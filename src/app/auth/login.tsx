@@ -22,19 +22,24 @@ export default function LoginScreen() {
   const [phone, setPhone] = useState("");
 
   const handleLogin = async () => {
+    console.log("handleLogin started", { email, phone });
     try {
       if (!email && !phone) {
         Alert.alert("Error", "Please enter phone or email");
         return;
       }
 
-      await requestOtp(email, phone);
+      console.log("Calling requestOtp...");
+      const res = await requestOtp(email, phone);
+      console.log("requestOtp response:", res);
 
+      console.log("Navigating to /auth/otp");
       router.push({
         pathname: "/auth/otp",
         params: { email, phone },
       });
     } catch (err) {
+      console.error("handleLogin error:", err);
       Alert.alert("OTP Error", "Failed to send OTP. Try again.");
     }
   };

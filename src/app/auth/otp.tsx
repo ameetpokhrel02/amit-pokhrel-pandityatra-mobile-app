@@ -30,22 +30,21 @@ export default function OTPScreen() {
     try {
       setLoading(true);
 
-      // 1. Verify OTP
-      await verifyOtp(email as string, otp);
+      // 1. Verify OTP & Login in one step
+      // Pass phone as third argument if needed by backend, though email might suffice
+      const res = await verifyOtp(email as string, otp, phone as string);
 
-      // 2. Login → get JWT
-      const res = await login(phone as string, otp); // if backend auto sets password = otp
-
-      // 3. Load profile
+      // 2. Load profile
+      // res.user might already contain the user profile depending on backend
       const user = await getMe();
 
-      // 4. Route by role
+      // 3. Route by role
       if (user.role === "pandit") {
-        router.replace("/(pandit)");
+        router.replace("/(pandit)" as any);
       } else if (user.role === "admin") {
-        router.replace("/admin/dashboard");
+        router.replace("/admin/dashboard" as any);
       } else {
-        router.replace("/(customer)");
+        router.replace("/(customer)" as any);
       }
     } catch (err) {
       Alert.alert("Invalid OTP", "Verification failed");
@@ -75,7 +74,7 @@ export default function OTPScreen() {
           </Text>
 
           <Input
-            label="OTP Code"
+            // label="OTP Code"
             placeholder="123456"
             value={otp}
             onChangeText={setOtp}

@@ -34,14 +34,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
         setUser(JSON.parse(userData));
-      } else {
-        // Default mock user for now if none exists
-        setUser({
-          name: 'Amit',
-          email: 'amit@example.com',
-          phone: '+977 9800000000',
-          photoUri: null,
-        });
       }
     } catch (e) {
       console.error('Failed to load user', e);

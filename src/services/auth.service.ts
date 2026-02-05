@@ -1,44 +1,63 @@
-import api from "./api";
+import { 
+  registerUser as apiRegister, 
+  requestLoginOtp, 
+  verifyOtpAndGetToken, 
+  fetchProfile,
+  RegisterPayload 
+} from "./api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// -1 Register
+export const registerUser = async (data: any) => {
+    // Adapter to match RegisterPayload
+    const payload: RegisterPayload = {
+        full_name: data.full_name || data.name,
+        phone_number: data.phone_number || data.phone,
+        email: data.email,
+        password: data.password,
+        role: data.role || 'user'
+    };
+    return await apiRegister(payload);
+};
 
 // 1️⃣ Send OTP
 export const requestOtp = async (email: string, phone: string) => {
-  const res = await api.post("/users/request-otp/", {
-    email,
-    phone,
-  });
-  return res.data;
+  const payload: any = {};
+  if (email) payload.email = email;
+  if (phone) payload.phone_number = phone;
+
+  return await requestLoginOtp(payload);
 };
 
-// 2️⃣ Verify OTP
-export const verifyOtp = async (email: string, otp: string) => {
-  const res = await api.post("/users/verify-otp/", {
-    email,
-    otp,
-  });
-  return res.data;
+// 2️⃣ Verify OTP & Login
+export const verifyOtp = async (email: string | null, otp: string, phone?: string | null) => {
+  const payload: any = { otp_code: otp };
+  if (email) payload.email = email;
+  if (phone) payload.phone_number = phone;
+
+  const res = await verifyOtpAndGetToken(payload);
+  
+  if (res.access) {
+      await AsyncStorage.setItem("access_token", res.access);
+  }
+  if (res.refresh) {
+      await AsyncStorage.setItem("refresh_token", res.refresh);
+  }
+  return res;
 };
 
-// 3️⃣ Login (JWT)
+// 3️⃣ Login (JWT) - Deprecated / wrapped by verifyOtp
 export const login = async (phone: string, password: string) => {
-  const res = await api.post("/token/", {
-    phone,
-    password,
-  });
-
-  await AsyncStorage.setItem("access_token", res.data.access);
-  await AsyncStorage.setItem("refresh_token", res.data.refresh);
-
-  return res.data;
+  // If we need password login later, use api.passwordLogin
+  return {};
 };
 
 // 4️⃣ Logged in user
 export const getMe = async () => {
-  const res = await api.get("/users/me/");
-  return res.data;
+  return await fetchProfile();
 };
 
 // 5️⃣ Logout
 export const logout = async () => {
-  await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+  await AsyncStorage.multiRemove(["access_token", "refresh_token", "user", "role"]);
 };
