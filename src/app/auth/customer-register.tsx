@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
-import { useAuth } from '@/store/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { registerUser } from '@/services/auth.service';
 
 export default function CustomerRegisterScreen() {
   const router = useRouter();
-  const { register } = useAuth();
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
     email: '',
     password: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     // Phone validation: Nepal format (starts with 98, 10 digits)
@@ -44,16 +45,30 @@ export default function CustomerRegisterScreen() {
     return true;
   };
 
-  const handleSubmit = () => {
-    if (validate()) {
-      register({
-        name: form.fullName,
-        phone: form.phone,
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    try {
+      setLoading(true);
+      // Use backend /api/users/register/ via auth.service adapter
+      await registerUser({
+        full_name: form.fullName,
+        phone_number: form.phone,
         email: form.email,
-      });
-      Alert.alert('Success', 'Account created successfully! Please login.', [
-        { text: 'OK', onPress: () => router.push('/auth/login' as any) }
-      ]);
+        password: form.password,
+        role: 'user',
+      } as any);
+
+      Alert.alert(
+        'Success',
+        'Account created successfully! Please login with OTP or password.',
+        [{ text: 'OK', onPress: () => router.push('/auth/login' as any) }],
+      );
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Registration failed', e?.message || 'Please check your details and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,6 +87,20 @@ export default function CustomerRegisterScreen() {
         </View>
         <Text style={styles.headerTitle}>Join as Customer</Text>
         <Text style={styles.headerSubtitle}>Create an account to book Pujas</Text>
+
+        <Button
+          title="Sign up with Google"
+          variant="outline"
+          onPress={() => router.push('/auth/login' as any)}
+          style={styles.googleButton}
+          leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
+        />
+
+        <View style={styles.orRow}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>OR</Text>
+          <View style={styles.orLine} />
+        </View>
 
         <View style={styles.form}>
           <Input
@@ -106,8 +135,9 @@ export default function CustomerRegisterScreen() {
           />
 
           <Button 
-            title="Continue" 
-            onPress={handleSubmit} 
+            title={loading ? 'Creating account...' : 'Continue'}
+            onPress={handleSubmit}
+            disabled={loading}
             style={styles.submitButton}
           />
 
@@ -152,6 +182,25 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
+  },
+  googleButton: {
+    marginBottom: 12,
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
+  },
+  orText: {
+    marginHorizontal: 8,
+    color: '#9E9E9E',
+    fontSize: 12,
+    fontWeight: '500',
   },
   submitButton: {
     marginTop: 16,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,72 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Colors } from "@/constants/Colors";
-import { requestOtp } from "@/services/auth.service";
+import { Ionicons } from "@expo/vector-icons";
+import { requestOtp, googleSignIn, getMe } from "@/services/auth.service";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_CLIENT_ID =
+  (Constants.expoConfig?.extra as any)?.expoPublicGoogleClientId || "";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [method, setMethod] = useState<"phone" | "email">("phone");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_NOT_SET",
+      responseType: AuthSession.ResponseType.IdToken,
+      scopes: ["profile", "email"],
+      redirectUri: AuthSession.makeRedirectUri({
+        useProxy: true,
+      }),
+    },
+    {
+      authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+    }
+  );
+
+  useEffect(() => {
+    const handleGoogleResponse = async () => {
+      if (response?.type === "success") {
+        const idToken = (response.params as any).id_token as string | undefined;
+        if (!idToken) {
+          Alert.alert("Google Sign-In", "No id_token returned from Google.");
+          return;
+        }
+
+        try {
+          await googleSignIn(idToken);
+          const user = await getMe();
+
+          if (user.role === "pandit") {
+            router.replace("/(pandit)" as any);
+          } else if (user.role === "admin") {
+            router.replace("/admin/dashboard" as any);
+          } else {
+            router.replace("/(customer)" as any);
+          }
+        } catch (err: any) {
+          console.error(err);
+          Alert.alert(
+            "Google Sign-In failed",
+            err?.message || "Unable to login with Google. Please try again."
+          );
+        }
+      }
+    };
+
+    handleGoogleResponse();
+  }, [response, router]);
 
   const handleLogin = async () => {
     console.log("handleLogin started", { email, phone });
@@ -42,6 +98,23 @@ export default function LoginScreen() {
       console.error("handleLogin error:", err);
       Alert.alert("OTP Error", "Failed to send OTP. Try again.");
     }
+  };
+
+  const handleGoogleLoginPress = () => {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "GOOGLE_CLIENT_ID_NOT_SET") {
+      Alert.alert(
+        "Google Sign-In not configured",
+        "Set EXPO_PUBLIC_GOOGLE_CLIENT_ID in your app config to enable Google login."
+      );
+      return;
+    }
+
+    if (!request) {
+      Alert.alert("Google Sign-In", "Google auth request is not ready yet. Please try again.");
+      return;
+    }
+
+    promptAsync();
   };
 
   return (
@@ -106,6 +179,20 @@ export default function LoginScreen() {
           </View>
 
           <Button title="Send OTP" onPress={handleLogin} style={styles.submitButton} />
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          <Button
+            title="Continue with Google"
+            variant="outline"
+            onPress={handleGoogleLoginPress}
+            style={styles.googleButton}
+            leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
+          />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -183,6 +270,26 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 8,
+  },
+  orRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E5E5EA",
+  },
+  orText: {
+    marginHorizontal: 8,
+    color: "#9E9E9E",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  googleButton: {
+    marginBottom: 8,
   },
   footer: {
     flexDirection: "row",

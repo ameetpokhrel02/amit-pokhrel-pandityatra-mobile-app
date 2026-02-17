@@ -20,9 +20,18 @@ export default function RootLayout() {
       <AuthProvider>
         <UserProvider>
           <Stack screenOptions={{ headerShown: false }}>
+            {/* Auth / startup routing */}
             <Stack.Screen name="index" />
             <Stack.Screen name="auth" />
+
+            {/* Customer app (tabs) */}
             <Stack.Screen name="(customer)" />
+
+            {/* Pandit app (tabs) */}
+            <Stack.Screen name="(pandit)" />
+
+            {/* Admin dashboard (simple stack as per spec) */}
+            <Stack.Screen name="admin" />
           </Stack>
         </UserProvider>
       </AuthProvider>

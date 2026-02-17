@@ -1,15 +1,55 @@
-import React from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ImageBackground, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
+import { fetchPanchang, PanchangData } from '@/services/api';
 
 export const DailyPanchang = () => {
   const today = new Date();
-  const dateString = today.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateString = today.toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  const isoDate = today.toISOString().slice(0, 10); // YYYY-MM-DD
+
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const [data, setData] = useState<PanchangData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const res = await fetchPanchang(isoDate);
+        if (isMounted) {
+          setData(res);
+        }
+      } catch (e) {
+        if (isMounted) {
+          setError('Unable to load Panchang');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [isoDate]);
+
+  const sunrise = data?.sunrise || '—';
+  const sunset = data?.sunset || '—';
+  const tithi = data?.tithi || 'Panchang';
 
   return (
     <MotiView
@@ -19,14 +59,16 @@ export const DailyPanchang = () => {
       style={[styles.container, { backgroundColor: colors.card }]}
     >
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1604881991720-f91add269ed8?q=80&w=1000&auto=format&fit=crop' }} // Placeholder abstract spiritual background
+        source={{
+          uri: 'https://images.unsplash.com/photo-1604881991720-f91add269ed8?q=80&w=1000&auto=format&fit=crop',
+        }}
         style={[styles.background, { backgroundColor: isDark ? '#333' : '#FFF8E1' }]}
         imageStyle={{ borderRadius: 16, opacity: 0.15 }}
       >
         <View style={styles.header}>
           <View style={styles.dateContainer}>
             <Text style={[styles.dateText, { color: isDark ? '#AAA' : '#666' }]}>{dateString}</Text>
-            <Text style={[styles.tithiText, { color: colors.primary }]}>Shukla Paksha, Tritiya</Text>
+            <Text style={[styles.tithiText, { color: colors.primary }]}>{tithi}</Text>
           </View>
           <View style={styles.iconContainer}>
             <Ionicons name="sunny" size={24} color={colors.primary} />
@@ -35,23 +77,37 @@ export const DailyPanchang = () => {
 
         <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} />
 
-        <View style={styles.detailsRow}>
-          <View style={styles.detailItem}>
-            <Ionicons name="sunny-outline" size={16} color={isDark ? '#AAA' : '#666'} />
-            <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Sunrise</Text>
-            <Text style={[styles.detailValue, { color: colors.text }]}>06:45 AM</Text>
+        {loading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: isDark ? '#AAA' : '#666' }]}>Loading Panchang…</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Ionicons name="moon-outline" size={16} color={isDark ? '#AAA' : '#666'} />
-            <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Sunset</Text>
-            <Text style={[styles.detailValue, { color: colors.text }]}>05:30 PM</Text>
+        ) : error ? (
+          <View style={styles.loadingRow}>
+            <Ionicons name="warning-outline" size={16} color={colors.primary} />
+            <Text style={[styles.loadingText, { color: isDark ? '#AAA' : '#666' }]}>{error}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Ionicons name="star-outline" size={16} color={isDark ? '#AAA' : '#666'} />
-            <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Nakshatra</Text>
-            <Text style={[styles.detailValue, { color: colors.text }]}>Rohini</Text>
+        ) : (
+          <View style={styles.detailsRow}>
+            <View style={styles.detailItem}>
+              <Ionicons name="sunny-outline" size={16} color={isDark ? '#AAA' : '#666'} />
+              <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Sunrise</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>{sunrise}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="moon-outline" size={16} color={isDark ? '#AAA' : '#666'} />
+              <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Sunset</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>{sunset}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Ionicons name="star-outline" size={16} color={isDark ? '#AAA' : '#666'} />
+              <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#999' }]}>Nakshatra</Text>
+              <Text style={[styles.detailValue, { color: colors.text }]}>
+                {data?.nakshatra || '—'}
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </ImageBackground>
     </MotiView>
   );
@@ -105,6 +161,15 @@ const styles = StyleSheet.create({
   detailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  loadingText: {
+    fontSize: 13,
   },
   detailItem: {
     alignItems: 'center',

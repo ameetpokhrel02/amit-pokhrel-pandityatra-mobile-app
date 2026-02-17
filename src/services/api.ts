@@ -367,6 +367,226 @@ export async function deleteSamagriCategory(id: number) {
     return response.data;
 }
 
+// ----------------------
+// Additional Services (Pujas) APIs
+// ----------------------
+
+export interface ServiceCategory {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export interface Service {
+    id: number;
+    name: string;
+    description?: string;
+    base_price: number;
+    base_duration_minutes?: number;
+    image?: string;
+    category?: number;
+}
+
+// List puja categories
+export async function fetchServiceCategories(): Promise<ServiceCategory[]> {
+    const response = await apiClient.get('/services/categories/');
+    return response.data.results || response.data;
+}
+
+// List all pujas with optional filters (e.g. ?category=)
+export async function fetchServices(params?: any): Promise<Service[]> {
+    const response = await apiClient.get('/services/', { params });
+    return response.data.results || response.data;
+}
+
+// Get single puja details
+export async function fetchServiceDetail(id: number): Promise<Service> {
+    const response = await apiClient.get(`/services/${id}/`);
+    return response.data;
+}
+
+// ----------------------
+// Extended Pandit APIs
+// ----------------------
+
+export interface PanditRegisterPayload {
+    user_id?: number;
+    bio?: string;
+    experience_years?: number;
+    expertise?: string;
+    language?: string;
+    [key: string]: any;
+}
+
+// Register as a pandit
+export async function registerPandit(payload: PanditRegisterPayload) {
+    const response = await apiClient.post('/pandits/register/', payload);
+    return response.data;
+}
+
+// Fetch pandits with optional filters: search, expertise, service, etc.
+export async function fetchPanditsWithFilters(params?: any): Promise<Pandit[]> {
+    const response = await apiClient.get('/pandits/', { params });
+    return response.data;
+}
+
+// ----------------------
+// Booking Detail API
+// ----------------------
+
+export async function fetchBookingDetail(id: number): Promise<Booking> {
+    const response = await apiClient.get(`/bookings/${id}/`);
+    return response.data;
+}
+
+// ----------------------
+// Payments APIs (Client-side flows)
+// ----------------------
+
+export interface CreatePaymentPayload {
+    booking: number;
+    payment_method: 'stripe' | 'khalti';
+    amount?: number;
+    currency?: string;
+    [key: string]: any;
+}
+
+export interface PaymentIntentResponse {
+    id: number;
+    status: string;
+    client_secret?: string; // Stripe
+    payment_url?: string;   // Khalti or other redirect URL
+    [key: string]: any;
+}
+
+export async function createPayment(payload: CreatePaymentPayload): Promise<PaymentIntentResponse> {
+    const response = await apiClient.post('/payments/create/', payload);
+    return response.data;
+}
+
+export async function checkPaymentStatus(id: number): Promise<Payment> {
+    const response = await apiClient.get(`/payments/check-status/${id}/`);
+    return response.data;
+}
+
+export async function verifyKhaltiPayment(payload: { token: string; amount: number }) {
+    const response = await apiClient.post('/payments/khalti/verify/', payload);
+    return response.data;
+}
+
+// ----------------------
+// Chat APIs
+// ----------------------
+
+export interface ChatRoom {
+    id: number;
+    booking: number;
+    last_message?: string;
+    updated_at: string;
+    [key: string]: any;
+}
+
+export interface ChatMessage {
+    id: number;
+    room: number;
+    sender: number;
+    content: string;
+    created_at: string;
+    [key: string]: any;
+}
+
+// List chat rooms (optionally filter by booking)
+export async function fetchChatRooms(params?: { booking?: number }): Promise<ChatRoom[]> {
+    const response = await apiClient.get('/chat/rooms/', { params });
+    return response.data.results || response.data;
+}
+
+// Get messages for a specific room
+export async function fetchChatRoomMessages(roomId: number): Promise<ChatMessage[]> {
+    const response = await apiClient.get(`/chat/rooms/${roomId}/messages/`);
+    return response.data.results || response.data;
+}
+
+// Convenience helper: fetch or create room for a booking (as per web spec)
+export async function fetchBookingChatRoom(bookingId: number): Promise<ChatRoom> {
+    const response = await apiClient.get('/chat/rooms/', { params: { booking: bookingId } });
+    // Depending on backend it might return a single room or list
+    const data = response.data;
+    if (Array.isArray(data)) {
+        return data[0];
+    }
+    if (data.results && Array.isArray(data.results)) {
+        return data.results[0];
+    }
+    return data;
+}
+
+// ----------------------
+// Video APIs
+// ----------------------
+
+export interface VideoRoom {
+    id: number;
+    booking: number;
+    room_name: string;
+    room_url?: string;
+    [key: string]: any;
+}
+
+export interface VideoLinkResponse {
+    room_url: string;
+    token?: string;
+    [key: string]: any;
+}
+
+export async function fetchVideoRoom(bookingId: number): Promise<VideoRoom> {
+    const response = await apiClient.get(`/video/room/${bookingId}/`);
+    return response.data;
+}
+
+export async function generateVideoJoinLink(id: number): Promise<VideoLinkResponse> {
+    const response = await apiClient.get(`/video/generate-link/${id}/`);
+    return response.data;
+}
+
+// ----------------------
+// Panchang APIs
+// ----------------------
+
+export interface PanchangData {
+    date: string;
+    tithi?: string;
+    sunrise?: string;
+    sunset?: string;
+    [key: string]: any;
+}
+
+export async function fetchPanchang(date: string): Promise<PanchangData> {
+    const response = await apiClient.get('/panchang/data/', { params: { date } });
+    return response.data;
+}
+
+// ----------------------
+// Samagri Checkout & AI Recommend
+// ----------------------
+
+export interface SamagriCheckoutPayload {
+    items: { id: number; quantity: number }[];
+    address?: string;
+    notes?: string;
+    [key: string]: any;
+}
+
+export async function checkoutSamagri(payload: SamagriCheckoutPayload) {
+    const response = await apiClient.post('/samagri/checkout/', payload);
+    return response.data;
+}
+
+export async function aiRecommendSamagri(payload: { service_id?: number; puja_name?: string }) {
+    const response = await apiClient.post('/samagri/ai_recommend/', payload);
+    return response.data;
+}
+
 // Helper to standardize error messages
 function handleApiError(error: any) {
     if (error.response) {

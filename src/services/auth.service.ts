@@ -3,6 +3,7 @@ import {
   requestLoginOtp, 
   verifyOtpAndGetToken, 
   fetchProfile,
+  googleLogin as apiGoogleLogin,
   RegisterPayload 
 } from "./api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -55,6 +56,20 @@ export const login = async (phone: string, password: string) => {
 // 4️⃣ Logged in user
 export const getMe = async () => {
   return await fetchProfile();
+};
+
+// 4.1️⃣ Google Sign-In (login or signup)
+export const googleSignIn = async (idToken: string) => {
+  const res = await apiGoogleLogin(idToken);
+
+  if (res.access) {
+    await AsyncStorage.setItem("access_token", res.access);
+  }
+  if (res.refresh) {
+    await AsyncStorage.setItem("refresh_token", res.refresh);
+  }
+
+  return res;
 };
 
 // 5️⃣ Logout

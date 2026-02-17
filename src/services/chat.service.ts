@@ -1,102 +1,90 @@
 import { ChatMessage, ChatRoom, ChatUser } from '../types/chat';
+import { fetchChatRooms, fetchChatRoomMessages } from './api';
 
-// Mock Users
-const CURRENT_USER: ChatUser = { id: 'u1', name: 'Anita', role: 'customer' };
-const PANDIT_USER: ChatUser = { id: 'p1', name: 'Pandit Ram Acharya', role: 'pandit', avatar: 'https://i.pravatar.cc/150?u=p1' };
-const AI_USER: ChatUser = { id: 'ai', name: 'PanditYatra AI', role: 'ai' };
+// NOTE:
+// This service now uses real backend APIs (/api/chat/rooms/ and /api/chat/rooms/{id}/messages/)
+// to match the web implementation. AI suggestions remain local-only for now.
 
-// Mock Chats
-let chats: ChatRoom[] = [
-  {
-    id: 'c1',
-    participants: [CURRENT_USER, PANDIT_USER],
-    unreadCount: 1,
-    status: 'active',
-    context: {
-      ritualType: 'Bratabandha',
-      location: 'Kathmandu',
-    },
-    lastMessage: {
-      id: 'm1',
-      chatId: 'c1',
-      senderId: 'p1',
-      text: 'Namaste 🙏 Yes, I am available on 12th Ashwin.',
-      type: 'text',
-      timestamp: Date.now() - 1000 * 60 * 5, // 5 mins ago
-      isRead: false,
-    },
-  },
-];
-
-let messages: Record<string, ChatMessage[]> = {
-  'c1': [
-    {
-      id: 'm0',
-      chatId: 'c1',
-      senderId: 'system',
-      text: '🔱 You are now chatting with Pandit Ram Acharya (Verified). Please keep communication respectful.',
-      type: 'system',
-      timestamp: Date.now() - 1000 * 60 * 60,
-      isRead: true,
-    },
-    {
-      id: 'm1',
-      chatId: 'c1',
-      senderId: 'u1',
-      text: 'Namaste Pandit ji 🙏 I am planning Bratabandha for my son next month in Kathmandu. Are you available on 12th Ashwin?',
-      type: 'text',
-      timestamp: Date.now() - 1000 * 60 * 30,
-      isRead: true,
-    },
-    {
-      id: 'm2',
-      chatId: 'c1',
-      senderId: 'p1',
-      text: 'Namaste 🙏 Yes, I am available on 12th Ashwin. Please confirm location and number of participants.',
-      type: 'text',
-      timestamp: Date.now() - 1000 * 60 * 5,
-      isRead: false,
-    },
-  ],
-};
+// Current user is still mocked on the client side; backend controls actual roles/IDs.
+const CURRENT_USER: ChatUser = { id: 'me', name: 'Me', role: 'customer' };
 
 export const ChatService = {
+  // Map backend ChatRoom to mobile ChatRoom shape
   getChats: async (): Promise<ChatRoom[]> => {
-    return new Promise((resolve) => setTimeout(() => resolve(chats), 500));
+    const rooms = await fetchChatRooms();
+
+    return rooms.map((room: any) => {
+      const participants: ChatUser[] =
+        room.participants?.map((p: any) => ({
+          id: String(p.id),
+          name: p.name || p.full_name || 'User',
+          avatar: p.avatar || p.profile_pic || undefined,
+          role: p.role || 'customer',
+        })) || [];
+
+      const last = room.last_message || room.lastMessage;
+
+      const lastMessage: ChatMessage | undefined = last
+        ? {
+            id: String(last.id),
+            chatId: String(room.id),
+            senderId: String(last.sender),
+            text: last.text || last.message || '',
+            type: 'text',
+            timestamp: new Date(last.created_at || last.timestamp).getTime(),
+            isRead: !!last.is_read,
+          }
+        : undefined;
+
+      return {
+        id: String(room.id),
+        participants,
+        unreadCount: room.unread_count ?? 0,
+        status: room.status || 'active',
+        context: {
+          ritualType: room.context?.ritualType || room.ritual_type,
+          date: room.context?.date || room.date,
+          location: room.context?.location || room.location,
+        },
+        lastMessage,
+      };
+    });
   },
 
   getMessages: async (chatId: string): Promise<ChatMessage[]> => {
-    return new Promise((resolve) => setTimeout(() => resolve(messages[chatId] || []), 500));
+    const data = await fetchChatRoomMessages(Number(chatId));
+
+    return data.map((m: any) => ({
+      id: String(m.id),
+      chatId: String(m.room || chatId),
+      senderId: String(m.sender || m.sender_id),
+      text: m.text || m.message || '',
+      type: m.type === 'system' ? 'system' : 'text',
+      timestamp: new Date(m.created_at || m.timestamp).getTime(),
+      isRead: !!m.is_read,
+    }));
   },
 
+  // Placeholder: requires backend POST endpoint to send messages
   sendMessage: async (chatId: string, text: string): Promise<ChatMessage> => {
-    const newMessage: ChatMessage = {
-      id: Math.random().toString(36).substr(2, 9),
+    const now = Date.now();
+
+    // Optimistic local echo; in the future, replace with real POST /chat/...
+    return {
+      id: 'local_' + now,
       chatId,
       senderId: CURRENT_USER.id,
       text,
       type: 'text',
-      timestamp: Date.now(),
+      timestamp: now,
       isRead: true,
     };
-
-    if (!messages[chatId]) messages[chatId] = [];
-    messages[chatId].push(newMessage);
-    
-    // Update last message in chat room
-    const chatIndex = chats.findIndex(c => c.id === chatId);
-    if (chatIndex > -1) {
-      chats[chatIndex].lastMessage = newMessage;
-    }
-
-    return newMessage;
   },
 
-  // Simulate AI Suggestion
+  // Local AI suggestion logic kept as-is (no backend dependency)
   getAISuggestion: async (chatId: string, lastMessageText: string): Promise<ChatMessage | null> => {
-    // Simple keyword matching for demo
     const lowerText = lastMessageText.toLowerCase();
-    
+
     if (lowerText.includes('available') || lowerText.includes('date')) {
       return {
         id: 'ai_' + Date.now(),
@@ -106,12 +94,12 @@ export const ChatService = {
         type: 'ai_suggestion',
         timestamp: Date.now(),
         isRead: true,
-        metadata: { suggestionAction: 'ask_samagri' }
+        metadata: { suggestionAction: 'ask_samagri' },
       };
     }
-    
+
     if (lowerText.includes('samagri')) {
-       return {
+      return {
         id: 'ai_' + Date.now(),
         chatId,
         senderId: 'ai',
@@ -123,5 +111,5 @@ export const ChatService = {
     }
 
     return null;
-  }
+  },
 };

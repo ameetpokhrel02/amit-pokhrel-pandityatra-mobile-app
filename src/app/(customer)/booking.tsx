@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView, AnimatePresence } from 'moti';
 import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
-import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 import { PanditService } from '@/services/pandit.service';
 import { Pandit } from '@/types/pandit';
+import { createBooking, createPayment, Booking, PaymentIntentResponse } from '@/services/api';
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
 
@@ -21,6 +21,8 @@ export default function BookingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [pandit, setPandit] = useState<Pandit | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentIntentResponse | null>(null);
 
   // Form State
   const [selectedService, setSelectedService] = useState('');
@@ -68,11 +70,36 @@ export default function BookingScreen() {
     }
   };
 
-  const handleBooking = () => {
-    // Simulate API call
-    setTimeout(() => {
+  const handleBooking = async () => {
+    if (!pandit) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // 1️⃣ Create booking on backend
+      const bookingPayload: Partial<Booking> = {
+        pandit: pandit.id as unknown as number,
+        booking_date: dayjs(selectedDate).format('YYYY-MM-DD'),
+        booking_time: selectedTime,
+        notes,
+      };
+
+      const booking = await createBooking(bookingPayload);
+
+      // 2️⃣ Create payment intent for this booking (default to Khalti for now)
+      const payment = await createPayment({
+        booking: booking.id,
+        payment_method: 'khalti',
+      });
+
+      setPaymentInfo(payment);
       setIsSuccess(true);
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Could not complete booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -89,15 +116,22 @@ export default function BookingScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 1000 }}
         >
-          <Text style={[styles.successTitle, { color: colors.text }]}>Booking Confirmed!</Text>
+          <Text style={[styles.successTitle, { color: colors.text }]}>Booking Created</Text>
           <Text style={[styles.successMessage, { color: isDark ? '#AAA' : '#666' }]}>
-            Your booking with {pandit?.name} for {selectedService} has been confirmed.
+            Your booking with {pandit?.name} for {selectedService} has been created.
           </Text>
-          <TouchableOpacity 
+
+          {paymentInfo?.payment_url && (
+            <Text style={[styles.successMessage, { color: isDark ? '#A7F3D0' : '#047857' }]}>
+              Please complete your payment in the next step.
+            </Text>
+          )}
+
+          <TouchableOpacity
             style={[styles.homeButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/(customer)')}
+            onPress={() => router.push('/(customer)/bookings')}
           >
-            <Text style={styles.homeButtonText}>Back to Home</Text>
+            <Text style={styles.homeButtonText}>Go to My Bookings</Text>
           </TouchableOpacity>
         </MotiView>
       </View>
@@ -322,12 +356,22 @@ export default function BookingScreen() {
 
       {/* Footer */}
       <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#F0F0F0' }]}>
-        <TouchableOpacity style={[styles.nextButton, { backgroundColor: colors.primary }]} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {currentStep === STEPS.length - 1 ? 'Confirm Booking' : 'Continue'}
-          </Text>
-          {currentStep < STEPS.length - 1 && (
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+        <TouchableOpacity
+          style={[styles.nextButton, { backgroundColor: colors.primary }, isSubmitting && styles.nextButtonDisabled]}
+          onPress={handleNext}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>
+                {currentStep === STEPS.length - 1 ? 'Confirm & Pay' : 'Continue'}
+              </Text>
+              {currentStep < STEPS.length - 1 && (
+                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+              )}
+            </>
           )}
         </TouchableOpacity>
       </View>
@@ -556,6 +600,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  nextButtonDisabled: {
+    opacity: 0.7,
   },
   successContainer: {
     flex: 1,
