@@ -1,7 +1,7 @@
 export const Colors = {
   light: {
     primary: '#FF6F00', // Saffron
-    background: '#F5F5F5', // Cream
+    background: '#FFF7ED', // Cream (Orange 50)
     card: '#FFFFFF',
     text: '#3E2723', // Dark Brown
     border: '#E5E5EA',
@@ -14,7 +14,7 @@ export const Colors = {
     lightGreen: '#A5D6A7',
     pastelYellow: '#FFEB3B',
     amber: '#FFB300',
-    lightGold: '#FFF8E1',
+    lightGold: '#FFF7ED',
     white: '#FFFFFF',
     inputBackground: '#FFFFFF',
     inputBorder: '#FF6F00',
@@ -24,10 +24,10 @@ export const Colors = {
     primary: '#FF6F00',
     background: '#121212',
     card: '#1E1E1E',
-    text: '#FFF8E1',
+    text: '#FFF7ED',
     border: '#333333',
     tint: '#FFD700',
-    icon: '#FFF8E1',
+    icon: '#FFF7ED',
     tabIconDefault: '#CCC',
     tabIconSelected: '#FFD700',
     deepRed: '#EF5350',

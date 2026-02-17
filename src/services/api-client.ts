@@ -1,10 +1,12 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 
 // Define API_BASE_URL (Update this with your actual backend URL)
-// For Android Emulator use 10.0.2.2, for iOS Simulator use localhost
-export const API_BASE_URL = 'http://10.0.2.2:8000/api'; 
+// For Physical Device: Use your computer's IP address (e.g., http://192.168.1.83:8000/api)
+// For Android Emulator: Use http://10.0.2.2:8000/api
+// For iOS Simulator: Use http://localhost:8000/api
+export const API_BASE_URL = 'http://192.168.1.83:8000/api';
 
 // Create Axios instance
 const apiClient = axios.create({
@@ -17,7 +19,7 @@ const apiClient = axios.create({
 // Request Interceptor: Attach Token
 apiClient.interceptors.request.use(
     async (config) => {
-        const token = await AsyncStorage.getItem('access_token');
+        const token = await SecureStore.getItemAsync('access_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -68,7 +70,7 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true;
             isRefreshing = true;
 
-            const refreshToken = await AsyncStorage.getItem('refresh_token');
+            const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
             if (!refreshToken) {
                 // No refresh token, force logout
@@ -83,7 +85,7 @@ apiClient.interceptors.response.use(
 
                 const { access } = response.data;
 
-                await AsyncStorage.setItem('access_token', access);
+                await SecureStore.setItemAsync('access_token', access);
 
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
                 processQueue(null, access);
@@ -103,10 +105,10 @@ apiClient.interceptors.response.use(
 );
 
 async function handleLogout() {
-    await AsyncStorage.removeItem('access_token');
-    await AsyncStorage.removeItem('refresh_token');
-    await AsyncStorage.removeItem('role');
-    await AsyncStorage.removeItem('user');
+    await SecureStore.deleteItemAsync('access_token');
+    await SecureStore.deleteItemAsync('refresh_token');
+    await SecureStore.deleteItemAsync('role');
+    await SecureStore.deleteItemAsync('user');
     router.replace('/auth/login');
 }
 

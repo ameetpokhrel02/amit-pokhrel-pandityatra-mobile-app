@@ -149,7 +149,7 @@ export default function PanditProfileScreen() {
                   </View>
                   <Text style={[styles.reviewerName, { color: colors.text }]}>Ramesh K.</Text>
                 </View>
-                <View style={[styles.reviewRating, { backgroundColor: isDark ? '#332' : '#FFF8E1' }]}>
+                <View style={[styles.reviewRating, { backgroundColor: isDark ? '#332' : '#FFF7ED' }]}>
                   <Ionicons name="star" size={12} color="#FFD700" />
                   <Text style={[styles.reviewRatingText, { color: colors.text }]}>5.0</Text>
                 </View>

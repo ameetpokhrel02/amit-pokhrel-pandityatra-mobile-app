@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,22 +7,61 @@ import {
   Platform,
   ScrollView,
   Alert,
+  TextInput,
+  TouchableOpacity,
+  Image,
 } from "react-native";
-import { Image } from "expo-image";
+// import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
 import { Colors } from "@/constants/Colors";
-import { verifyOtp, login, getMe } from "@/services/auth.service";
+import { verifyOtp, getMe } from "@/services/auth.service";
 
 export default function OTPScreen() {
   const router = useRouter();
   const { email, phone } = useLocalSearchParams();
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
+  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const [timer, setTimer] = useState(30);
+
+  // Focus first input on mount
+  useEffect(() => {
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
+
+  // Timer for resend
+  useEffect(() => {
+    let interval: any;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const handleOtpChange = (text: string, index: number) => {
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    // Focus next input
+    if (text && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
 
   const handleVerify = async () => {
-    if (otp.length !== 6) {
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
       Alert.alert("Error", "Enter valid 6 digit OTP");
       return;
     }
@@ -30,15 +69,13 @@ export default function OTPScreen() {
     try {
       setLoading(true);
 
-      // 1. Verify OTP & Login in one step
-      // Pass phone as third argument if needed by backend, though email might suffice
-      const res = await verifyOtp(email as string, otp, phone as string);
+      // Verify OTP
+      const res = await verifyOtp(email as string, otpString, phone as string);
 
-      // 2. Load profile
-      // res.user might already contain the user profile depending on backend
+      // Load profile
       const user = await getMe();
 
-      // 3. Route by role
+      // Route by role
       if (user.role === "pandit") {
         router.replace("/(pandit)" as any);
       } else if (user.role === "admin") {
@@ -46,10 +83,21 @@ export default function OTPScreen() {
       } else {
         router.replace("/(customer)" as any);
       }
-    } catch (err) {
-      Alert.alert("Invalid OTP", "Verification failed");
+    } catch (err: any) {
+      Alert.alert("Invalid OTP", err.message || "Verification failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (timer > 0) return;
+    try {
+        // Mock resend
+        setTimer(30);
+        Alert.alert('Sent', 'OTP has been resent');
+    } catch (e) {
+        Alert.alert('Error', 'Failed to resend OTP');
     }
   };
 
@@ -60,40 +108,59 @@ export default function OTPScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/pandit-logo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
-          </View>
+            <View style={styles.iconContainer}>
+                 <Image 
+                    source={require("../../../assets/images/pandit-logo.png")} 
+                    style={{width: 80, height: 80, resizeMode: 'contain'}} 
+                 />
+            </View>
 
-          <Text style={styles.title}>Verify OTP Code</Text>
-          <Text style={styles.subtitle}>
-            Enter the code sent to {email || phone}
-          </Text>
+            <Text style={styles.title}>Verify OTP</Text>
+            <Text style={styles.subtitle}>
+                Enter the code sent to your phone/email
+            </Text>
 
-          <Input
-            // label="OTP Code"
-            placeholder="123456"
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            style={styles.otpInput}
-          />
+            <View style={styles.otpContainer}>
+                {otp.map((digit, index) => (
+                    <TextInput
+                        key={index}
+                        ref={(ref) => { inputRefs.current[index] = ref; }}
+                        style={[
+                            styles.otpInput,
+                            { borderColor: digit ? Colors.light.primary : '#E0E0E0' }
+                        ]}
+                        keyboardType="number-pad"
+                        maxLength={1}
+                        value={digit}
+                        onChangeText={(text) => handleOtpChange(text, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                        selectTextOnFocus
+                        cursorColor={Colors.light.primary}
+                    />
+                ))}
+            </View>
 
-          <Button
-            title={loading ? "Verifying..." : "Verify"}
-            onPress={handleVerify}
-            disabled={loading}
-            style={styles.submitButton}
-          />
+            <TouchableOpacity 
+                style={[styles.verifyButton, { opacity: loading ? 0.7 : 1 }]} 
+                onPress={handleVerify}
+                disabled={loading}
+            >
+                <Text style={styles.verifyButtonText}>
+                    {loading ? "Verifying..." : "Verify"}
+                </Text>
+            </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Didn't receive code? </Text>
-            <Text style={styles.link}>Resend</Text>
-          </View>
+            <TouchableOpacity 
+                style={styles.resendContainer} 
+                onPress={handleResend}
+                disabled={timer > 0}
+            >
+                <Text style={styles.resendText}>
+                    Didn't receive code? <Text style={[styles.resendLink, { color: timer > 0 ? '#999' : Colors.light.primary }]}>
+                        {timer > 0 ? `Resend` : "Resend"}
+                    </Text>
+                </Text>
+            </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -103,60 +170,86 @@ export default function OTPScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: "#F5F5F5",
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 24,
+    padding: 20,
+    marginTop: 0,
   },
   card: {
-    backgroundColor: Colors.light.white,
+    backgroundColor: "#FFF",
     borderRadius: 20,
     padding: 24,
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
     elevation: 5,
   },
-  logoContainer: {
-    alignItems: "center",
+  iconContainer: {
     marginBottom: 20,
-  },
-  logo: {
-    width: 60,
-    height: 60,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: Colors.light.text,
-    textAlign: "center",
+    color: "#333",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: "#757575",
+    color: "#666",
     textAlign: "center",
     marginBottom: 32,
   },
-  otpInput: {
-    marginBottom: 24,
-  },
-  submitButton: {
-    marginTop: 0,
-  },
-  footer: {
+  otpContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 32,
   },
-  footerText: {
-    color: "#757575",
+  otpInput: {
+    width: 45,
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    backgroundColor: "#FAFAFA",
+    color: "#333",
   },
-  link: {
-    color: Colors.light.primary,
-    fontWeight: "600",
+  verifyButton: {
+    width: "100%",
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 24,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  verifyButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  resendContainer: {
+    marginTop: 8,
+  },
+  resendText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  resendLink: {
+    fontWeight: "bold",
   },
 });

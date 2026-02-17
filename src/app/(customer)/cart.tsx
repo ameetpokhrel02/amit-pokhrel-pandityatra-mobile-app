@@ -54,7 +54,11 @@ export default function CartScreen() {
         {items.map((item) => (
           <View key={item.id} style={[styles.cartItem, { backgroundColor: colors.card }]}>
             <View style={[styles.itemImage, { backgroundColor: isDark ? '#333' : '#F3F4F6' }]}>
-              <Ionicons name={item.image as any} size={32} color={isDark ? '#AAA' : '#9CA3AF'} />
+               {item.image && (item.image.startsWith('http') || item.image.startsWith('file')) ? (
+                  <Image source={{ uri: item.image }} style={{ width: 50, height: 50, borderRadius: 8 }} />
+               ) : (
+                  <Ionicons name={item.image as any || 'cube-outline'} size={32} color={isDark ? '#AAA' : '#9CA3AF'} />
+               )}
             </View>
             <View style={styles.itemDetails}>
               <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
@@ -96,7 +100,10 @@ export default function CartScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#F3F4F6' }]}>
-        <TouchableOpacity style={[styles.checkoutButton, { backgroundColor: colors.primary }]}>
+        <TouchableOpacity 
+            style={[styles.checkoutButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/(customer)/checkout')}
+        >
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </TouchableOpacity>
       </View>

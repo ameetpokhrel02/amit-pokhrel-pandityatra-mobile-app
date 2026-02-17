@@ -1,33 +1,50 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/store/CartContext';
 import { useUser } from '@/store/UserContext';
 import { useTheme } from '@/store/ThemeContext';
-import { PRODUCTS } from '@/data/products';
-import { MotiView, MotiText } from 'moti';
+import { MotiView } from 'moti';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
-import { DailyQuote } from '@/components/home/DailyQuote';
 import { useTranslation } from 'react-i18next';
-
-// Get a few products for the recommended section
-const RECOMMENDED_PRODUCTS = PRODUCTS.slice(0, 5);
-
-const POPULAR_PANDITS = [
-  { id: '1', name: 'Pt. Sharma', location: 'Kathmandu', rating: 4.9 },
-  { id: '2', name: 'Pt. Joshi', location: 'Lalitpur', rating: 4.8 },
-  { id: '3', name: 'Pt. Bhatta', location: 'Bhaktapur', rating: 4.7 },
-];
+import { fetchServices, Service } from '@/services/api';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
-  const { addToCart, updateQuantity, getItemCount } = useCart();
   const { user } = useUser();
   const { colors, theme } = useTheme();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
+  
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFeaturedServices();
+  }, []);
+
+  const loadFeaturedServices = async () => {
+    try {
+      const data = await fetchServices();
+      setServices(data);
+    } catch (error) {
+      console.error("Failed to load services", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock upcoming booking
+  const upcomingBooking = {
+    id: 'bk_123',
+    service: 'Satyanarayan Puja',
+    date: '2024-03-15',
+    time: '09:00 AM',
+    pandit: 'Pt. Sharma',
+    status: 'confirmed'
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -62,157 +79,105 @@ export default function CustomerHomeScreen() {
         {/* Daily Panchang Widget */}
         <DailyPanchang />
 
-        {/* Search Bar */}
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 500, delay: 100 }}
-          style={[styles.searchContainer, { backgroundColor: colors.inputBackground }]}
-        >
-          <Ionicons name="search-outline" size={20} color={colors.placeholder} />
-          <TextInput 
-            placeholder={t('searchPlaceholder')} 
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholderTextColor={colors.placeholder}
-          />
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="options-outline" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        </MotiView>
-
-        {/* Categories */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesContainer}>
-          <CategoryItem 
-            index={0} 
-            icon="flame" 
-            label={t('categories.puja')} 
-            active 
-            onPress={() => router.push('/(customer)/pandits')} 
-            colors={colors}
-            isDark={isDark}
-          />
-          <CategoryItem 
-            index={1} 
-            icon="basket" 
-            label={t('categories.samagri')} 
-            onPress={() => router.push('/(customer)/shop')} 
-            colors={colors}
-            isDark={isDark}
-          />
-          <CategoryItem 
-            index={2} 
-            icon="people" 
-            label={t('categories.pandits')} 
-            onPress={() => router.push('/(customer)/pandits')} 
-            colors={colors}
-            isDark={isDark}
-          />
-          <CategoryItem 
-            index={3} 
-            icon="planet" 
-            label={t('categories.kundali')} 
-            onPress={() => router.push('/(customer)/kundali')} 
-            colors={colors}
-            isDark={isDark}
-          />
-        </ScrollView>
-
-        {/* Daily Quote Widget */}
-        <DailyQuote />
-
-        {/* Recommended Products */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('recommendedSamagri')}</Text>
-          <TouchableOpacity onPress={() => router.push('/(customer)/shop')}>
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('seeAll')}</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
-          {RECOMMENDED_PRODUCTS.map((item) => {
-            const quantity = getItemCount(item.id);
-            
-            return (
-              <TouchableOpacity 
-                key={item.id} 
-                style={[styles.productCard, { backgroundColor: colors.card }]}
-                onPress={() => router.push(`/(customer)/shop/${item.id}`)}
+        {/* Featured Services */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Services</Text>
+          {loading ? (
+             <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
+            {services.map((service, index) => (
+              <MotiView
+                key={service.id}
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 100 }}
               >
-                <View style={[styles.productImage, { backgroundColor: isDark ? '#333' : '#FFF8E1' }]}>
-                  <Ionicons name={item.image as any} size={40} color={colors.primary} />
-                </View>
-                <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-                <View style={styles.productFooter}>
-                  <Text style={[styles.productPrice, { color: colors.primary }]}>NPR {item.price}</Text>
-                  
-                  {quantity > 0 ? (
-                    <View style={[styles.quantityControl, { backgroundColor: colors.primary }]}>
-                      <TouchableOpacity 
-                        style={styles.qtyButton} 
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          updateQuantity(item.id, quantity - 1);
-                        }}
-                      >
-                        <Ionicons name="remove" size={12} color="#FFF" />
-                      </TouchableOpacity>
-                      <Text style={styles.qtyText}>{quantity}</Text>
-                      <TouchableOpacity 
-                        style={styles.qtyButton} 
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          addToCart(item);
-                        }}
-                      >
-                        <Ionicons name="add" size={12} color="#FFF" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity 
-                      style={[styles.addButton, { backgroundColor: colors.primary }]}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        addToCart(item);
-                      }}
-                    >
-                      <Ionicons name="add" size={16} color="#FFF" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Popular Pandits */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Most Popular Pandits</Text>
-          <TouchableOpacity onPress={() => router.push('/(customer)/pandits')}>
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>See all</Text>
-          </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.serviceCard, { backgroundColor: colors.card }]}
+                  onPress={() => router.push(`/(customer)/services/${service.id}`)}
+                >
+                  <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
+                    {service.image ? (
+                        <Image source={{ uri: service.image }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                    ) : (
+                        <Ionicons name="flame" size={28} color={colors.primary} />
+                    )}
+                  </View>
+                  <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={2}>{service.name}</Text>
+                  <Text style={[styles.servicePrice, { color: colors.primary }]}>
+                    NPR {service.base_price}
+                  </Text>
+                </TouchableOpacity>
+              </MotiView>
+            ))}
+          </ScrollView>
+          )}
         </View>
 
-        <View style={styles.verticalList}>
-          {POPULAR_PANDITS.map((pandit) => (
-            <TouchableOpacity 
-              key={pandit.id} 
-              style={[styles.panditCard, { backgroundColor: colors.card }]} 
-              onPress={() => router.push('/(customer)/pandits')}
-            >
-              <View style={[styles.panditImage, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-                <Ionicons name="person" size={24} color={isDark ? '#AAA' : '#666'} />
+        {/* Upcoming Booking Card */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Booking</Text>
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 300 }}
+            style={[styles.bookingCard, { backgroundColor: colors.card, borderLeftColor: colors.primary }]}
+          >
+            <View style={styles.bookingHeader}>
+              <View>
+                <Text style={[styles.bookingService, { color: colors.text }]}>{upcomingBooking.service}</Text>
+                <Text style={[styles.bookingPandit, { color: isDark ? '#AAA' : '#666' }]}>with {upcomingBooking.pandit}</Text>
               </View>
-              <View style={styles.panditInfo}>
-                <Text style={[styles.panditName, { color: colors.text }]}>{pandit.name}</Text>
-                <Text style={[styles.panditLocation, { color: isDark ? '#AAA' : '#666' }]}>{pandit.location}</Text>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={14} color="#FFD700" />
-                  <Text style={[styles.ratingValue, { color: colors.text }]}>{pandit.rating}</Text>
-                </View>
+              <View style={[styles.statusBadge, { backgroundColor: '#E8F5E9' }]}>
+                <Text style={[styles.statusText, { color: '#2E7D32' }]}>{upcomingBooking.status}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={isDark ? '#555' : '#CCC'} />
+            </View>
+            <View style={styles.bookingDetails}>
+              <View style={styles.bookingDetailItem}>
+                <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+                <Text style={[styles.bookingDetailText, { color: colors.text }]}>{upcomingBooking.date}</Text>
+              </View>
+              <View style={styles.bookingDetailItem}>
+                <Ionicons name="time-outline" size={16} color={colors.primary} />
+                <Text style={[styles.bookingDetailText, { color: colors.text }]}>{upcomingBooking.time}</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={[styles.viewBookingButton, { borderColor: colors.primary }]}>
+                <Text style={[styles.viewBookingText, { color: colors.primary }]}>View Details</Text>
             </TouchableOpacity>
-          ))}
+          </MotiView>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            <QuickActionData 
+              title="Book Puja" 
+              icon="flame" 
+              color="#FF9800" 
+              onPress={() => router.push('/(customer)/pandits')}
+              colors={colors}
+              isDark={isDark}
+            />
+            <QuickActionData 
+              title="Shop Samagri" 
+              icon="basket" 
+              color="#2196F3" 
+              onPress={() => router.push('/(customer)/shop')}
+              colors={colors}
+              isDark={isDark}
+            />
+            <QuickActionData 
+              title="Generate Kundali" 
+              icon="planet" 
+              color="#9C27B0" 
+              onPress={() => router.push('/(customer)/kundali')}
+              colors={colors}
+              isDark={isDark}
+            />
+          </View>
         </View>
 
       </ScrollView>
@@ -220,62 +185,18 @@ export default function CustomerHomeScreen() {
   );
 }
 
-function CategoryItem({ 
-  icon, 
-  label, 
-  active, 
-  onPress, 
-  index,
-  colors,
-  isDark
-}: { 
-  icon: any, 
-  label: string, 
-  active?: boolean, 
-  onPress: () => void, 
-  index: number,
-  colors: any,
-  isDark: boolean
-}) {
-  return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.8, translateY: 20 }}
-      animate={{ opacity: 1, scale: 1, translateY: 0 }}
-      transition={{
-        type: 'spring',
-        damping: 15,
-        delay: index * 100,
-      }}
-    >
-      <TouchableOpacity 
-        style={[
-          styles.categoryItem, 
-          { 
-            backgroundColor: colors.card,
-            borderColor: isDark ? '#333' : '#F0F0F0'
-          },
-          active && { 
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
-          }
-        ]} 
-        onPress={onPress}
-      >
-        <View style={[
-          styles.categoryIcon, 
-          { backgroundColor: isDark ? '#333' : '#F5F5F5' },
-          active && styles.categoryIconActive
-        ]}>
-          <Ionicons name={icon} size={24} color={active ? '#FFF' : (isDark ? '#AAA' : '#666')} />
-        </View>
-        <Text style={[
-          styles.categoryLabel, 
-          { color: isDark ? '#AAA' : '#666' },
-          active && styles.categoryLabelActive
-        ]}>{label}</Text>
-      </TouchableOpacity>
-    </MotiView>
-  );
+function QuickActionData({ title, icon, color, onPress, colors, isDark }: any) {
+    return (
+        <TouchableOpacity 
+            style={[styles.quickActionCard, { backgroundColor: colors.card }]} 
+            onPress={onPress}
+        >
+            <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+                <Ionicons name={icon as any} size={32} color={color} />
+            </View>
+            <Text style={[styles.quickActionTitle, { color: colors.text }]}>{title}</Text>
+        </TouchableOpacity>
+    );
 }
 
 const styles = StyleSheet.create({
@@ -322,178 +243,136 @@ const styles = StyleSheet.create({
   greetingSubtitle: {
     fontSize: 16,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
-    height: 50,
-    borderRadius: 12,
+  sectionContainer: {
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-  },
-  filterButton: {
-    padding: 4,
-  },
-  categoriesContainer: {
     paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  categoryItem: {
-    alignItems: 'center',
-    marginRight: 20,
-    padding: 8,
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    gap: 8,
-    borderWidth: 1,
-  },
-  categoryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryIconActive: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  categoryLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  categoryLabelActive: {
-    color: '#FFF',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
+    marginBottom: 16,
   },
   horizontalList: {
+    marginHorizontal: -20,
     paddingHorizontal: 20,
-    marginBottom: 32,
   },
-  productCard: {
-    width: 160,
-    padding: 12,
+  serviceCard: {
+    width: 140,
+    padding: 16,
     borderRadius: 16,
     marginRight: 16,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  productImage: {
-    height: 100,
-    borderRadius: 12,
+  serviceIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
-  productName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  productFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: 30,
-  },
-  productPrice: {
+  serviceName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    textAlign: 'center',
   },
-  addButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantityControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 2,
-  },
-  qtyButton: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyText: {
-    color: '#FFF',
+  servicePrice: {
     fontSize: 12,
     fontWeight: 'bold',
-    marginHorizontal: 4,
+    textAlign: 'center',
+    marginTop: 4,
   },
-  verticalList: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  panditCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  bookingCard: {
     padding: 16,
     borderRadius: 16,
+    borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  panditImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  bookingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  panditInfo: {
-    flex: 1,
-  },
-  panditName: {
-    fontSize: 16,
+  bookingService: {
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  panditLocation: {
+  bookingPandit: {
     fontSize: 14,
-    marginBottom: 4,
   },
-  ratingRow: {
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  bookingDetails: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16,
+  },
+  bookingDetailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  ratingValue: {
-    fontSize: 12,
+  bookingDetailText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  viewBookingButton: {
+    borderWidth: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  viewBookingText: {
+    fontSize: 14,
     fontWeight: '600',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  quickActionCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    aspectRatio: 1, // Make it square-ish
+    justifyContent: 'center',
+  },
+  quickActionIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quickActionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

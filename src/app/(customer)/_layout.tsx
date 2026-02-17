@@ -75,20 +75,20 @@ export default function CustomerTabLayout() {
           }}
         />
         <Tabs.Screen
-          name="cart"
-          options={{
-            title: 'Cart',
-            tabBarIcon: ({ color, focused }) => (
-              <CartIcon color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="bookings"
           options={{
             title: 'Bookings',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="shop"
+          options={{
+            title: 'Shop',
+            tabBarIcon: ({ color, focused }) => (
+              <CartIcon color={color} focused={focused} />
             ),
           }}
         />
@@ -102,12 +102,9 @@ export default function CustomerTabLayout() {
           }}
         />
         <Tabs.Screen
-          name="shop"
+          name="cart"
           options={{
-            title: 'Shop',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'basket' : 'basket-outline'} size={24} color={color} />
-            ),
+            href: null,
           }}
         />
         <Tabs.Screen
@@ -137,10 +134,7 @@ export default function CustomerTabLayout() {
         <Tabs.Screen
           name="chat/index"
           options={{
-            title: 'Chat',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={24} color={color} />
-            ),
+            href: null,
           }}
         />
         <Tabs.Screen
@@ -149,6 +143,24 @@ export default function CustomerTabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="services/index"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="services/[id]"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+           name="checkout"
+           options={{
+             href: null,
+           }}
+         />
       </Tabs>
     </CartProvider>
   );

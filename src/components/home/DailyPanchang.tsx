@@ -62,7 +62,7 @@ export const DailyPanchang = () => {
         source={{
           uri: 'https://images.unsplash.com/photo-1604881991720-f91add269ed8?q=80&w=1000&auto=format&fit=crop',
         }}
-        style={[styles.background, { backgroundColor: isDark ? '#333' : '#FFF8E1' }]}
+        style={[styles.background, { backgroundColor: isDark ? '#333' : '#FFF7ED' }]}
         imageStyle={{ borderRadius: 16, opacity: 0.15 }}
       >
         <View style={styles.header}>

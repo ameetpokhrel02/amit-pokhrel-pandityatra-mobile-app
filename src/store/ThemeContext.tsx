@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
+import { DefaultTheme, DarkTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -49,12 +50,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const theme = mode === 'system' ? (systemColorScheme || 'light') : mode;
-  const colors = Colors[theme];
+  const activeThemeName = mode === 'system' ? (systemColorScheme || 'light') : mode;
+  const themeName = activeThemeName === 'dark' ? 'dark' : 'light';
+  const colors = Colors[themeName];
+
+  const baseNavigationTheme = themeName === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...baseNavigationTheme,
+    colors: {
+      ...baseNavigationTheme.colors,
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.tint,
+    },
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, mode, setMode, colors }}>
-      {children}
+    <ThemeContext.Provider value={{ theme: themeName, mode, setMode, colors }}>
+      <NavigationThemeProvider value={navigationTheme}>
+        {children}
+      </NavigationThemeProvider>
     </ThemeContext.Provider>
   );
 };

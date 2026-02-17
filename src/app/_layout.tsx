@@ -6,6 +6,7 @@ import { AuthProvider } from '@/store/AuthContext';
 import { ThemeProvider } from '@/store/ThemeContext';
 import { UserProvider } from '@/store/UserContext';
 import '@/i18n'; // Initialize i18n
+import '../../global.css'; // Import NativeWind styles
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useCart } from '@/store/CartContext';
-import { PRODUCTS } from '@/data/products';
+import { fetchSamagriItems, SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
 
 export default function ProductDetailScreen() {
@@ -14,7 +14,26 @@ export default function ProductDetailScreen() {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   
-  const product = PRODUCTS.find(p => p.id === id);
+  const [product, setProduct] = useState<SamagriItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if(id) loadProduct();
+  }, [id]);
+
+  const loadProduct = async () => {
+      try {
+          setLoading(true);
+          // Fetch all items and find. In a real app with large catalog, we'd use a detail endpoint.
+          const items = await fetchSamagriItems();
+          const found = items.find(p => String(p.id) === String(id));
+          setProduct(found || null);
+      } catch(e) {
+          console.error("Failed to load product", e);
+      } finally {
+          setLoading(false);
+      }
+  };
   
   // Local state for quantity display, initialized with cart quantity or 1
   const cartQuantity = typeof id === 'string' ? getItemCount(id) : 0;
@@ -27,6 +46,14 @@ export default function ProductDetailScreen() {
     }
   }, [cartQuantity]);
 
+  if (loading) {
+      return (
+          <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+      );
+  }
+
   if (!product) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -37,14 +64,14 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product);
+      addToCart({ ...product, id: String(product.id) } as any);
       router.push('/(customer)/cart');
     }
   };
 
   const handleIncrement = () => {
     if (product) {
-      addToCart(product);
+      addToCart({ ...product, id: String(product.id) } as any);
     }
   };
 
@@ -68,8 +95,12 @@ export default function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Image */}
-        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#333' : '#FFF8E1' }]}>
-          <Ionicons name={product.image as any} size={120} color={colors.primary} />
+        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#333' : '#FFF7ED' }]}>
+           {product.image && (product.image.startsWith('http') || product.image.startsWith('file')) ? (
+              <Image source={{ uri: product.image }} style={{ width: 200, height: 200, borderRadius: 8 }} resizeMode="contain" />
+           ) : (
+              <Ionicons name={product.image as any || "cube-outline"} size={120} color={colors.primary} />
+           )}
         </View>
 
         {/* Info */}

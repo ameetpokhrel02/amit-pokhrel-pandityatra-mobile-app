@@ -1,24 +1,24 @@
-import { 
-  registerUser as apiRegister, 
-  requestLoginOtp, 
-  verifyOtpAndGetToken, 
+import {
+  registerUser as apiRegister,
+  requestLoginOtp,
+  verifyOtpAndGetToken,
   fetchProfile,
   googleLogin as apiGoogleLogin,
-  RegisterPayload 
+  RegisterPayload
 } from "./api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 
 // -1 Register
 export const registerUser = async (data: any) => {
-    // Adapter to match RegisterPayload
-    const payload: RegisterPayload = {
-        full_name: data.full_name || data.name,
-        phone_number: data.phone_number || data.phone,
-        email: data.email,
-        password: data.password,
-        role: data.role || 'user'
-    };
-    return await apiRegister(payload);
+  // Adapter to match RegisterPayload
+  const payload: RegisterPayload = {
+    full_name: data.full_name || data.name,
+    phone_number: data.phone_number || data.phone,
+    email: data.email,
+    password: data.password,
+    role: data.role || 'user'
+  };
+  return await apiRegister(payload);
 };
 
 // 1️⃣ Send OTP
@@ -37,12 +37,12 @@ export const verifyOtp = async (email: string | null, otp: string, phone?: strin
   if (phone) payload.phone_number = phone;
 
   const res = await verifyOtpAndGetToken(payload);
-  
+
   if (res.access) {
-      await AsyncStorage.setItem("access_token", res.access);
+    await SecureStore.setItemAsync("access_token", res.access);
   }
   if (res.refresh) {
-      await AsyncStorage.setItem("refresh_token", res.refresh);
+    await SecureStore.setItemAsync("refresh_token", res.refresh);
   }
   return res;
 };
@@ -63,10 +63,10 @@ export const googleSignIn = async (idToken: string) => {
   const res = await apiGoogleLogin(idToken);
 
   if (res.access) {
-    await AsyncStorage.setItem("access_token", res.access);
+    await SecureStore.setItemAsync("access_token", res.access);
   }
   if (res.refresh) {
-    await AsyncStorage.setItem("refresh_token", res.refresh);
+    await SecureStore.setItemAsync("refresh_token", res.refresh);
   }
 
   return res;
@@ -74,5 +74,8 @@ export const googleSignIn = async (idToken: string) => {
 
 // 5️⃣ Logout
 export const logout = async () => {
-  await AsyncStorage.multiRemove(["access_token", "refresh_token", "user", "role"]);
+  await SecureStore.deleteItemAsync("access_token");
+  await SecureStore.deleteItemAsync("refresh_token");
+  await SecureStore.deleteItemAsync("user");
+  await SecureStore.deleteItemAsync("role");
 };

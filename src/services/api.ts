@@ -1,6 +1,42 @@
 import apiClient from './api-client';
 
 // ----------------------
+// Services (Pujas) APIs
+// ----------------------
+
+export interface Category {
+    id: number;
+    name: string;
+    image: string; // URL string
+    description: string;
+}
+
+export interface Service {
+    id: number;
+    name: string;
+    base_price: string; // Decimal string or number depending on serializer
+    image: string;
+    description?: string; // Detail only
+    base_duration?: string; // Detail only, e.g. "02:00:00" or minutes
+    samagri_list?: any[]; // Detail only
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+    const response = await apiClient.get('/services/categories/');
+    return response.data;
+}
+
+export async function fetchServices(params?: { category?: number; search?: string }): Promise<Service[]> {
+    const response = await apiClient.get('/services/', { params });
+    return response.data;
+}
+
+export async function fetchServiceDetail(id: number): Promise<Service> {
+    const response = await apiClient.get(`/services/${id}/`);
+    return response.data;
+}
+
+// ----------------------
 // Payments APIs
 // ----------------------
 export interface Payment {
@@ -256,6 +292,40 @@ export async function fetchProfile() {
 }
 
 // ----------------------
+// Forgot Password APIs
+// ----------------------
+
+// Step 1: Request password reset OTP
+export async function requestPasswordResetOtp(payload: { email: string }) {
+    try {
+        const response = await apiClient.post('/users/forgot-password/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+// Step 2: Verify OTP and get temporary reset token
+export async function verifyPasswordResetOtp(payload: { email: string; otp: string }) {
+    try {
+        const response = await apiClient.post('/users/forgot-password/verify-otp/', payload);
+        return response.data; // Returns { token }
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+// Step 3: Reset password using temporary token
+export async function resetPasswordWithToken(payload: { token: string; new_password: string }) {
+    try {
+        const response = await apiClient.post('/users/forgot-password/reset/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+// ----------------------
 // Admin APIs
 // ----------------------
 export interface AdminStats {
@@ -319,7 +389,7 @@ export interface SamagriItem {
     description: string;
     price: number;
     category?: number; // category ID
-    stock_quantity: number;
+    stock: number;
     image?: string;
     is_available: boolean;
     unit?: string;
@@ -364,44 +434,6 @@ export async function createSamagriCategory(data: any) {
 
 export async function deleteSamagriCategory(id: number) {
     const response = await apiClient.delete(`/samagri/categories/${id}/`);
-    return response.data;
-}
-
-// ----------------------
-// Additional Services (Pujas) APIs
-// ----------------------
-
-export interface ServiceCategory {
-    id: number;
-    name: string;
-    description?: string;
-}
-
-export interface Service {
-    id: number;
-    name: string;
-    description?: string;
-    base_price: number;
-    base_duration_minutes?: number;
-    image?: string;
-    category?: number;
-}
-
-// List puja categories
-export async function fetchServiceCategories(): Promise<ServiceCategory[]> {
-    const response = await apiClient.get('/services/categories/');
-    return response.data.results || response.data;
-}
-
-// List all pujas with optional filters (e.g. ?category=)
-export async function fetchServices(params?: any): Promise<Service[]> {
-    const response = await apiClient.get('/services/', { params });
-    return response.data.results || response.data;
-}
-
-// Get single puja details
-export async function fetchServiceDetail(id: number): Promise<Service> {
-    const response = await apiClient.get(`/services/${id}/`);
     return response.data;
 }
 
@@ -571,10 +603,12 @@ export async function fetchPanchang(date: string): Promise<PanchangData> {
 // ----------------------
 
 export interface SamagriCheckoutPayload {
-    items: { id: number; quantity: number }[];
-    address?: string;
-    notes?: string;
-    [key: string]: any;
+    full_name: string;
+    phone_number: string;
+    shipping_address: string;
+    city: string;
+    payment_method: 'STRIPE' | 'KHALTI';
+    items: { id: number; qty: number }[];
 }
 
 export async function checkoutSamagri(payload: SamagriCheckoutPayload) {

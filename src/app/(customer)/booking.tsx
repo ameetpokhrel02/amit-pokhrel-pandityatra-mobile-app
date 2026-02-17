@@ -192,7 +192,7 @@ export default function BookingScreen() {
                 {pandit?.specialization.map((spec) => (
                   <TouchableOpacity
                     key={spec}
-                    style={[styles.optionCard, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' }, selectedService === spec && { borderColor: colors.primary, backgroundColor: isDark ? '#332' : '#FFF8E1' }]}
+                    style={[styles.optionCard, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' }, selectedService === spec && { borderColor: colors.primary, backgroundColor: isDark ? '#332' : '#FFF7ED' }]}
                     onPress={() => setSelectedService(spec)}
                   >
                     <View style={[styles.radioCircle, { borderColor: isDark ? '#666' : '#CCC' }, selectedService === spec && { borderColor: colors.primary }]}>

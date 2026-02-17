@@ -1,22 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
+import { requestPasswordResetOtp } from '@/services/api';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSendOTP = () => {
-    // TODO: Validate and send OTP
-    router.push({ pathname: '/auth/otp-verify', params: { identifier, mode: 'reset-password' } } as any);
+  const handleSendOTP = async () => {
+    // Validate email
+    if (!identifier.trim()) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(identifier)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await requestPasswordResetOtp({ email: identifier });
+      Alert.alert('Success', 'Verification code sent to your email');
+      router.push({ pathname: '/auth/otp-verify', params: { email: identifier, mode: 'reset-password' } } as any);
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to send verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -41,10 +64,11 @@ export default function ForgotPasswordScreen() {
             autoCapitalize="none"
           />
 
-          <Button 
-            title="Send Verification Code" 
-            onPress={handleSendOTP} 
+          <Button
+            title="Send Verification Code"
+            onPress={handleSendOTP}
             style={styles.submitButton}
+            disabled={loading}
           />
 
           <View style={styles.footer}>
