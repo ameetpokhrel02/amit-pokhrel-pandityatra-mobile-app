@@ -1,21 +1,110 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
+import { fetchProfile } from '@/services/auth.service';
+import { PanditService } from '@/services/api';
+import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
 
 export default function PanditDashboardScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [myServices, setMyServices] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    pending: '0',
+    upcoming: '0',
+    earnings: '₹0',
+    rating: '0.0'
+  });
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const profileData = await fetchProfile();
+      setProfile(profileData);
+
+      // If user has a pandit profile
+      if (profileData.pandit_profile) {
+        setIsAvailable(profileData.pandit_profile.is_available);
+        setStats({
+          pending: profileData.pandit_profile.pending_bookings?.toString() || '0',
+          upcoming: profileData.pandit_profile.upcoming_bookings?.toString() || '0',
+          earnings: `₹${profileData.pandit_profile.total_earnings || 0}`,
+          rating: profileData.pandit_profile.rating ? profileData.pandit_profile.rating.toString() : '0.0'
+        });
+      }
+
+      const servicesData = await fetchPanditMyServices();
+      setMyServices(servicesData);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleToggleAvailability = async (value: boolean) => {
+    try {
+      setIsAvailable(value);
+      await togglePanditAvailability(value);
+    } catch (error) {
+      console.error('Error toggling availability:', error);
+      setIsAvailable(!value); // Revert on error
+    }
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={Colors.light.primary} />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.light.primary} />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Namaste, Ramesh Ji!</Text>
-          <View style={styles.verifiedBadge}>
-            <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
-            <Text style={styles.verifiedText}>Verified Pandit</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>Namaste, {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!</Text>
+          <View style={styles.headerRow}>
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+            <View style={styles.availabilityToggle}>
+              <Text style={[styles.availabilityText, { color: isAvailable ? '#10B981' : '#666' }]}>
+                {isAvailable ? 'Online' : 'Offline'}
+              </Text>
+              <Switch
+                value={isAvailable}
+                onValueChange={handleToggleAvailability}
+                trackColor={{ false: '#767577', true: '#10B981' }}
+                thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
+                ios_backgroundColor="#3e3e3e"
+              />
+            </View>
           </View>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(pandit)/profile')}>
@@ -25,10 +114,10 @@ export default function PanditDashboardScreen() {
 
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
-        <StatCard label="Pending" value="3" icon="time-outline" color="#F59E0B" />
-        <StatCard label="Upcoming" value="5" icon="calendar-outline" color="#3B82F6" />
-        <StatCard label="Earnings" value="₹12k" icon="wallet-outline" color="#10B981" />
-        <StatCard label="Reviews" value="4.9" icon="star-outline" color="#FBBF24" />
+        <StatCard label="Pending" value={stats.pending} icon="time-outline" color="#F59E0B" />
+        <StatCard label="Upcoming" value={stats.upcoming} icon="calendar-outline" color="#3B82F6" />
+        <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#10B981" />
+        <StatCard label="Reviews" value={stats.rating} icon="star-outline" color="#FBBF24" />
       </View>
 
       {/* Upcoming Pujas */}
@@ -39,19 +128,13 @@ export default function PanditDashboardScreen() {
             <Text style={styles.seeAll}>View All</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.verticalList}>
-          <UpcomingPujaCard 
-            customerName="Anita Sharma" 
-            pujaType="Satyanarayan Puja" 
-            date="15 Jan, 10:00 AM" 
-            status="Confirmed" 
-          />
-          <UpcomingPujaCard 
-            customerName="Rajesh Verma" 
-            pujaType="Griha Pravesh" 
-            date="20 Jan, 08:00 AM" 
-            status="Pending" 
+          <UpcomingPujaCard
+            customerName="Anita Sharma"
+            pujaType="Satyanarayan Puja"
+            date="15 Jan, 10:00 AM"
+            status="Confirmed"
           />
         </View>
       </View>
@@ -61,8 +144,8 @@ export default function PanditDashboardScreen() {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionGrid}>
           <ActionButton label="Accept/Decline" icon="checkmark-done-circle-outline" onPress={() => router.push('/(pandit)/bookings')} />
-          <ActionButton label="Message" icon="chatbubble-ellipses-outline" onPress={() => {}} />
-          <ActionButton label="Join Video Puja" icon="videocam-outline" onPress={() => {}} />
+          <ActionButton label="Message" icon="chatbubble-ellipses-outline" onPress={() => { }} />
+          <ActionButton label="Join Video Puja" icon="videocam-outline" onPress={() => { }} />
           <ActionButton label="Update Calendar" icon="calendar-outline" onPress={() => router.push('/(pandit)/calendar')} />
         </View>
       </View>
@@ -71,19 +154,27 @@ export default function PanditDashboardScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Services</Text>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => { }}>
             <Text style={styles.seeAll}>Manage</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.serviceCard}>
-          <View style={styles.serviceInfo}>
-            <Text style={styles.serviceName}>Satyanarayan Puja</Text>
-            <Text style={styles.serviceDetails}>2 Hours • ₹2,100</Text>
+        {myServices.length > 0 ? (
+          myServices.map((service, index) => (
+            <View key={service.id || index} style={[styles.serviceCard, { marginBottom: 8 }]}>
+              <View style={styles.serviceInfo}>
+                <Text style={styles.serviceName}>{service.puja_details?.name}</Text>
+                <Text style={styles.serviceDetails}>{service.duration_minutes} Mins • ₹{service.custom_price}</Text>
+              </View>
+              <TouchableOpacity style={styles.editButton}>
+                <Ionicons name="create-outline" size={20} color={Colors.light.primary} />
+              </TouchableOpacity>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No services added yet.</Text>
           </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Ionicons name="create-outline" size={20} color={Colors.light.primary} />
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
 
       {/* Notifications / Alerts */}
@@ -95,7 +186,7 @@ export default function PanditDashboardScreen() {
           </View>
           <View style={styles.alertContent}>
             <Text style={styles.alertTitle}>New Booking Request</Text>
-            <Text style={styles.alertMessage}>Ramesh Kumar requested Satyanarayan Puja for Jan 15.</Text>
+            <Text style={styles.alertMessage}>Anita Sharma requested Satyanarayan Puja.</Text>
           </View>
           <TouchableOpacity style={styles.alertAction}>
             <Text style={styles.alertActionText}>View</Text>
@@ -154,6 +245,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   contentContainer: {
     padding: 20,
     paddingTop: 60,
@@ -164,26 +259,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+  },
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    fontFamily: 'Playfair Display',
+    // fontFamily: 'Playfair Display', // Ensure fonts are loaded or use defaults
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 4,
   },
   verifiedText: {
     fontSize: 14,
     color: Colors.light.primary,
     fontWeight: '600',
   },
-  subGreeting: {
-    fontSize: 14,
-    color: '#666',
+  availabilityToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  availabilityText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   profileButton: {
     padding: 4,
@@ -235,7 +340,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    fontFamily: 'Playfair Display',
+    // fontFamily: 'Playfair Display',
   },
   seeAll: {
     color: Colors.light.primary,
@@ -350,6 +455,16 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#F3F4F6',
     borderRadius: 8,
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+  },
+  emptyStateText: {
+    color: '#6B7280',
+    fontSize: 14,
   },
   alertCard: {
     flexDirection: 'row',

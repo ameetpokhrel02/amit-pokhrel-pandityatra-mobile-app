@@ -1,115 +1,91 @@
-import { ChatMessage, ChatRoom, ChatUser } from '../types/chat';
-import { fetchChatRooms, fetchChatRoomMessages } from './api';
+import apiClient from './api-client';
+import { ChatRoom, ChatMessage, ChatUser } from '@/types/chat';
 
-// NOTE:
-// This service now uses real backend APIs (/api/chat/rooms/ and /api/chat/rooms/{id}/messages/)
-// to match the web implementation. AI suggestions remain local-only for now.
 
-// Current user is still mocked on the client side; backend controls actual roles/IDs.
-const CURRENT_USER: ChatUser = { id: 'me', name: 'Me', role: 'customer' };
+// Helper to map API ChatMessage to Frontend ChatMessage
+function mapChatMessage(apiMsg: any): ChatMessage {
+  return {
+    id: apiMsg.id.toString(),
+    chatId: apiMsg.room.toString(),
+    senderId: apiMsg.sender.toString(),
+    text: apiMsg.content || apiMsg.text || '',
+    type: (apiMsg.type as any) || 'text',
+    timestamp: new Date(apiMsg.created_at || apiMsg.timestamp).getTime(),
+    isRead: apiMsg.is_read || false,
+    metadata: apiMsg.metadata,
+  };
+}
 
-export const ChatService = {
-  // Map backend ChatRoom to mobile ChatRoom shape
-  getChats: async (): Promise<ChatRoom[]> => {
-    const rooms = await fetchChatRooms();
+// Helper to map API ChatRoom to Frontend ChatRoom
+function mapChatRoom(apiRoom: any): ChatRoom {
+  return {
+    id: apiRoom.id.toString(),
+    participants: (apiRoom.participants || []).map((p: any) => ({
+      id: p.id.toString(),
+      name: p.full_name || p.name || 'User',
+      avatar: p.profile_pic_url || p.avatar,
+      role: p.role || 'user',
+    })),
+    lastMessage: apiRoom.last_message_details ? mapChatMessage(apiRoom.last_message_details) : undefined,
+    unreadCount: apiRoom.unread_count || 0,
+    status: apiRoom.status || 'active',
+  };
+}
 
-    return rooms.map((room: any) => {
-      const participants: ChatUser[] =
-        room.participants?.map((p: any) => ({
-          id: String(p.id),
-          name: p.name || p.full_name || 'User',
-          avatar: p.avatar || p.profile_pic || undefined,
-          role: p.role || 'customer',
-        })) || [];
+// List chat rooms (optionally filter by booking)
+export async function fetchChatRooms(params?: { booking?: number }): Promise<ChatRoom[]> {
+  const response = await apiClient.get('/chat/rooms/', { params });
+  const data = response.data.results || response.data;
+  return Array.isArray(data) ? data.map(mapChatRoom) : [mapChatRoom(data)];
+}
 
-      const last = room.last_message || room.lastMessage;
+// Get messages for a specific room
+export async function fetchChatRoomMessages(roomId: string | number): Promise<ChatMessage[]> {
+  const response = await apiClient.get(`/chat/rooms/${roomId}/messages/`);
+  const data = response.data.results || response.data;
+  return Array.isArray(data) ? data.map(mapChatMessage) : [mapChatMessage(data)];
+}
 
-      const lastMessage: ChatMessage | undefined = last
-        ? {
-            id: String(last.id),
-            chatId: String(room.id),
-            senderId: String(last.sender),
-            text: last.text || last.message || '',
-            type: 'text',
-            timestamp: new Date(last.created_at || last.timestamp).getTime(),
-            isRead: !!last.is_read,
-          }
-        : undefined;
 
-      return {
-        id: String(room.id),
-        participants,
-        unreadCount: room.unread_count ?? 0,
-        status: room.status || 'active',
-        context: {
-          ritualType: room.context?.ritualType || room.ritual_type,
-          date: room.context?.date || room.date,
-          location: room.context?.location || room.location,
-        },
-        lastMessage,
-      };
-    });
-  },
+// Send a message to a specific room
+export async function sendMessage(roomId: string | number, text: string): Promise<ChatMessage> {
+  const response = await apiClient.post(`/chat/rooms/${roomId}/messages/`, { content: text });
+  return mapChatMessage(response.data);
+}
 
-  getMessages: async (chatId: string): Promise<ChatMessage[]> => {
-    const data = await fetchChatRoomMessages(Number(chatId));
+// Get AI suggestion for a response
+export async function getAISuggestion(roomId: string | number, lastMessage: string): Promise<ChatMessage> {
+  const response = await apiClient.post(`/chat/rooms/${roomId}/ai-suggestion/`, { last_message: lastMessage });
+  return mapChatMessage(response.data);
+}
 
-    return data.map((m: any) => ({
-      id: String(m.id),
-      chatId: String(m.room || chatId),
-      senderId: String(m.sender || m.sender_id),
-      text: m.text || m.message || '',
-      type: m.type === 'system' ? 'system' : 'text',
-      timestamp: new Date(m.created_at || m.timestamp).getTime(),
-      isRead: !!m.is_read,
-    }));
-  },
 
-  // Placeholder: requires backend POST endpoint to send messages
-  sendMessage: async (chatId: string, text: string): Promise<ChatMessage> => {
-    const now = Date.now();
 
-    // Optimistic local echo; in the future, replace with real POST /chat/...
-    return {
-      id: 'local_' + now,
-      chatId,
-      senderId: CURRENT_USER.id,
-      text,
-      type: 'text',
-      timestamp: now,
-      isRead: true,
-    };
-  },
+// Convenience helper: fetch or create room for a booking (as per web spec)
+export async function fetchBookingChatRoom(bookingId: number): Promise<ChatRoom> {
+  const response = await apiClient.get('/chat/rooms/', { params: { booking: bookingId } });
+  const data = response.data;
+  let room;
+  if (Array.isArray(data)) {
+    room = data[0];
+  } else if (data.results && Array.isArray(data.results)) {
+    room = data.results[0];
+  } else {
+    room = data;
+  }
+  return mapChatRoom(room);
+}
 
-  // Local AI suggestion logic kept as-is (no backend dependency)
-  getAISuggestion: async (chatId: string, lastMessageText: string): Promise<ChatMessage | null> => {
-    const lowerText = lastMessageText.toLowerCase();
+// AI Quick Guide Chat
+export async function quickChat(message: string): Promise<string> {
+  const response = await apiClient.post('/chat/quick-chat/', { message });
+  return response.data.response;
+}
 
-    if (lowerText.includes('available') || lowerText.includes('date')) {
-      return {
-        id: 'ai_' + Date.now(),
-        chatId,
-        senderId: 'ai',
-        text: 'Suggested: "Pandit ji, will you arrange samagri or should we provide it?"',
-        type: 'ai_suggestion',
-        timestamp: Date.now(),
-        isRead: true,
-        metadata: { suggestionAction: 'ask_samagri' },
-      };
-    }
+// WebSocket URL helper
+export function getChatWebSocketUrl(bookingId: number, token: string): string {
+  // Replace http with ws for the base URL
+  const baseUrl = apiClient.defaults.baseURL?.replace('http', 'ws') || 'ws://localhost:8000/api';
+  return `${baseUrl}/ws/puja/${bookingId}/?token=${token}`;
+}
 
-    if (lowerText.includes('samagri')) {
-      return {
-        id: 'ai_' + Date.now(),
-        chatId,
-        senderId: 'ai',
-        text: 'Suggested: "What is the total dakshina for this ritual?"',
-        type: 'ai_suggestion',
-        timestamp: Date.now(),
-        isRead: true,
-      };
-    }
-
-    return null;
-  },
-};

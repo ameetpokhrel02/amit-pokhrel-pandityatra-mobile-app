@@ -1,81 +1,110 @@
-import {
-  registerUser as apiRegister,
-  requestLoginOtp,
-  verifyOtpAndGetToken,
-  fetchProfile,
-  googleLogin as apiGoogleLogin,
-  RegisterPayload
-} from "./api";
-import * as SecureStore from 'expo-secure-store';
+import apiClient, { publicApi } from './api-client';
 
-// -1 Register
-export const registerUser = async (data: any) => {
-  // Adapter to match RegisterPayload
-  const payload: RegisterPayload = {
-    full_name: data.full_name || data.name,
-    phone_number: data.phone_number || data.phone,
-    email: data.email,
-    password: data.password,
-    role: data.role || 'user'
-  };
-  return await apiRegister(payload);
-};
+export interface RegisterPayload {
+  full_name: string;
+  phone_number: string;
+  email?: string;
+  password?: string;
+  role?: 'user' | 'pandit';
+}
 
-// 1️⃣ Send OTP
-export const requestOtp = async (email: string, phone: string) => {
-  const payload: any = {};
-  if (email) payload.email = email;
-  if (phone) payload.phone_number = phone;
-
-  return await requestLoginOtp(payload);
-};
-
-// 2️⃣ Verify OTP & Login
-export const verifyOtp = async (email: string | null, otp: string, phone?: string | null) => {
-  const payload: any = { otp_code: otp };
-  if (email) payload.email = email;
-  if (phone) payload.phone_number = phone;
-
-  const res = await verifyOtpAndGetToken(payload);
-
-  if (res.access) {
-    await SecureStore.setItemAsync("access_token", res.access);
+// Helper to standardize error messages (internal to auth for now, or move to utils)
+function handleApiError(error: any) {
+  if (error.response) {
+    const data = error.response.data;
+    if (data.detail) return new Error(data.detail);
+    if (data.message) return new Error(data.message);
+    if (typeof data === 'object') {
+      const fieldErrors = Object.entries(data)
+        .map(([field, errors]: [string, any]) => {
+          const errorList = Array.isArray(errors) ? errors : [errors];
+          return `${field}: ${errorList.join(', ')}`;
+        })
+        .join('; ');
+      return new Error(fieldErrors);
+    }
   }
-  if (res.refresh) {
-    await SecureStore.setItemAsync("refresh_token", res.refresh);
+  return error;
+}
+
+export async function registerUser(payload: RegisterPayload) {
+  try {
+    const response = await publicApi.post('/users/register/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
   }
-  return res;
-};
-// 2.1️⃣ Axios interceptor for token refresh
-// 3️⃣ Login (JWT) - Deprecated / wrapped by verifyOtp
-export const login = async (phone: string, password: string) => {
-  // If we need password login later, use api.passwordLogin
-  return {};
-};
+}
 
-// 4️⃣ Logged in user
-export const getMe = async () => {
-  return await fetchProfile();
-};
-
-// 4.1️⃣ Google Sign-In (login or signup)
-export const googleSignIn = async (idToken: string) => {
-  const res = await apiGoogleLogin(idToken);
-
-  if (res.access) {
-    await SecureStore.setItemAsync("access_token", res.access);
+export async function requestLoginOtp(payload: { phone_number?: string; email?: string }) {
+  try {
+    const response = await publicApi.post('/users/request-otp/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
   }
-  if (res.refresh) {
-    await SecureStore.setItemAsync("refresh_token", res.refresh);
+}
+
+export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
+  try {
+    const response = await publicApi.post('/users/login-otp/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
   }
+}
 
-  return res;
-};
+export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
+  try {
+    const response = await publicApi.post('/users/login-password/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+}
 
-// 5️⃣ Logout
-export const logout = async () => {
-  await SecureStore.deleteItemAsync("access_token");
-  await SecureStore.deleteItemAsync("refresh_token");
-  await SecureStore.deleteItemAsync("user");
-  await SecureStore.deleteItemAsync("role");
-};
+export async function googleLogin(idToken: string) {
+  try {
+    const response = await publicApi.post('/users/google-login/', { id_token: idToken });
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+}
+
+export async function fetchProfile() {
+  const response = await apiClient.get('/users/profile/');
+  return response.data;
+}
+
+export async function requestPasswordResetOtp(payload: { email: string }) {
+  try {
+    const response = await publicApi.post('/users/forgot-password/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+}
+
+export async function verifyPasswordResetOtp(payload: { email: string; otp: string }) {
+  try {
+    const response = await publicApi.post('/users/forgot-password/verify-otp/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+}
+
+export async function resetPasswordWithToken(payload: { token: string; new_password: string }) {
+  try {
+    const response = await publicApi.post('/users/forgot-password/reset/', payload);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+}
+
+export async function updateUserProfile(data: any) {
+  const response = await apiClient.patch('/users/profile/', data);
+  return response.data;
+}

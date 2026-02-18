@@ -1,19 +1,55 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 
-// Define API_BASE_URL (Update this with your actual backend URL)
-// For Physical Device: Use your computer's IP address (e.g., http://192.168.1.83:8000/api)
-// For Android Emulator: Use http://10.0.2.2:8000/api
-// For iOS Simulator: Use http://localhost:8000/api
-export const API_BASE_URL = 'http://192.168.1.83:8000/api';
+// Helper to determine base URL dynamically based on environment
+const getBaseUrl = () => {
+    // Option 1: Use local IP address from Expo manifest (Development)
+    // This works if your phone is on the same Wi-Fi as your computer
+    if (Constants.expoConfig?.hostUri) {
+        const host = Constants.expoConfig.hostUri.split(':')[0];
+
+        // Fix for tunnel mode: tunnel URL usually doesn't forward the backend port (8000)
+        // If using tunnel, fall back to the LAN IP (assuming device is on same network)
+        if (host.includes('exp.direct')) {
+            return 'http://192.168.1.172:8000/api';
+        }
+
+        // Use a flag for Emulator (optional)
+        // If testing on Emulator use 10.0.2.2 to access host localhost
+        // But expoConfig.hostUri usually returns the LAN IP
+
+        return `http://${host}:8000/api`;
+    }
+
+    // Option 2: Fallback for Android Emulator (if hostUri is missing)
+    // return 'http://10.0.2.2:8000/api';
+
+    // Option 3: Hardcoded IP as fallback
+    // Replace with your current local IP (e.g., from 'ipconfig' or 'ifconfig')
+    return 'http://192.168.1.172:8000/api';
+};
+
+export const API_BASE_URL = getBaseUrl();
+
+console.log('API Base URL:', API_BASE_URL); // Debug logging
 
 // Create Axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    // headers: {
-    //     'Content-Type': 'application/json',
-    // },
+    timeout: 15000, // 15 seconds timeout
+});
+
+// ... imports and interceptors ...
+
+// Public API instance (no auth headers, no refresh logic)
+export const publicApi = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    timeout: 15000, // 15 seconds timeout
 });
 
 // Request Interceptor: Attach Token
@@ -24,9 +60,17 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // If data is FormData, let browser set Content-Type
-        if (config.data instanceof FormData) {
-            delete config.headers['Content-Type'];
+        // Robust FormData detection for React Native
+        const isFormData = config.data instanceof FormData ||
+            (config.data && typeof config.data === 'object' && config.data.append);
+
+        if (isFormData) {
+            // Let the engine/browser set the boundary for multipart/form-data
+            config.headers['Content-Type'] = 'multipart/form-data';
+
+            // In some environments (like older Axios/RN), we might need to delete it 
+            // to allow the polyfill to set the boundary correctly
+            // delete config.headers['Content-Type']; 
         }
 
         return config;
@@ -112,13 +156,7 @@ async function handleLogout() {
     router.replace('/auth/login');
 }
 
-// Public API instance (no auth headers, no refresh logic)
-export const publicApi = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
+
 
 export { apiClient as api };
 export default apiClient;

@@ -17,25 +17,21 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <UserProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* Auth / startup routing */}
-            <Stack.Screen name="index" />
-            <Stack.Screen name="auth" />
+    <UserProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Auth / startup routing */}
+        <Stack.Screen name="index" />
+        <Stack.Screen name="auth" />
 
-            {/* Customer app (tabs) */}
-            <Stack.Screen name="(customer)" />
+        {/* Customer app (tabs) */}
+        <Stack.Screen name="(customer)" />
 
-            {/* Pandit app (tabs) */}
-            <Stack.Screen name="(pandit)" />
+        {/* Pandit app (tabs) */}
+        <Stack.Screen name="(pandit)" />
 
-            {/* Admin dashboard (simple stack as per spec) */}
-            <Stack.Screen name="admin" />
-          </Stack>
-        </UserProvider>
-      </AuthProvider>
-    </ThemeProvider>
+        {/* Admin dashboard (simple stack as per spec) */}
+        <Stack.Screen name="admin" />
+      </Stack>
+    </UserProvider>
   );
 }

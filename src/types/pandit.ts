@@ -12,6 +12,15 @@ export interface Pandit {
   isAvailable: boolean;
   isTopRated?: boolean;
   isVerified?: boolean;
+  bio?: string;
+  services?: PanditServiceItem[];
+}
+
+export interface PanditServiceItem {
+  id: number;
+  name: string;
+  price: number;
+  duration: number;
 }
 
 export interface PanditFilter {

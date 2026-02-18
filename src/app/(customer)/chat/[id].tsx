@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Keyboard
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { Colors } from '@/constants/Colors';
-import { ChatService } from '@/services/chat.service';
+import { fetchChatRoomMessages, sendMessage, getAISuggestion } from '@/services/chat.service';
 import { ChatMessage, ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
@@ -26,15 +26,15 @@ export default function ChatRoomScreen() {
   const loadMessages = async () => {
     if (typeof id !== 'string') return;
     try {
-      const data = await ChatService.getMessages(id);
+      const data = await fetchChatRoomMessages(id);
       setMessages(data);
-      
+
       // Check for AI suggestion based on last message
       if (data.length > 0) {
         const lastMsg = data[data.length - 1];
         if (lastMsg.senderId !== 'u1') { // If last message is not from me
-             const suggestion = await ChatService.getAISuggestion(id, lastMsg.text);
-             setAiSuggestion(suggestion);
+          const suggestion = await getAISuggestion(id, lastMsg.text);
+          setAiSuggestion(suggestion);
         }
       }
     } catch (error) {
@@ -63,7 +63,7 @@ export default function ChatRoomScreen() {
     setAiSuggestion(null); // Clear suggestion after sending
 
     try {
-      await ChatService.sendMessage(id, text);
+      await sendMessage(id, text);
       // In real app, replace temp ID with real ID
     } catch (error) {
       console.error('Failed to send', error);
@@ -81,10 +81,10 @@ export default function ChatRoomScreen() {
     }
 
     const isMe = item.senderId === 'u1';
-    
+
     return (
       <View style={[
-        styles.messageBubble, 
+        styles.messageBubble,
         isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: isDark ? '#333' : '#F0F0F0', borderBottomLeftRadius: 4 },
         isMe ? styles.myMessage : styles.theirMessage
       ]}>
@@ -105,8 +105,8 @@ export default function ChatRoomScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: colors.background }]} 
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
@@ -138,7 +138,7 @@ export default function ChatRoomScreen() {
             <IconSymbol name="sparkles" size={16} color={colors.primary} />
             <Text style={[styles.suggestionTitle, { color: colors.primary }]}>AI Suggestion</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.suggestionBubble, { backgroundColor: colors.card, borderColor: isDark ? '#443' : '#FFE0B2' }]}
             onPress={() => handleSend(aiSuggestion.text.replace('Suggested: ', '').replace(/"/g, ''))}
           >
@@ -159,8 +159,8 @@ export default function ChatRoomScreen() {
           placeholderTextColor={isDark ? '#AAA' : '#999'}
           multiline
         />
-        <TouchableOpacity 
-          style={[styles.sendButton, { backgroundColor: colors.primary }, !inputText.trim() && styles.sendButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.sendButton, { backgroundColor: colors.primary }, !inputText.trim() && styles.sendButtonDisabled]}
           onPress={() => handleSend()}
           disabled={!inputText.trim()}
         >

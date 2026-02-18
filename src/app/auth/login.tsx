@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -26,23 +27,33 @@ const GOOGLE_CLIENT_ID =
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [authType, setAuthType] = useState<"otp" | "password">("otp");
   const [method, setMethod] = useState<"phone" | "email">("phone");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: GOOGLE_CLIENT_ID || "GOOGLE_CLIENT_ID_NOT_SET",
       responseType: AuthSession.ResponseType.IdToken,
       scopes: ["profile", "email"],
-      redirectUri: AuthSession.makeRedirectUri({
-        useProxy: true,
-      }),
+      redirectUri: AuthSession.makeRedirectUri(),
     },
     {
       authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
     }
   );
+
+  useEffect(() => {
+    // DEBUG: Check what URL we are hitting
+    import('@/services/api-client').then(module => {
+      console.log("Current API Base URL:", module.API_BASE_URL);
+      // Alert.alert("Debug Info", `API URL: ${module.API_BASE_URL}`); // Uncomment if you want to see it on screen
+    });
+  }, []);
 
   useEffect(() => {
     const handleGoogleResponse = async () => {
@@ -78,25 +89,50 @@ export default function LoginScreen() {
   }, [response, router]);
 
   const handleLogin = async () => {
-    console.log("handleLogin started", { email, phone });
     try {
-      if (!email && !phone) {
-        Alert.alert("Error", "Please enter phone or email");
-        return;
+      setLoading(true);
+      if (authType === 'otp') {
+        const identifier = method === 'email' ? email : phone;
+        if (!identifier) {
+          Alert.alert("Error", `Please enter your ${method}`);
+          setLoading(false);
+          return;
+        }
+
+        await requestOtp(
+          method === 'email' ? email : '',
+          method === 'phone' ? phone : ''
+        );
+
+        router.push({
+          pathname: "/auth/otp",
+          params: { email: method === 'email' ? email : undefined, phone: method === 'phone' ? phone : undefined },
+        });
+      } else {
+        // Password Login
+        const identifier = method === 'email' ? email : phone;
+        if (!identifier || !password) {
+          Alert.alert("Error", "Please enter both credentials");
+          setLoading(false);
+          return;
+        }
+
+        await require('@/services/auth.service').loginWithPassword(identifier, password);
+        const user = await getMe();
+
+        if (user.role === "pandit") {
+          router.replace("/(pandit)" as any);
+        } else if (user.role === "admin") {
+          router.replace("/admin/dashboard" as any);
+        } else {
+          router.replace("/(customer)" as any);
+        }
       }
-
-      console.log("Calling requestOtp...");
-      const res = await requestOtp(email, phone);
-      console.log("requestOtp response:", res);
-
-      console.log("Navigating to /auth/otp");
-      router.push({
-        pathname: "/auth/otp",
-        params: { email, phone },
-      });
-    } catch (err) {
-      console.error("handleLogin error:", err);
-      Alert.alert("OTP Error", "Failed to send OTP. Try again.");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      Alert.alert("Login Error", err.message || "Authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,6 +171,22 @@ export default function LoginScreen() {
           <Text style={styles.title}>Login</Text>
           <Text style={styles.subtitle}>Enter your details to login</Text>
 
+          {/* Auth Type Toggle */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, authType === 'otp' && styles.activeTab]}
+              onPress={() => setAuthType('otp')}
+            >
+              <Text style={[styles.tabText, authType === 'otp' && styles.activeTabText]}>OTP Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, authType === 'password' && styles.activeTab]}
+              onPress={() => setAuthType('password')}
+            >
+              <Text style={[styles.tabText, authType === 'password' && styles.activeTabText]}>Password</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.methodContainer}>
             <Button
               title="Phone"
@@ -153,10 +205,11 @@ export default function LoginScreen() {
           {method === "phone" ? (
             <Input
               label="Phone Number"
-              placeholder="+61XXXXXXXX"
+              placeholder="98XXXXXXXX"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
+              leftIcon={<Ionicons name="call-outline" size={20} color="#6B7280" />}
             />
           ) : (
             <Input
@@ -166,6 +219,28 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
+            />
+          )}
+
+          {authType === 'password' && (
+            <Input
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              style={{ marginTop: 12 }}
+              leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              }
             />
           )}
 
@@ -178,7 +253,13 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          <Button title="Send OTP" onPress={handleLogin} style={styles.submitButton} />
+          <Button
+            title={loading ? "Logging in..." : (authType === 'otp' ? "Send OTP" : "Login")}
+            onPress={handleLogin}
+            isLoading={loading}
+            disabled={loading}
+            style={styles.submitButton}
+          />
 
           <View style={styles.orRow}>
             <View style={styles.orLine} />
@@ -248,12 +329,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: '#F5F5F7',
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  activeTabText: {
+    color: Colors.light.primary,
   },
   methodContainer: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   methodButton: {
     flex: 1,

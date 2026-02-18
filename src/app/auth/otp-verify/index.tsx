@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
-import { verifyPasswordResetOtp, requestPasswordResetOtp } from '@/services/api';
+import { verifyPasswordResetOtp, requestPasswordResetOtp } from '@/services/auth.service';
 
 export default function OTPVerifyScreen() {
   const router = useRouter();

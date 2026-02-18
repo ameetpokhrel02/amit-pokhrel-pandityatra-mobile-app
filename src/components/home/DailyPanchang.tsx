@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ImageBackground, ActivityIndicator } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchPanchang, PanchangData } from '@/services/api';
+import { fetchPanchang } from '@/services/panchang.service';
+import { PanchangData } from '@/services/api';
 
 export const DailyPanchang = () => {
   const today = new Date();

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
@@ -9,7 +10,8 @@ import { useTheme } from '@/store/ThemeContext';
 import { MotiView } from 'moti';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { useTranslation } from 'react-i18next';
-import { fetchServices, Service } from '@/services/api';
+import { fetchServices } from '@/services/booking.service';
+import { Service } from '@/services/api';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
@@ -17,7 +19,7 @@ export default function CustomerHomeScreen() {
   const { colors, theme } = useTheme();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
-  
+
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,13 +57,13 @@ export default function CustomerHomeScreen() {
             <Ionicons name="menu-outline" size={28} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/(customer)/profile')}>
-             {user?.photoUri ? (
-               <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
-             ) : (
-               <View style={[styles.profileImagePlaceholder, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.profileInitials}>{user?.name?.[0]?.toUpperCase() || 'G'}</Text>
-               </View>
-             )}
+            {user?.photoUri ? (
+              <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
+            ) : (
+              <View style={[styles.profileImagePlaceholder, { backgroundColor: colors.primary }]}>
+                <Text style={styles.profileInitials}>{user?.name?.[0]?.toUpperCase() || 'G'}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -83,35 +85,49 @@ export default function CustomerHomeScreen() {
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Services</Text>
           {loading ? (
-             <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
-            {services.map((service, index) => (
-              <MotiView
-                key={service.id}
-                from={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 100 }}
-              >
-                <TouchableOpacity 
-                  style={[styles.serviceCard, { backgroundColor: colors.card }]}
-                  onPress={() => router.push(`/(customer)/services/${service.id}`)}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
+              {services.map((service, index) => (
+                <MotiView
+                  key={service.id}
+                  from={{ opacity: 0, scale: 0.9, translateY: 10 }}
+                  animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                  transition={{ delay: index * 100, type: 'timing', duration: 400 }}
                 >
-                  <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-                    {service.image ? (
-                        <Image source={{ uri: service.image }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-                    ) : (
-                        <Ionicons name="flame" size={28} color={colors.primary} />
-                    )}
-                  </View>
-                  <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={2}>{service.name}</Text>
-                  <Text style={[styles.servicePrice, { color: colors.primary }]}>
-                    NPR {service.base_price}
-                  </Text>
-                </TouchableOpacity>
-              </MotiView>
-            ))}
-          </ScrollView>
+                  <TouchableOpacity
+                    style={[styles.serviceCard, { backgroundColor: colors.card }]}
+                    onPress={() => router.push(`/(customer)/services/${service.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#2D2D2D' : '#FFF7F0' }]}>
+                      {service.image ? (
+                        <Image
+                          source={{ uri: service.image }}
+                          style={styles.serviceImage}
+                          contentFit="cover"
+                        />
+                      ) : (
+                        <View style={[styles.fallbackIcon, { backgroundColor: colors.primary + '10' }]}>
+                          <Ionicons name="flame-outline" size={32} color={colors.primary} />
+                          <Text style={{ fontSize: 10, color: colors.primary, marginTop: 4, fontWeight: 'bold' }}>Puja</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.serviceInfo}>
+                      <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={2}>
+                        {service.name}
+                      </Text>
+                      <View style={styles.priceBadge}>
+                        <Text style={[styles.priceText, { color: colors.primary }]}>
+                          NPR {service.base_price}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </MotiView>
+              ))}
+            </ScrollView>
           )}
         </View>
 
@@ -144,7 +160,7 @@ export default function CustomerHomeScreen() {
               </View>
             </View>
             <TouchableOpacity style={[styles.viewBookingButton, { borderColor: colors.primary }]}>
-                <Text style={[styles.viewBookingText, { color: colors.primary }]}>View Details</Text>
+              <Text style={[styles.viewBookingText, { color: colors.primary }]}>View Details</Text>
             </TouchableOpacity>
           </MotiView>
         </View>
@@ -153,26 +169,26 @@ export default function CustomerHomeScreen() {
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
-            <QuickActionData 
-              title="Book Puja" 
-              icon="flame" 
-              color="#FF9800" 
-              onPress={() => router.push('/(customer)/pandits')}
+            <QuickActionData
+              title="Book Puja"
+              icon="flame"
+              color="#FF9800"
+              onPress={() => router.push('/(customer)/services')}
               colors={colors}
               isDark={isDark}
             />
-            <QuickActionData 
-              title="Shop Samagri" 
-              icon="basket" 
-              color="#2196F3" 
+            <QuickActionData
+              title="Shop Samagri"
+              icon="basket"
+              color="#2196F3"
               onPress={() => router.push('/(customer)/shop')}
               colors={colors}
               isDark={isDark}
             />
-            <QuickActionData 
-              title="Generate Kundali" 
-              icon="planet" 
-              color="#9C27B0" 
+            <QuickActionData
+              title="Generate Kundali"
+              icon="planet"
+              color="#9C27B0"
               onPress={() => router.push('/(customer)/kundali')}
               colors={colors}
               isDark={isDark}
@@ -186,17 +202,17 @@ export default function CustomerHomeScreen() {
 }
 
 function QuickActionData({ title, icon, color, onPress, colors, isDark }: any) {
-    return (
-        <TouchableOpacity 
-            style={[styles.quickActionCard, { backgroundColor: colors.card }]} 
-            onPress={onPress}
-        >
-            <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
-                <Ionicons name={icon as any} size={32} color={color} />
-            </View>
-            <Text style={[styles.quickActionTitle, { color: colors.text }]}>{title}</Text>
-        </TouchableOpacity>
-    );
+  return (
+    <TouchableOpacity
+      style={[styles.quickActionCard, { backgroundColor: colors.card }]}
+      onPress={onPress}
+    >
+      <View style={[styles.quickActionIcon, { backgroundColor: color + '20' }]}>
+        <Ionicons name={icon as any} size={32} color={color} />
+      </View>
+      <Text style={[styles.quickActionTitle, { color: colors.text }]}>{title}</Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -257,35 +273,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   serviceCard: {
-    width: 140,
-    padding: 16,
-    borderRadius: 16,
+    width: 160,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     marginRight: 16,
-    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 3,
   },
   serviceIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: '100%',
+    height: 100,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  serviceImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fallbackIcon: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  serviceInfo: {
+    gap: 6,
   },
   serviceName: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 20,
   },
-  servicePrice: {
+  priceBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priceText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 4,
+    fontWeight: '800',
   },
   bookingCard: {
     padding: 16,

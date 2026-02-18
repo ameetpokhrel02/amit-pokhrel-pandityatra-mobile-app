@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
-import { requestPasswordResetOtp } from '@/services/api';
+import { requestPasswordResetOtp } from '@/services/auth.service';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -13,16 +14,17 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSendOTP = async () => {
-    // Validate email
+    // Validate email or phone
     if (!identifier.trim()) {
-      Alert.alert('Error', 'Please enter your email address');
+      Alert.alert('Error', 'Please enter your email or phone number');
       return;
     }
 
-    // Basic email validation
+    // Basic email/phone validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(identifier)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    const phoneRegex = /^98\d{8}$/;
+    if (!emailRegex.test(identifier) && !phoneRegex.test(identifier)) {
+      Alert.alert('Error', 'Please enter a valid email address or 10-digit phone number starting with 98');
       return;
     }
 
@@ -30,7 +32,7 @@ export default function ForgotPasswordScreen() {
     try {
       await requestPasswordResetOtp({ email: identifier });
       Alert.alert('Success', 'Verification code sent to your email');
-      router.push({ pathname: '/auth/otp-verify', params: { email: identifier, mode: 'reset-password' } } as any);
+      router.push({ pathname: '/auth/otp', params: { email: identifier, mode: 'reset-password' } } as any);
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to send verification code. Please try again.');
     } finally {
@@ -62,6 +64,7 @@ export default function ForgotPasswordScreen() {
             value={identifier}
             onChangeText={setIdentifier}
             autoCapitalize="none"
+            leftIcon={<Ionicons name="person-outline" size={20} color="#6B7280" />}
           />
 
           <Button

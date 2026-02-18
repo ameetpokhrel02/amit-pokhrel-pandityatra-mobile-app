@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, Image, Alert, TextInput, ScrollView } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
@@ -17,8 +17,26 @@ export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const isDark = theme === 'dark';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { getMe } = require('@/services/auth.service');
+        const data = await getMe();
+        updateUser({
+          name: data.full_name,
+          email: data.email,
+          phone: data.phone_number,
+          role: data.role,
+          photoUri: data.profile_image ? data.profile_image : null,
+        } as any);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const toggleTheme = () => {
     setMode(isDark ? 'light' : 'dark');
@@ -36,50 +54,13 @@ export default function ProfileScreen() {
     router.replace('/auth/welcome');
   };
 
-  const handleImagePress = () => {
-    Alert.alert(
-      "Profile Photo",
-      "Choose an option",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove Photo", style: "destructive", onPress: removePhoto },
-        { text: "Choose from Library", onPress: pickImage },
-      ]
-    );
-  };
-
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      updateUser({ photoUri: result.assets[0].uri });
-    }
-  };
-
-  const removePhoto = () => {
-    updateUser({ photoUri: null });
-  };
-
-  const startEditingName = () => {
-    setTempName(user?.name || '');
-    setIsEditingName(true);
-  };
-
-  const saveName = () => {
-    if (tempName.trim()) {
-      updateUser({ name: tempName.trim() });
-    }
-    setIsEditingName(false);
+  const handleEditPress = () => {
+    router.push('/(customer)/edit-profile' as any);
   };
 
   const renderSettingItem = (icon: any, label: string, onPress?: () => void, rightElement?: React.ReactNode) => (
-    <TouchableOpacity 
-      style={styles.row} 
+    <TouchableOpacity
+      style={styles.row}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -99,7 +80,7 @@ export default function ProfileScreen() {
 
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <TouchableOpacity onPress={handleImagePress} style={styles.imageContainer}>
+        <View style={styles.imageContainer}>
           {user?.photoUri ? (
             <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
           ) : (
@@ -107,36 +88,19 @@ export default function ProfileScreen() {
               <Text style={styles.placeholderText}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
             </View>
           )}
-          <View style={[styles.editIconBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
-            <Ionicons name="camera" size={14} color="#FFF" />
-          </View>
-        </TouchableOpacity>
+        </View>
 
         <View style={styles.nameContainer}>
-          {isEditingName ? (
-            <View style={styles.editNameRow}>
-              <TextInput
-                style={[styles.nameInput, { color: colors.text, borderColor: colors.primary }]}
-                value={tempName}
-                onChangeText={setTempName}
-                autoFocus
-              />
-              <TouchableOpacity onPress={saveName} style={styles.iconButton}>
-                <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setIsEditingName(false)} style={styles.iconButton}>
-                <Ionicons name="close-circle" size={28} color={colors.deepRed} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.nameRow}>
-              <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'User'}</Text>
-              <TouchableOpacity onPress={startEditingName} style={styles.editButton}>
-                <Ionicons name="pencil" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.nameRow}>
+            <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'User'}</Text>
+            <TouchableOpacity onPress={handleEditPress} style={styles.editButton}>
+              <Ionicons name="pencil" size={18} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.userEmail, { color: colors.text, opacity: 0.7 }]}>{user?.email || 'email@example.com'}</Text>
+          <View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
+            <Text style={[styles.roleText, { color: colors.primary }]}>{user?.role?.toUpperCase() || 'USER'}</Text>
+          </View>
         </View>
       </View>
 
@@ -154,7 +118,7 @@ export default function ProfileScreen() {
             thumbColor={isDark ? '#fff' : '#f4f3f4'}
           />
         </View>
-        
+
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <View style={styles.row}>
@@ -172,26 +136,26 @@ export default function ProfileScreen() {
 
       {/* More Settings */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
-        {renderSettingItem("notifications-outline", "Notifications", () => {})}
+        {renderSettingItem("notifications-outline", "Notifications", () => { })}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("lock-closed-outline", "Privacy Policy", () => {})}
+        {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("document-text-outline", "Terms of Service", () => {})}
+        {renderSettingItem("document-text-outline", "Terms of Service", () => { })}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("help-circle-outline", "Help & Support", () => {})}
+        {renderSettingItem("help-circle-outline", "Help & Support", () => { })}
       </View>
 
       <View style={styles.logoutContainer}>
-        <Button 
-          title={t('profile.logout')} 
-          onPress={() => setShowLogoutModal(true)} 
+        <Button
+          title={t('profile.logout')}
+          onPress={() => setShowLogoutModal(true)}
           variant="outline"
           style={{ borderColor: colors.deepRed }}
           textStyle={{ color: colors.deepRed }}
         />
       </View>
 
-      <LogoutModal 
+      <LogoutModal
         visible={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleLogout}
@@ -259,12 +223,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
-  editNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -272,18 +230,17 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
   },
-  nameInput: {
-    fontSize: 24,
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  roleText: {
+    fontSize: 10,
     fontWeight: 'bold',
-    borderBottomWidth: 1,
-    minWidth: 150,
-    textAlign: 'center',
-    paddingBottom: 4,
   },
   editButton: {
-    padding: 4,
-  },
-  iconButton: {
     padding: 4,
   },
   section: {

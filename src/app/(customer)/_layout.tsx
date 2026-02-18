@@ -36,15 +36,20 @@ function CartIcon({ color, focused }: { color: string, focused: boolean }) {
 }
 
 import { useTheme } from '@/store/ThemeContext';
+import { ChatProvider, useChat } from '@/store/ChatContext';
+import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { ChatModal } from '@/components/chat/ChatModal';
 
-export default function CustomerTabLayout() {
+function LayoutContent() {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const activeColor = colors.primary;
   const inactiveColor = '#8E8E93';
 
+  const { chatVisible, openChat, closeChat, bookingId, panditName } = useChat();
+
   return (
-    <CartProvider>
+    <>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: activeColor,
@@ -156,12 +161,37 @@ export default function CustomerTabLayout() {
           }}
         />
         <Tabs.Screen
-           name="checkout"
-           options={{
-             href: null,
-           }}
-         />
+          name="checkout"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="edit-profile"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
+      <FloatingChatButton onPress={() => openChat()} />
+      <ChatModal
+        visible={chatVisible}
+        onClose={closeChat}
+        bookingId={bookingId}
+        panditName={panditName}
+      />
+    </>
+  );
+}
+
+export default function CustomerTabLayout() {
+  return (
+    <CartProvider>
+      <ChatProvider>
+        <LayoutContent />
+      </ChatProvider>
     </CartProvider>
   );
 }
+
+

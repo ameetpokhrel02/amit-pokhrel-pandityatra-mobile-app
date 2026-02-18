@@ -7,9 +7,10 @@ import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 import { useTheme } from '@/store/ThemeContext';
-import { PanditService } from '@/services/pandit.service';
-import { Pandit } from '@/types/pandit';
-import { createBooking, createPayment, Booking, PaymentIntentResponse } from '@/services/api';
+import { fetchPandit } from '@/services/pandit.service';
+import { createBooking } from '@/services/booking.service';
+import { createPayment, PaymentIntentResponse } from '@/services/payment.service';
+import { Booking, PanditService, Pandit } from '@/services/api';
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
 
@@ -34,7 +35,7 @@ export default function BookingScreen() {
   useEffect(() => {
     const loadPandit = async () => {
       if (typeof panditId === 'string') {
-        const data = await PanditService.getPanditById(panditId);
+        const data = await fetchPandit(Number(panditId));
         setPandit(data || null);
       }
     };
@@ -54,7 +55,7 @@ export default function BookingScreen() {
       Alert.alert('Required', 'Please enter address');
       return;
     }
-    
+
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -180,7 +181,7 @@ export default function BookingScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <AnimatePresence exitBeforeEnter>
           {currentStep === 0 && (
-            <MotiView 
+            <MotiView
               key="step0"
               from={{ opacity: 0, translateX: 20 }}
               animate={{ opacity: 1, translateX: 0 }}
@@ -208,7 +209,7 @@ export default function BookingScreen() {
           )}
 
           {currentStep === 1 && (
-            <MotiView 
+            <MotiView
               key="step1"
               from={{ opacity: 0, translateX: 20 }}
               animate={{ opacity: 1, translateX: 0 }}
@@ -216,7 +217,7 @@ export default function BookingScreen() {
               transition={{ type: 'timing', duration: 300 }}
             >
               <Text style={[styles.stepTitle, { color: colors.text }]}>Select Date & Time</Text>
-              
+
               <Text style={[styles.subLabel, { color: colors.text }]}>Select Date</Text>
               <View style={[styles.calendarContainer, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' }]}>
                 <DateTimePicker
@@ -243,19 +244,19 @@ export default function BookingScreen() {
                   <TouchableOpacity
                     key={time}
                     style={[
-                      styles.timeCard, 
+                      styles.timeCard,
                       { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' },
                       selectedTime === time && { backgroundColor: colors.primary, borderColor: colors.primary }
                     ]}
                     onPress={() => setSelectedTime(time)}
                   >
-                    <Ionicons 
-                      name={time.includes('Morning') ? 'sunny-outline' : time.includes('Evening') ? 'moon-outline' : 'time-outline'} 
-                      size={20} 
-                      color={selectedTime === time ? '#FFF' : colors.text} 
+                    <Ionicons
+                      name={time.includes('Morning') ? 'sunny-outline' : time.includes('Evening') ? 'moon-outline' : 'time-outline'}
+                      size={20}
+                      color={selectedTime === time ? '#FFF' : colors.text}
                     />
                     <Text style={[
-                      styles.timeText, 
+                      styles.timeText,
                       { color: colors.text },
                       selectedTime === time && { color: '#FFF', fontWeight: '600' }
                     ]}>
@@ -268,7 +269,7 @@ export default function BookingScreen() {
           )}
 
           {currentStep === 2 && (
-            <MotiView 
+            <MotiView
               key="step2"
               from={{ opacity: 0, translateX: 20 }}
               animate={{ opacity: 1, translateX: 0 }}
@@ -276,7 +277,7 @@ export default function BookingScreen() {
               transition={{ type: 'timing', duration: 300 }}
             >
               <Text style={[styles.stepTitle, { color: colors.text }]}>Location Details</Text>
-              
+
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Full Address</Text>
                 <TextInput
@@ -305,7 +306,7 @@ export default function BookingScreen() {
           )}
 
           {currentStep === 3 && (
-            <MotiView 
+            <MotiView
               key="step3"
               from={{ opacity: 0, translateX: 20 }}
               animate={{ opacity: 1, translateX: 0 }}
@@ -313,7 +314,7 @@ export default function BookingScreen() {
               transition={{ type: 'timing', duration: 300 }}
             >
               <Text style={[styles.stepTitle, { color: colors.text }]}>Review Booking</Text>
-              
+
               <View style={[styles.summaryCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Pandit</Text>

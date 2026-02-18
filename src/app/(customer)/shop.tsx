@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useCart } from '@/store/CartContext';
-import { fetchSamagriItems, fetchSamagriCategories, aiRecommendSamagri, SamagriItem } from '@/services/api';
+import { fetchSamagriItems, fetchSamagriCategories, aiRecommendSamagri } from '@/services/shop.service';
+import { SamagriItem } from '@/services/api';
 import { MotiView } from 'moti';
 import { useTheme } from '@/store/ThemeContext';
 
@@ -17,7 +18,7 @@ export default function ShopScreen() {
 
   // State for API data
   const [products, setProducts] = useState<SamagriItem[]>([]);
-  const [categories, setCategories] = useState<{id: number | string, name: string}[]>([{id: 'All', name: 'All'}]);
+  const [categories, setCategories] = useState<{ id: number | string, name: string }[]>([{ id: 'All', name: 'All' }]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [recommendedItems, setRecommendedItems] = useState<SamagriItem[]>([]);
@@ -26,34 +27,34 @@ export default function ShopScreen() {
 
   const handleAIRecommend = async () => {
     if (!pujaName.trim()) {
-       Alert.alert('Required', 'Please enter a puja name');
-       return;
+      Alert.alert('Required', 'Please enter a puja name');
+      return;
     }
     try {
-        setLoadingRec(true);
-        const data = await aiRecommendSamagri({ puja_name: pujaName });
-        const items = Array.isArray(data) ? data : (data.recommended_items || []);
-        
-        if (items.length > 0) {
-            setRecommendedItems(items);
-            Alert.alert('Success', `Found ${items.length} recommended items.`);
-        } else {
-             Alert.alert('Info', 'No items found for this puja.');
-        }
+      setLoadingRec(true);
+      const data = await aiRecommendSamagri({ puja_name: pujaName });
+      const items = Array.isArray(data) ? data : (data.recommended_items || []);
+
+      if (items.length > 0) {
+        setRecommendedItems(items);
+        Alert.alert('Success', `Found ${items.length} recommended items.`);
+      } else {
+        Alert.alert('Info', 'No items found for this puja.');
+      }
     } catch (e: any) {
-        Alert.alert('Error', e.message || 'Failed to get recommendations.');
+      Alert.alert('Error', e.message || 'Failed to get recommendations.');
     } finally {
-        setLoadingRec(false);
+      setLoadingRec(false);
     }
   };
 
   const addAllRecommended = () => {
-      recommendedItems.forEach(item => {
-          // Ensure we map id correctly if needed. Product context usually expects string id.
-          addToCart({ ...item, id: String(item.id) } as any);
-      });
-      Alert.alert('Success', 'Added recommended items to cart');
-      setRecommendedItems([]); // Clear after adding? Usefulness depends on UX.
+    recommendedItems.forEach(item => {
+      // Ensure we map id correctly if needed. Product context usually expects string id.
+      addToCart({ ...item, id: String(item.id) } as any);
+    });
+    Alert.alert('Success', 'Added recommended items to cart');
+    setRecommendedItems([]); // Clear after adding? Usefulness depends on UX.
   };
 
   // Fetch products and categories on mount
@@ -70,7 +71,7 @@ export default function ShopScreen() {
       ]);
 
       setProducts(itemsData);
-      setCategories([{id: 'All', name: 'All'}, ...categoriesData]);
+      setCategories([{ id: 'All', name: 'All' }, ...categoriesData]);
     } catch (error: any) {
       console.error('Error loading shop data:', error);
       Alert.alert('Error', 'Failed to load shop items. Please try again.');
@@ -95,8 +96,8 @@ export default function ShopScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Shop Samagri & Books</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="options-outline" size={24} color={colors.text} />
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(customer)/shop/ai-recommend')}>
+            <Ionicons name="sparkles" size={24} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(customer)/cart')}>
             <Ionicons name="cart-outline" size={24} color={colors.text} />
@@ -128,38 +129,38 @@ export default function ShopScreen() {
             <Ionicons name="sparkles" size={16} color="#D97706" />
             <Text style={[styles.suggestionTitle, { color: isDark ? '#FBBF24' : '#92400E' }]}>AI Puja Recommendation</Text>
           </View>
-          
-          <View style={{flexDirection: 'row', gap: 8, marginBottom: 12, alignItems: 'center'}}>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, alignItems: 'center' }}>
             <TextInput
-                style={[styles.searchInput, { 
-                  backgroundColor: isDark ? '#444' : '#FFF', 
-                  height: 40, 
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  borderWidth: 1,
-                  borderColor: isDark ? '#555' : '#DDD'
-                }]}
-                placeholder="Ex: Satyanarayan Puja"
-                placeholderTextColor={isDark ? '#AAA' : '#888'}
-                value={pujaName}
-                onChangeText={setPujaName}
+              style={[styles.searchInput, {
+                backgroundColor: isDark ? '#444' : '#FFF',
+                height: 40,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: isDark ? '#555' : '#DDD'
+              }]}
+              placeholder="Ex: Satyanarayan Puja"
+              placeholderTextColor={isDark ? '#AAA' : '#888'}
+              value={pujaName}
+              onChangeText={setPujaName}
             />
-            <TouchableOpacity 
-                style={[styles.addRecommendedButton, {backgroundColor: colors.primary, paddingHorizontal: 16, height: 40, justifyContent: 'center'}]}
-                onPress={handleAIRecommend}
-                disabled={loadingRec}
+            <TouchableOpacity
+              style={[styles.addRecommendedButton, { backgroundColor: colors.primary, paddingHorizontal: 16, height: 40, justifyContent: 'center' }]}
+              onPress={handleAIRecommend}
+              disabled={loadingRec}
             >
-              {loadingRec ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={{color: '#FFF', fontWeight: 'bold'}}>Ask AI</Text>}
+              {loadingRec ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Ask AI</Text>}
             </TouchableOpacity>
           </View>
 
           {recommendedItems.length > 0 && (
-             <TouchableOpacity 
-                style={[styles.addRecommendedButton, {backgroundColor: '#F59E0B', marginTop: 8}]} 
-                onPress={addAllRecommended}
-             >
-                <Text style={styles.addRecommendedText}>Add {recommendedItems.length} Recommended Items</Text>
-             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.addRecommendedButton, { backgroundColor: '#F59E0B', marginTop: 8 }]}
+              onPress={addAllRecommended}
+            >
+              <Text style={styles.addRecommendedText}>Add {recommendedItems.length} Recommended Items</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -184,70 +185,61 @@ export default function ShopScreen() {
           </View>
         ) : (
           <View style={styles.productList}>
-            {filteredProducts.map((item, index) => {
-              const quantity = getItemCount(String(item.id));
-              return (
-                <MotiView
-                  key={item.id}
-                  from={{ opacity: 0, translateY: 20 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ delay: index * 50 }}
-                >
-                  <TouchableOpacity
-                    style={[styles.productCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
-                    onPress={() => router.push(`/(customer)/shop/${item.id}`)}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Product</Text>
+              <TouchableOpacity><Text style={{ color: '#999' }}>See All</Text></TouchableOpacity>
+            </View>
+            <View style={styles.gridContainer}>
+              {filteredProducts.map((item, index) => {
+                // const quantity = getItemCount(String(item.id)); // Not needed for card view unless we show +/-
+                return (
+                  <MotiView
+                    key={item.id}
+                    from={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 50 }}
+                    style={[styles.productCard, { backgroundColor: isDark ? '#1F1F1F' : '#FFF9F4', borderColor: isDark ? '#333' : '#FDE68A' }]}
                   >
-                    <View style={[styles.productImage, { backgroundColor: isDark ? '#333' : '#F3F4F6' }]}>
-                      {item.image && (item.image.startsWith('http') || item.image.startsWith('file')) ? (
-                        <Image source={{ uri: item.image }} style={{ width: 60, height: 60, borderRadius: 8 }} resizeMode="cover" />
-                      ) : (
-                        <Ionicons name={item.image as any || "cube-outline"} size={30} color={isDark ? '#AAA' : '#9CA3AF'} />
-                      )}
-                    </View>
-                    <View style={styles.productInfo}>
-                      <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
-                      <Text style={[styles.productDescription, { color: isDark ? '#AAA' : '#666' }]} numberOfLines={3}>{item.description || 'No description'}</Text>
-                      <Text style={[styles.productPrice, { color: colors.primary }]}>NPR {item.price}</Text>
-                    </View>
-                    <View style={styles.productActionsCol}>
-                        <TouchableOpacity 
-                            style={[styles.viewButton, { borderColor: colors.primary }]}
-                            onPress={() => router.push(`/(customer)/shop/${item.id}`)}
-                        >
-                            <Text style={[styles.viewButtonText, { color: colors.primary }]}>View</Text>
+                    <TouchableOpacity
+                      style={{ flex: 1 }}
+                      onPress={() => router.push(`/(customer)/shop/${item.id}`)}
+                    >
+                      <View style={[styles.imageContainer, { backgroundColor: isDark ? '#2a2a2a' : '#FFF' }]}>
+                        {item.image && (item.image.startsWith('http') || item.image.startsWith('file')) ? (
+                          <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
+                        ) : (
+                          <View style={[styles.placeholderImage, { backgroundColor: isDark ? '#333' : '#F3F4F6' }]}>
+                            <Ionicons name="image-outline" size={40} color={isDark ? '#555' : '#CCC'} />
+                          </View>
+                        )}
+                        <TouchableOpacity style={styles.heartButton}>
+                          <Ionicons name="heart-outline" size={20} color={colors.primary} />
                         </TouchableOpacity>
+                      </View>
 
-                        {quantity > 0 ? (
-                        <MotiView
-                          from={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: 'spring' }}
-                          style={[styles.quantityControl, { backgroundColor: colors.primary }]}
-                        >
-                          <TouchableOpacity
-                            onPress={() => updateQuantity(String(item.id), quantity - 1)}
-                            style={styles.qtyButton}
-                          >
-                            <Ionicons name="remove" size={16} color="#FFF" />
-                          </TouchableOpacity>
-                          <Text style={styles.qtyText}>{quantity}</Text>
-                          <TouchableOpacity
-                            onPress={() => addToCart({ ...item, id: String(item.id) } as any)}
-                            style={styles.qtyButton}
-                          >
-                            <Ionicons name="add" size={16} color="#FFF" />
-                          </TouchableOpacity>
-                        </MotiView>
-                      ) : (
-                        <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => addToCart({ ...item, id: String(item.id) } as any)}>
-                          <Text style={styles.addButtonText}>Add</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                </MotiView>
-              );
-            })}
+                      <View style={styles.cardContent}>
+                        <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+
+                        <View style={styles.priceRow}>
+                          {/* Mocking original price for UI effect as requested */}
+                          <Text style={[styles.originalPrice, { textDecorationLine: 'line-through', color: '#999', fontSize: 12 }]}>
+                            NPR {Math.round(item.price * 1.2)}
+                          </Text>
+                          <Text style={[styles.productPrice, { color: colors.text }]}>NPR {item.price}</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.addToCartButton, { backgroundColor: colors.primary }]}
+                      onPress={() => addToCart({ ...item, id: String(item.id) } as any)}
+                    >
+                      <Ionicons name="bag-handle-outline" size={18} color="#FFF" />
+                    </TouchableOpacity>
+                  </MotiView>
+                );
+              })}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -384,78 +376,92 @@ const styles = StyleSheet.create({
   },
   productList: {
     paddingHorizontal: 16,
-    gap: 16,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingBottom: 100,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   productCard: {
-    flexDirection: 'row',
-    borderRadius: 12,
+    width: '48%',
+    borderRadius: 16,
     padding: 12,
-    alignItems: 'center',
-    elevation: 1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    marginBottom: 16,
+    borderWidth: 1,
+    // elevation: 1, // Optional, can remove if too much shadow
   },
-  productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+  imageContainer: {
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+    marginBottom: 10,
+    position: 'relative',
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  productInfo: {
-    flex: 1,
+  productImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heartButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 4,
+    zIndex: 10,
+  },
+  cardContent: {
+    gap: 4,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   productDescription: {
     fontSize: 12,
     marginBottom: 4,
-    opacity: 0.8,
+    opacity: 0.6,
   },
-  productPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  priceRow: {
     marginTop: 4,
   },
-  productActions: {
-    justifyContent: 'center',
+  originalPrice: {
+    fontSize: 12,
+    textDecorationLine: 'line-through',
+    opacity: 0.6,
   },
-  productActionsCol: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginLeft: 8,
-    minWidth: 70,
-  },
-  viewButton: {
-      borderWidth: 1,
-      paddingHorizontal: 8,
-      paddingVertical: 6,
-      borderRadius: 6,
-      alignItems: 'center',
-      width: '100%',
-  },
-  viewButtonText: {
-      fontSize: 10,
-      fontWeight: '600',
-  },
-  addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    width: '100%',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#FFF',
+  productPrice: {
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 10,
   },
+  addToCartButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Cleaned up unused styles
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -477,7 +483,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    paddingBottom: 30,
+    // paddingBottom: 30, // Adjust for safe area
+    paddingBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

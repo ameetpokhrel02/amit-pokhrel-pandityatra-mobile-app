@@ -4,7 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useCart } from '@/store/CartContext';
-import { fetchSamagriItems, SamagriItem } from '@/services/api';
+import { fetchSamagriItems } from '@/services/shop.service';
+import { SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
 
 export default function ProductDetailScreen() {
@@ -13,28 +14,28 @@ export default function ProductDetailScreen() {
   const { addToCart, updateQuantity, getItemCount } = useCart();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   const [product, setProduct] = useState<SamagriItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if(id) loadProduct();
+    if (id) loadProduct();
   }, [id]);
 
   const loadProduct = async () => {
-      try {
-          setLoading(true);
-          // Fetch all items and find. In a real app with large catalog, we'd use a detail endpoint.
-          const items = await fetchSamagriItems();
-          const found = items.find(p => String(p.id) === String(id));
-          setProduct(found || null);
-      } catch(e) {
-          console.error("Failed to load product", e);
-      } finally {
-          setLoading(false);
-      }
+    try {
+      setLoading(true);
+      // Fetch all items and find. In a real app with large catalog, we'd use a detail endpoint.
+      const items = await fetchSamagriItems();
+      const found = items.find(p => String(p.id) === String(id));
+      setProduct(found || null);
+    } catch (e) {
+      console.error("Failed to load product", e);
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   // Local state for quantity display, initialized with cart quantity or 1
   const cartQuantity = typeof id === 'string' ? getItemCount(id) : 0;
   const [quantity, setQuantity] = useState(cartQuantity > 0 ? cartQuantity : 1);
@@ -47,11 +48,11 @@ export default function ProductDetailScreen() {
   }, [cartQuantity]);
 
   if (loading) {
-      return (
-          <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-      );
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   if (!product) {
@@ -95,92 +96,88 @@ export default function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Image */}
-        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#333' : '#FFF7ED' }]}>
-           {product.image && (product.image.startsWith('http') || product.image.startsWith('file')) ? (
-              <Image source={{ uri: product.image }} style={{ width: 200, height: 200, borderRadius: 8 }} resizeMode="contain" />
-           ) : (
-              <Ionicons name={product.image as any || "cube-outline"} size={120} color={colors.primary} />
-           )}
+        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#2a2a2a' : '#FFF7ED' }]}>
+          {product.image && (product.image.startsWith('http') || product.image.startsWith('file')) ? (
+            <Image source={{ uri: product.image }} style={styles.productImage} resizeMode="contain" />
+          ) : (
+            <Ionicons name={product.image as any || "cube-outline"} size={100} color={colors.primary} />
+          )}
+          <View style={styles.imageOverlayIcon}>
+            <Ionicons name="bag-check-outline" size={24} color={colors.primary} />
+          </View>
         </View>
 
         {/* Info */}
         <View style={styles.infoContainer}>
-          <Text style={[styles.category, { color: isDark ? '#AAA' : '#666' }]}>{product.category}</Text>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: colors.text }]}>{product.name}</Text>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={[styles.ratingText, { color: isDark ? '#AAA' : '#666' }]}>4.8 (120)</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.title, { color: colors.text }]}>{product.name}</Text>
+              <Text style={[styles.category, { color: isDark ? '#AAA' : '#888' }]}>{product.category ? 'Puja Samagri' : 'General Item'}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              {/* Mocking original price */}
+              <Text style={[styles.originalPrice, { textDecorationLine: 'line-through', color: '#999', fontSize: 14 }]}>
+                NPR {Math.round(product.price * 1.2)}
+              </Text>
+              <Text style={[styles.price, { color: colors.primary }]}>NPR {product.price}</Text>
             </View>
           </View>
 
-          <View style={styles.priceRow}>
-            <Text style={[styles.price, { color: colors.primary }]}>NPR {product.price}</Text>
-            
-            {cartQuantity > 0 ? (
-               <View style={[styles.quantityControl, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-                <TouchableOpacity 
-                  style={[styles.qtyButton, { backgroundColor: colors.primary }]} 
-                  onPress={handleDecrement}
-                >
-                  <Ionicons name="remove" size={20} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={[styles.qtyText, { color: colors.text }]}>{cartQuantity}</Text>
-                <TouchableOpacity style={[styles.qtyButton, { backgroundColor: colors.primary }]} onPress={handleIncrement}>
-                  <Ionicons name="add" size={20} color="#FFF" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-               <View style={[styles.quantityControlDisabled, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-                  <Text style={[styles.qtyTextDisabled, { color: isDark ? '#AAA' : '#999' }]}>1</Text>
-               </View>
-            )}
+          {/* Select Size / Variant Mock to match UI reference */}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Variant</Text>
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+            {['Small', 'Medium', 'Large'].map((size, idx) => (
+              <TouchableOpacity key={size} style={[styles.sizeOption, idx === 1 && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                <Text style={[styles.sizeText, idx === 1 && { color: '#FFF' }]}>{size}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
-          <Text style={[styles.description, { color: isDark ? '#CCC' : '#666' }]}>{product.description}</Text>
-
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Choice of Add On</Text>
-          <View style={[styles.addOnItem, { borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}>
-            <View style={styles.addOnInfo}>
-              <Ionicons name="leaf-outline" size={24} color={isDark ? '#AAA' : '#666'} />
-              <Text style={[styles.addOnName, { color: colors.text }]}>Extra Tulsi Leaves</Text>
-            </View>
-            <View style={styles.addOnPriceRow}>
-              <Text style={[styles.addOnPrice, { color: isDark ? '#AAA' : '#666' }]}>+ NPR 50</Text>
-              <TouchableOpacity>
-                <Ionicons name="radio-button-off" size={20} color={colors.primary} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Quantity</Text>
+            <View style={[styles.quantityControl, { backgroundColor: isDark ? '#333' : '#F9FAFB', borderColor: isDark ? '#444' : '#E5E7EB', borderWidth: 1 }]}>
+              <TouchableOpacity
+                style={styles.qtyButton}
+                onPress={handleDecrement}
+              >
+                <Ionicons name="remove" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.qtyText, { color: colors.text }]}>{quantity}</Text>
+              <TouchableOpacity style={styles.qtyButton} onPress={handleIncrement}>
+                <Ionicons name="add" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
           </View>
-          <View style={[styles.addOnItem, { borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}>
-            <View style={styles.addOnInfo}>
-              <Ionicons name="water-outline" size={24} color={isDark ? '#AAA' : '#666'} />
-              <Text style={[styles.addOnName, { color: colors.text }]}>Ganga Jal</Text>
-            </View>
-            <View style={styles.addOnPriceRow}>
-              <Text style={[styles.addOnPrice, { color: isDark ? '#AAA' : '#666' }]}>+ NPR 100</Text>
-              <TouchableOpacity>
-                <Ionicons name="radio-button-off" size={20} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </View>
+
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About This Item</Text>
+          <Text style={[styles.description, { color: isDark ? '#CCC' : '#666' }]}>
+            {product.description || 'This is a premium quality item for your puja needs. It is sourced from the best suppliers and verified for authenticity.'}
+            <Text style={{ fontWeight: 'bold' }}> Learn More</Text>
+          </Text>
+
+          {/* Keep Add On section as it is valuable functionality even if not in reference image */}
+          {/* <Text style={[styles.sectionTitle, { color: colors.text }]}>Choice of Add On</Text>
+          <View style={[styles.addOnItem, { borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}> ... </View> */}
         </View>
       </ScrollView>
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: isDark ? '#333' : '#F0F0F0' }]}>
-        {cartQuantity > 0 ? (
-           <TouchableOpacity style={[styles.viewCartButton, { backgroundColor: isDark ? '#444' : '#333' }]} onPress={() => router.push('/(customer)/cart')}>
-            <Ionicons name="cart" size={20} color="#FFF" />
-            <Text style={styles.addToCartText}>View Cart ({cartQuantity})</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={[styles.addToCartButton, { backgroundColor: colors.primary }]} onPress={handleAddToCart}>
-            <Ionicons name="cart-outline" size={20} color="#FFF" />
-            <Text style={styles.addToCartText}>Add to Cart</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={[styles.addToCartButton, { borderColor: colors.text, borderWidth: 1 }]} onPress={handleAddToCart}>
+          <Ionicons name="add-circle-outline" size={20} color={colors.text} />
+          <Text style={[styles.addToCartText, { color: colors.text }]}>Add To Cart</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.buyNowButton, { backgroundColor: colors.primary }]}
+          onPress={() => {
+            addToCart({ ...product, id: String(product.id) } as any);
+            router.push('/(customer)/cart');
+          }}
+        >
+          <Ionicons name="bag-check" size={20} color="#FFF" />
+          <Text style={styles.buyNowText}>Buy Now</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -201,12 +198,31 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   imageContainer: {
-    height: 250,
+    height: 300,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,
     borderRadius: 20,
     marginBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlayIcon: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: '#FFF',
+    padding: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   infoContainer: {
     paddingHorizontal: 20,
@@ -222,10 +238,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    flex: 1,
-    marginRight: 10,
+    marginBottom: 4,
+  },
+  originalPrice: {
+    textDecorationLine: 'line-through',
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -245,38 +263,37 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  // Variant
+  sizeOption: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sizeText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 30,
-    padding: 4,
-  },
-  quantityControlDisabled: {
-     flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 30,
-    padding: 4,
-    paddingHorizontal: 12,
-    height: 40,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   qtyButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  qtyButtonDisabled: {
-    backgroundColor: '#CCC',
   },
   qtyText: {
     fontSize: 16,
     fontWeight: 'bold',
     marginHorizontal: 16,
-  },
-  qtyTextDisabled: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 16,
@@ -288,66 +305,42 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: 14,
   },
-  addOnItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  addOnInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  addOnName: {
-    fontSize: 14,
-  },
-  addOnPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  addOnPrice: {
-    fontSize: 14,
-  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: 16,
     paddingBottom: 30,
     borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
   },
   addToCartButton: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 30,
+    paddingVertical: 14,
+    borderRadius: 12,
     gap: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  viewCartButton: {
+  buyNowButton: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 30,
+    paddingVertical: 14,
+    borderRadius: 12,
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
   addToCartText: {
-    color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  buyNowText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFF',
   },
 });

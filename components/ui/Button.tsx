@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Pressable, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
 interface ButtonProps {
@@ -10,18 +10,22 @@ interface ButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-export function Button({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
-  isLoading = false, 
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  isLoading = false,
   disabled = false,
   style,
-  textStyle 
+  textStyle,
+  leftIcon,
+  rightIcon
 }: ButtonProps) {
-  
+
   const getBackgroundColor = (pressed: boolean) => {
     if (disabled) return '#BDBDBD';
     if (variant === 'primary') return pressed ? Colors.light.deepRed : Colors.light.primary;
@@ -59,10 +63,15 @@ export function Button({
       {isLoading ? (
         <ActivityIndicator color={getTextColor()} />
       ) : (
-        <Text style={[styles.text, { color: getTextColor() }, textStyle]}>{title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
+          <Text style={[styles.text, { color: getTextColor() }, textStyle]}>{title}</Text>
+          {rightIcon && <View style={{ marginLeft: 8 }}>{rightIcon}</View>}
+        </View>
       )}
     </Pressable>
   );
+
 }
 
 const styles = StyleSheet.create({

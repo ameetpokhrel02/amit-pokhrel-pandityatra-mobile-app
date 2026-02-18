@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -21,24 +22,17 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <Button 
-          title="Login as Customer" 
-          onPress={() => router.push('/auth/login' as any)} 
-          style={styles.button}
-        />
-        
-        <Button 
-          title="Join as Pandit" 
-          variant="secondary"
-          onPress={() => router.push('/auth/pandit-register' as any)} 
+        <Button
+          title="Join as Customer"
+          onPress={() => router.push('/auth/login' as any)}
           style={styles.button}
         />
 
-        <Button 
-          title="Admin Login" 
-          variant="text"
-          onPress={() => alert('Admin login not implemented yet')} 
-          style={styles.textButton}
+        <Button
+          title="Join as Pandit"
+          variant="secondary"
+          onPress={() => router.push('/auth/pandit-register' as any)}
+          style={styles.button}
         />
       </View>
     </View>

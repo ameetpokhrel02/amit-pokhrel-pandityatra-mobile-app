@@ -1,4 +1,4 @@
-import apiClient from './api-client';
+import apiClient, { publicApi } from './api-client';
 
 // ----------------------
 // Services (Pujas) APIs
@@ -11,6 +11,8 @@ export interface Category {
     description: string;
 }
 
+export type ServiceCategory = Category;
+
 export interface Service {
     id: number;
     name: string;
@@ -21,20 +23,8 @@ export interface Service {
     samagri_list?: any[]; // Detail only
 }
 
-export async function fetchCategories(): Promise<Category[]> {
-    const response = await apiClient.get('/services/categories/');
-    return response.data;
-}
+// Services functions moved to booking.service.ts
 
-export async function fetchServices(params?: { category?: number; search?: string }): Promise<Service[]> {
-    const response = await apiClient.get('/services/', { params });
-    return response.data;
-}
-
-export async function fetchServiceDetail(id: number): Promise<Service> {
-    const response = await apiClient.get(`/services/${id}/`);
-    return response.data;
-}
 
 // ----------------------
 // Payments APIs
@@ -70,9 +60,8 @@ export async function refundPayment(id: number) {
     return response.data;
 }
 
-// ----------------------
-// Pandit APIs
-// ----------------------
+// Pandit and Verification APIs moved to pandit.service.ts
+
 export interface Pandit {
     id: number;
     user: number;
@@ -121,73 +110,22 @@ export interface PanditReview {
     created_at: string;
 }
 
-export async function fetchPandits(): Promise<Pandit[]> {
-    const response = await apiClient.get('/pandits/');
-    return response.data;
-}
-
-export async function fetchPandit(id: number): Promise<Pandit> {
-    const response = await apiClient.get(`/pandits/${id}/`);
-    return response.data;
-}
-
 export interface Puja {
     id: number;
-    name: string; // Changed from title to name to match common convention, or use title if backend sends title
+    name: string;
     description?: string;
     base_price: number;
     base_duration_minutes?: number;
     image?: string;
 }
 
-export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
-    const response = await apiClient.get(`/pandits/${panditId}/services/`);
-    return response.data;
-}
+// Recommender APIs (Placeholder) moved or removed
 
-// ----------------------
-// Pandit Verification APIs (Admin)
-// ----------------------
-export async function fetchPendingPandits(): Promise<Pandit[]> {
-    const response = await apiClient.get('/pandits/admin/pending/');
-    return response.data;
-}
-
-export async function verifyPandit(id: number, notes?: string) {
-    const response = await apiClient.post(`/pandits/admin/verify/${id}/`, { notes });
-    return response.data;
-}
-
-export async function rejectPandit(id: number, reason?: string) {
-    const response = await apiClient.post(`/pandits/admin/reject/${id}/`, { reason });
-    return response.data;
-}
-
-// ----------------------
-// Recommender APIs
-// ----------------------
 export interface RecommendedPandit extends Pandit {
     recommendation_score: number;
 }
 
-export async function fetchRecommendations(): Promise<RecommendedPandit[]> {
-    // TODO: Backend endpoint /recommender/pandits/ does not exist yet.
-    // The current recommender app only supports Samagri recommendations.
-    // Returning empty array for now to prevent 404 errors.
-    console.warn('fetchRecommendations: Backend endpoint missing. Returning empty array.');
-    return [];
-    // const response = await apiClient.get('/recommender/pandits/');
-    // return response.data;
-}
-
-// ----------------------
-// Booking APIs
-// ----------------------
-// Fetches ALL available pujas (catalog)
-export async function fetchAllPujas(): Promise<Puja[]> {
-    const response = await apiClient.get('/services/');
-    return response.data;
-}
+// Booking APIs moved to booking.service.ts
 
 export interface Booking {
     id: number;
@@ -206,26 +144,7 @@ export interface Booking {
     service_name?: string;
 }
 
-export async function fetchBookings(): Promise<Booking[]> {
-    const response = await apiClient.get('/bookings/');
-    return response.data;
-}
 
-export async function createBooking(payload: Partial<Booking>) {
-    const response = await apiClient.post('/bookings/', payload);
-    return response.data;
-}
-
-export async function updateBookingStatus(id: number, status: string) {
-    const response = await apiClient.patch(`/bookings/${id}/update_status/`, { status });
-    return response.data;
-}
-
-export async function adminCancelBooking(id: number) {
-    // Calls the specialized admin view that handles refunds
-    const response = await apiClient.post(`/bookings/${id}/admin_cancel/`);
-    return response.data;
-}
 
 // ----------------------
 // Auth APIs
@@ -241,7 +160,7 @@ export interface RegisterPayload {
 
 export async function registerUser(payload: RegisterPayload) {
     try {
-        const response = await apiClient.post('/users/register/', payload);
+        const response = await publicApi.post('/users/register/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -251,7 +170,7 @@ export async function registerUser(payload: RegisterPayload) {
 // Updated Payload to support email or phone
 export async function requestLoginOtp(payload: { phone_number?: string; email?: string }) {
     try {
-        const response = await apiClient.post('/users/request-otp/', payload);
+        const response = await publicApi.post('/users/request-otp/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -260,7 +179,7 @@ export async function requestLoginOtp(payload: { phone_number?: string; email?: 
 
 export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
     try {
-        const response = await apiClient.post('/users/login-otp/', payload);
+        const response = await publicApi.post('/users/login-otp/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -269,7 +188,7 @@ export async function verifyOtpAndGetToken(payload: { phone_number?: string; ema
 
 export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
     try {
-        const response = await apiClient.post('/users/login-password/', payload);
+        const response = await publicApi.post('/users/login-password/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -278,7 +197,7 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
 
 export async function googleLogin(idToken: string) {
     try {
-        const response = await apiClient.post('/users/google-login/', { id_token: idToken });
+        const response = await publicApi.post('/users/google-login/', { id_token: idToken });
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -298,7 +217,7 @@ export async function fetchProfile() {
 // Step 1: Request password reset OTP
 export async function requestPasswordResetOtp(payload: { email: string }) {
     try {
-        const response = await apiClient.post('/users/forgot-password/', payload);
+        const response = await publicApi.post('/users/forgot-password/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -308,7 +227,7 @@ export async function requestPasswordResetOtp(payload: { email: string }) {
 // Step 2: Verify OTP and get temporary reset token
 export async function verifyPasswordResetOtp(payload: { email: string; otp: string }) {
     try {
-        const response = await apiClient.post('/users/forgot-password/verify-otp/', payload);
+        const response = await publicApi.post('/users/forgot-password/verify-otp/', payload);
         return response.data; // Returns { token }
     } catch (error: any) {
         throw handleApiError(error);
@@ -318,7 +237,7 @@ export async function verifyPasswordResetOtp(payload: { email: string; otp: stri
 // Step 3: Reset password using temporary token
 export async function resetPasswordWithToken(payload: { token: string; new_password: string }) {
     try {
-        const response = await apiClient.post('/users/forgot-password/reset/', payload);
+        const response = await publicApi.post('/users/forgot-password/reset/', payload);
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -402,13 +321,13 @@ export interface SamagriCategory {
 }
 
 export async function fetchSamagriItems(params?: any): Promise<SamagriItem[]> {
-    const response = await apiClient.get('/samagri/items/', { params });
+    const response = await publicApi.get('/samagri/items/', { params });
     // Handle pagination result if it exists (Django Rest Framework default)
     return response.data.results || response.data;
 }
 
 export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
-    const response = await apiClient.get('/samagri/categories/');
+    const response = await publicApi.get('/samagri/categories/');
     return response.data.results || response.data;
 }
 
@@ -437,77 +356,17 @@ export async function deleteSamagriCategory(id: number) {
     return response.data;
 }
 
-// ----------------------
-// Extended Pandit APIs
-// ----------------------
+// Extended Pandit APIs moved to pandit.service.ts
 
-export interface PanditRegisterPayload {
-    user_id?: number;
-    bio?: string;
-    experience_years?: number;
-    expertise?: string;
-    language?: string;
-    [key: string]: any;
-}
 
-// Register as a pandit
-export async function registerPandit(payload: PanditRegisterPayload) {
-    const response = await apiClient.post('/pandits/register/', payload);
-    return response.data;
-}
+// Booking Detail API moved to booking.service.ts
 
-// Fetch pandits with optional filters: search, expertise, service, etc.
-export async function fetchPanditsWithFilters(params?: any): Promise<Pandit[]> {
-    const response = await apiClient.get('/pandits/', { params });
-    return response.data;
-}
+
+// Payments logic moved to payment.service.ts
+
 
 // ----------------------
-// Booking Detail API
-// ----------------------
-
-export async function fetchBookingDetail(id: number): Promise<Booking> {
-    const response = await apiClient.get(`/bookings/${id}/`);
-    return response.data;
-}
-
-// ----------------------
-// Payments APIs (Client-side flows)
-// ----------------------
-
-export interface CreatePaymentPayload {
-    booking: number;
-    payment_method: 'stripe' | 'khalti';
-    amount?: number;
-    currency?: string;
-    [key: string]: any;
-}
-
-export interface PaymentIntentResponse {
-    id: number;
-    status: string;
-    client_secret?: string; // Stripe
-    payment_url?: string;   // Khalti or other redirect URL
-    [key: string]: any;
-}
-
-export async function createPayment(payload: CreatePaymentPayload): Promise<PaymentIntentResponse> {
-    const response = await apiClient.post('/payments/create/', payload);
-    return response.data;
-}
-
-export async function checkPaymentStatus(id: number): Promise<Payment> {
-    const response = await apiClient.get(`/payments/check-status/${id}/`);
-    return response.data;
-}
-
-export async function verifyKhaltiPayment(payload: { token: string; amount: number }) {
-    const response = await apiClient.post('/payments/khalti/verify/', payload);
-    return response.data;
-}
-
-// ----------------------
-// Chat APIs
+// Shared Interfaces & Helpers
 // ----------------------
 
 export interface ChatRoom {
@@ -527,36 +386,6 @@ export interface ChatMessage {
     [key: string]: any;
 }
 
-// List chat rooms (optionally filter by booking)
-export async function fetchChatRooms(params?: { booking?: number }): Promise<ChatRoom[]> {
-    const response = await apiClient.get('/chat/rooms/', { params });
-    return response.data.results || response.data;
-}
-
-// Get messages for a specific room
-export async function fetchChatRoomMessages(roomId: number): Promise<ChatMessage[]> {
-    const response = await apiClient.get(`/chat/rooms/${roomId}/messages/`);
-    return response.data.results || response.data;
-}
-
-// Convenience helper: fetch or create room for a booking (as per web spec)
-export async function fetchBookingChatRoom(bookingId: number): Promise<ChatRoom> {
-    const response = await apiClient.get('/chat/rooms/', { params: { booking: bookingId } });
-    // Depending on backend it might return a single room or list
-    const data = response.data;
-    if (Array.isArray(data)) {
-        return data[0];
-    }
-    if (data.results && Array.isArray(data.results)) {
-        return data.results[0];
-    }
-    return data;
-}
-
-// ----------------------
-// Video APIs
-// ----------------------
-
 export interface VideoRoom {
     id: number;
     booking: number;
@@ -571,20 +400,6 @@ export interface VideoLinkResponse {
     [key: string]: any;
 }
 
-export async function fetchVideoRoom(bookingId: number): Promise<VideoRoom> {
-    const response = await apiClient.get(`/video/room/${bookingId}/`);
-    return response.data;
-}
-
-export async function generateVideoJoinLink(id: number): Promise<VideoLinkResponse> {
-    const response = await apiClient.get(`/video/generate-link/${id}/`);
-    return response.data;
-}
-
-// ----------------------
-// Panchang APIs
-// ----------------------
-
 export interface PanchangData {
     date: string;
     tithi?: string;
@@ -592,15 +407,6 @@ export interface PanchangData {
     sunset?: string;
     [key: string]: any;
 }
-
-export async function fetchPanchang(date: string): Promise<PanchangData> {
-    const response = await apiClient.get('/panchang/data/', { params: { date } });
-    return response.data;
-}
-
-// ----------------------
-// Samagri Checkout & AI Recommend
-// ----------------------
 
 export interface SamagriCheckoutPayload {
     full_name: string;
@@ -611,18 +417,8 @@ export interface SamagriCheckoutPayload {
     items: { id: number; qty: number }[];
 }
 
-export async function checkoutSamagri(payload: SamagriCheckoutPayload) {
-    const response = await apiClient.post('/samagri/checkout/', payload);
-    return response.data;
-}
-
-export async function aiRecommendSamagri(payload: { service_id?: number; puja_name?: string }) {
-    const response = await apiClient.post('/samagri/ai_recommend/', payload);
-    return response.data;
-}
-
 // Helper to standardize error messages
-function handleApiError(error: any) {
+export function handleApiError(error: any) {
     if (error.response) {
         const data = error.response.data;
         if (data.detail) return new Error(data.detail);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { ChatService } from '@/services/chat.service';
+import { fetchChatRooms } from '@/services/chat.service';
 import { ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
@@ -20,7 +20,7 @@ export default function ChatListScreen() {
 
   const loadChats = async () => {
     try {
-      const data = await ChatService.getChats();
+      const data = await fetchChatRooms();
       setChats(data);
     } catch (error) {
       console.error(error);
@@ -31,10 +31,10 @@ export default function ChatListScreen() {
 
   const renderItem = ({ item }: { item: ChatRoom }) => {
     const otherParticipant = item.participants.find(p => p.role === 'pandit');
-    
+
     return (
-      <TouchableOpacity 
-        style={[styles.chatItem, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]} 
+      <TouchableOpacity
+        style={[styles.chatItem, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
         onPress={() => router.push(`/(customer)/chat/${item.id}` as any)}
       >
         <View style={styles.avatarContainer}>
@@ -47,7 +47,7 @@ export default function ChatListScreen() {
           )}
           {item.unreadCount > 0 && <View style={[styles.badge, { borderColor: colors.card }]} />}
         </View>
-        
+
         <View style={styles.contentContainer}>
           <View style={styles.headerRow}>
             <Text style={[styles.name, { color: colors.text }]}>{otherParticipant?.name}</Text>
@@ -55,11 +55,11 @@ export default function ChatListScreen() {
               {item.lastMessage ? new Date(item.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
             </Text>
           </View>
-          
+
           <Text style={[styles.contextText, { color: colors.primary }]}>
             {item.context?.ritualType} • {item.context?.location}
           </Text>
-          
+
           <Text style={[styles.messagePreview, { color: isDark ? '#AAA' : '#666' }, item.unreadCount > 0 && { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
             {item.lastMessage?.text}
           </Text>
@@ -73,7 +73,7 @@ export default function ChatListScreen() {
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#f0f0f0' }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
       </View>
-      
+
       <FlatList
         data={chats}
         renderItem={renderItem}

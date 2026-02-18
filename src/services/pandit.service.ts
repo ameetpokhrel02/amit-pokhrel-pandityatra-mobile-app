@@ -1,67 +1,64 @@
-import { Pandit, PanditFilter } from '@/types/pandit';
-import { fetchPandits, fetchPanditsWithFilters, fetchPandit } from '@/services/api';
+import apiClient, { publicApi } from './api-client';
+import { Pandit, PanditReview, PanditService, Puja } from './api';
 
-export const PanditService = {
-  getPandits: async (filter?: PanditFilter): Promise<Pandit[]> => {
-    try {
-      // If there's a filter, use the filtered endpoint
-      if (filter && (filter.searchQuery || filter.location || filter.minRating || filter.availability)) {
-        const params: any = {};
-
-        if (filter.searchQuery) {
-          params.search = filter.searchQuery;
-        }
-        if (filter.location) {
-          params.location = filter.location;
-        }
-        if (filter.minRating) {
-          params.min_rating = filter.minRating;
-        }
-        if (filter.availability === 'today') {
-          params.is_available = true;
-        }
-
-        const data = await fetchPanditsWithFilters(params);
-        // Map backend response to frontend Pandit type
-        return data.map(mapBackendPanditToFrontend);
-      }
-
-      // Otherwise fetch all pandits
-      const data = await fetchPandits();
-      return data.map(mapBackendPanditToFrontend);
-    } catch (error) {
-      console.error('Error fetching pandits:', error);
-      throw error;
-    }
-  },
-
-  getPanditById: async (id: string): Promise<Pandit | undefined> => {
-    try {
-      const data = await fetchPandit(Number(id));
-      return mapBackendPanditToFrontend(data);
-    } catch (error) {
-      console.error('Error fetching pandit:', error);
-      return undefined;
-    }
-  },
-};
-
-// Helper function to map backend Pandit type to frontend Pandit type
-function mapBackendPanditToFrontend(backendPandit: any): Pandit {
-  return {
-    id: String(backendPandit.id),
-    name: backendPandit.user_details?.full_name || 'Unknown',
-    image: backendPandit.user_details?.profile_pic_url || undefined,
-    experience: backendPandit.experience_years || 0,
-    specialization: backendPandit.expertise ? [backendPandit.expertise] : [],
-    languages: backendPandit.language ? backendPandit.language.split(',').map((l: string) => l.trim()) : [],
-    rating: backendPandit.rating || 0,
-    reviewCount: backendPandit.review_count || 0,
-    location: 'Kathmandu', // Backend doesn't have location field, using default
-    price: backendPandit.services?.[0]?.custom_price ? Number(backendPandit.services[0].custom_price) : 0,
-    isAvailable: backendPandit.is_available || false,
-    isTopRated: backendPandit.rating >= 4.5,
-    isVerified: backendPandit.is_verified || false,
-  };
+export interface PanditRegisterPayload {
+  user_id?: number;
+  bio?: string;
+  experience_years?: number;
+  expertise?: string;
+  language?: string;
+  [key: string]: any;
 }
 
+export interface MyService {
+  id: number;
+  puja_details: Puja;
+  custom_price: string;
+  duration_minutes: number;
+  is_active: boolean;
+}
+
+export async function fetchPandits(): Promise<Pandit[]> {
+  const response = await publicApi.get('/pandits/');
+  return response.data;
+}
+
+export async function fetchPandit(id: number): Promise<Pandit> {
+  const response = await publicApi.get(`/pandits/${id}/`);
+  return response.data;
+}
+
+export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
+  const response = await publicApi.get(`/pandits/${panditId}/services/`);
+  return response.data;
+}
+
+export async function registerPandit(payload: PanditRegisterPayload) {
+  const response = await apiClient.post('/pandits/register/', payload);
+  return response.data;
+}
+
+export async function fetchPanditsWithFilters(params?: any): Promise<Pandit[]> {
+  const response = await apiClient.get('/pandits/', { params });
+  return response.data;
+}
+
+export async function fetchPanditMyServices(): Promise<MyService[]> {
+  const response = await apiClient.get('/pandits/my-services/');
+  return response.data;
+}
+
+export async function addPanditService(payload: { puja_id: number; custom_price: number; duration_minutes: number }) {
+  const response = await apiClient.post('/pandits/my-services/', payload);
+  return response.data;
+}
+
+export async function togglePanditAvailability(is_available: boolean) {
+  const response = await apiClient.post('/pandits/dashboard/toggle-availability/', { is_available });
+  return response.data;
+}
+
+export async function updatePanditProfile(id: number, data: any) {
+  const response = await apiClient.patch(`/pandits/${id}/`, data);
+  return response.data;
+}

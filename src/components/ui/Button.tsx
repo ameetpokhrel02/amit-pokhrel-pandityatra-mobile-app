@@ -1,25 +1,29 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps, View } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'text';
-  loading?: boolean;
+  isLoading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-export const Button = ({ 
-  title, 
-  variant = 'primary', 
-  loading = false, 
-  style, 
-  textStyle, 
+export const Button = ({
+  title,
+  variant = 'primary',
+  isLoading = false,
+  style,
+  textStyle,
   disabled,
-  ...props 
+  leftIcon,
+  rightIcon,
+  ...props
 }: ButtonProps) => {
-  
+
   const getBackgroundColor = () => {
     if (disabled) return '#E0E0E0';
     switch (variant) {
@@ -57,16 +61,20 @@ export const Button = ({
         getBorder(),
         style,
       ]}
-      disabled={disabled || loading}
+      disabled={disabled || isLoading}
       activeOpacity={0.8}
       {...props}
     >
-      {loading ? (
+      {isLoading ? (
         <ActivityIndicator color={getTextColor()} />
       ) : (
-        <Text style={[styles.text, { color: getTextColor() }, textStyle]}>
-          {title}
-        </Text>
+        <>
+          {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
+          <Text style={[styles.text, { color: getTextColor() }, textStyle]}>
+            {title}
+          </Text>
+          {rightIcon && <View style={{ marginLeft: 8 }}>{rightIcon}</View>}
+        </>
       )}
     </TouchableOpacity>
   );

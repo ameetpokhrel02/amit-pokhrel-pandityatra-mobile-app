@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity }
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
-import { Booking, fetchBookings } from '@/services/api';
+import { fetchMyBookings } from '@/services/booking.service';
+import { Booking } from '@/services/api';
+import { useChat } from '@/store/ChatContext';
 
 export default function BookingsScreen() {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const router = useRouter();
+  const { openChat } = useChat();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +22,7 @@ export default function BookingsScreen() {
 
     const load = async () => {
       try {
-        const data = await fetchBookings();
+        const data = await fetchMyBookings();
         if (isMounted) {
           setBookings(data);
         }
@@ -45,10 +48,10 @@ export default function BookingsScreen() {
       item.status === 'ACCEPTED'
         ? '#16A34A'
         : item.status === 'COMPLETED'
-        ? '#2563EB'
-        : item.status === 'CANCELLED'
-        ? '#DC2626'
-        : '#D97706';
+          ? '#2563EB'
+          : item.status === 'CANCELLED'
+            ? '#DC2626'
+            : '#D97706';
 
     return (
       <TouchableOpacity
@@ -81,6 +84,15 @@ export default function BookingsScreen() {
               <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
               <Text style={styles.paidText}>Paid</Text>
             </View>
+          )}
+          {item.status !== 'CANCELLED' && (
+            <TouchableOpacity
+              style={[styles.chatIconButton, { backgroundColor: colors.primary + '15' }]}
+              onPress={() => openChat(item.id, item.pandit_name || item.pandit_full_name)}
+            >
+              <Ionicons name="chatbubbles-outline" size={18} color={colors.primary} />
+              <Text style={[styles.chatIconText, { color: colors.primary }]}>Chat</Text>
+            </TouchableOpacity>
           )}
         </View>
       </TouchableOpacity>
@@ -225,4 +237,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#166534',
   },
+  chatIconButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginLeft: 'auto',
+  },
+  chatIconText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
 });
+

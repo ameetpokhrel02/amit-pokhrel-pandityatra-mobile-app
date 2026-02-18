@@ -5,6 +5,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  role: string;
   photoUri?: string | null;
 }
 
@@ -16,8 +17,8 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType>({
   user: null,
-  updateUser: async () => {},
-  logout: async () => {},
+  updateUser: async () => { },
+  logout: async () => { },
 });
 
 export const useUser = () => useContext(UserContext);

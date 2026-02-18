@@ -2,20 +2,31 @@ import React from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
-interface InputProps extends TextInputProps {
+export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-export const Input = ({ label, error, style, ...props }: InputProps) => {
+export const Input: React.FC<InputProps> = ({ label, error, style, leftIcon, rightIcon, ...props }) => {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[styles.input, error && styles.inputError, style]}
-        placeholderTextColor="#9CA3AF"
-        {...props}
-      />
+      <View style={[
+        styles.inputWrapper,
+        error ? styles.inputError : null,
+        leftIcon ? { paddingLeft: 44 } : null,
+        rightIcon ? { paddingRight: 44 } : null
+      ]}>
+        {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
+        <TextInput
+          style={[styles.input, style]}
+          placeholderTextColor="#9CA3AF"
+          {...props}
+        />
+        {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -27,17 +38,39 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#374151',
-    marginBottom: 6,
+    marginBottom: 8,
   },
-  input: {
+  inputWrapper: {
     backgroundColor: '#F3F4F6',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 54,
+  },
+  leftIconContainer: {
+    position: 'absolute',
+    left: 12,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 24,
+  },
+  rightIconContainer: {
+    position: 'absolute',
+    right: 12,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 24,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 16,
     fontSize: 16,
     color: '#1F2937',
   },

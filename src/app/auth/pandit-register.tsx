@@ -27,7 +27,7 @@ export default function PanditRegisterScreen() {
     bio: '',
     language: '',
   });
-  
+
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
 
   const toggleExpertise = (item: string) => {
@@ -54,20 +54,20 @@ export default function PanditRegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Header Image Placeholder */}
         <View style={styles.imageContainer}>
-           <Image
-             source={require('@/assets/images/pandit-logo.png')}
-             style={styles.logo}
-             contentFit="contain"
-           />
+          <Image
+            source={require('@/assets/images/pandit-logo.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
         </View>
 
         <Text style={styles.headerTitle}>Register as Pandit</Text>
@@ -79,14 +79,16 @@ export default function PanditRegisterScreen() {
             placeholder="Your full name"
             value={form.fullName}
             onChangeText={(t) => setForm({ ...form, fullName: t })}
+            leftIcon={<Ionicons name="person-outline" size={20} color="#6B7280" />}
           />
-          
+
           <Input
             label="Phone Number *"
             placeholder="9841234567"
             keyboardType="phone-pad"
             value={form.phone}
             onChangeText={(t) => setForm({ ...form, phone: t })}
+            leftIcon={<Ionicons name="call-outline" size={20} color="#6B7280" />}
           />
 
           <Input
@@ -95,6 +97,7 @@ export default function PanditRegisterScreen() {
             keyboardType="email-address"
             value={form.email}
             onChangeText={(t) => setForm({ ...form, email: t })}
+            leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
           />
 
           {/* Areas of Expertise */}
@@ -102,9 +105,9 @@ export default function PanditRegisterScreen() {
             <Text style={styles.sectionLabel}>Areas of Expertise * (Select all that apply)</Text>
             <View style={styles.expertiseGrid}>
               {EXPERTISE_OPTIONS.map((item) => (
-                <TouchableOpacity 
-                  key={item} 
-                  style={styles.checkboxRow} 
+                <TouchableOpacity
+                  key={item}
+                  style={styles.checkboxRow}
                   onPress={() => toggleExpertise(item)}
                 >
                   <View style={[styles.checkbox, selectedExpertise.includes(item) && styles.checkboxChecked]}>
@@ -121,10 +124,10 @@ export default function PanditRegisterScreen() {
             <Text style={styles.label}>Primary Language *</Text>
             <View style={styles.languageContainer}>
               {['Nepali', 'English', 'Hindi', 'Maithili'].map((lang) => (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={lang}
                   style={[
-                    styles.languageOption, 
+                    styles.languageOption,
                     form.language === lang && styles.languageOptionSelected
                   ]}
                   onPress={() => setForm({ ...form, language: lang })}
@@ -145,6 +148,7 @@ export default function PanditRegisterScreen() {
             keyboardType="numeric"
             value={form.experience}
             onChangeText={(t) => setForm({ ...form, experience: t })}
+            leftIcon={<Ionicons name="calendar-outline" size={20} color="#6B7280" />}
           />
 
           {/* Brief Bio */}
@@ -170,9 +174,9 @@ export default function PanditRegisterScreen() {
             </TouchableOpacity>
           </View>
 
-          <Button 
-            title="Submit for Verification" 
-            onPress={handleSubmit} 
+          <Button
+            title="Submit for Verification"
+            onPress={handleSubmit}
             style={styles.submitButton}
           />
 

@@ -63,7 +63,7 @@ export default function PanditProfileScreen() {
         </View>
 
         {/* Content Section */}
-        <MotiView 
+        <MotiView
           from={{ translateY: 50, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 20 }}
@@ -78,7 +78,7 @@ export default function PanditProfileScreen() {
             <Text style={[styles.location, { color: isDark ? '#AAA' : '#666' }]}>
               <Ionicons name="location" size={14} color={isDark ? '#AAA' : '#666'} /> {pandit.location}
             </Text>
-            
+
             <View style={[styles.statsRow, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
               <View style={styles.statItem}>
                 <Text style={[styles.statValue, { color: colors.text }]}>{pandit.rating} <Ionicons name="star" size={12} color="#FFD700" /></Text>
@@ -103,11 +103,34 @@ export default function PanditProfileScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
             <Text style={[styles.description, { color: isDark ? '#CCC' : '#555' }]}>
-              {pandit.name} is a highly experienced Vedic scholar specializing in {pandit.specialization.join(', ')}. 
-              With over {pandit.experience} years of dedicated service, he has performed numerous ceremonies across {pandit.location}.
-              He is fluent in {pandit.languages.join(', ')} and ensures all rituals are performed with utmost devotion and accuracy.
+              {pandit.bio || `${pandit.name} is a highly experienced Vedic scholar specializing in ${pandit.specialization.join(', ')}.`}
             </Text>
           </View>
+
+          {/* Services Section */}
+          {pandit.services && pandit.services.length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Offered Services</Text>
+              <View style={styles.verticalList}>
+                {pandit.services.map((service) => (
+                  <View key={service.id} style={[styles.serviceMiniCard, { backgroundColor: colors.card }]}>
+                    <View>
+                      <Text style={[styles.serviceMiniName, { color: colors.text }]}>{service.name}</Text>
+                      <Text style={[styles.serviceMiniDetails, { color: isDark ? '#AAA' : '#666' }]}>
+                        {service.duration} Mins • NPR {service.price}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.smallBookButton, { backgroundColor: colors.primary }]}
+                      onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}&serviceId=${service.id}`)}
+                    >
+                      <Text style={styles.smallBookButtonText}>Book</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* Specializations */}
           <View style={styles.section}>
@@ -163,7 +186,7 @@ export default function PanditProfileScreen() {
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <MotiView 
+      <MotiView
         from={{ translateY: 100 }}
         animate={{ translateY: 0 }}
         transition={{ type: 'timing', duration: 500, delay: 300 }}
@@ -173,7 +196,7 @@ export default function PanditProfileScreen() {
           <Text style={[styles.priceLabel, { color: isDark ? '#AAA' : '#999' }]}>Dakshina starts from</Text>
           <Text style={[styles.priceValue, { color: colors.primary }]}>NPR {pandit.price}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.bookButton, { backgroundColor: colors.primary }, !pandit.isAvailable && styles.bookButtonDisabled]}
           onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}`)}
           disabled={!pandit.isAvailable}
@@ -428,6 +451,39 @@ const styles = StyleSheet.create({
   bookButtonText: {
     color: '#FFF',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  verticalList: {
+    gap: 12,
+  },
+  serviceMiniCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  serviceMiniName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  serviceMiniDetails: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  smallBookButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  smallBookButtonText: {
+    color: '#FFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

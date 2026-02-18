@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ export default function CustomerRegisterScreen() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = () => {
     // Phone validation: Nepal format (starts with 98, 10 digits)
@@ -61,8 +62,14 @@ export default function CustomerRegisterScreen() {
 
       Alert.alert(
         'Success',
-        'Account created successfully! Please login with OTP or password.',
-        [{ text: 'OK', onPress: () => router.push('/auth/login' as any) }],
+        'Account created successfully! Please verify your phone number.',
+        [{
+          text: 'OK',
+          onPress: () => router.push({
+            pathname: '/auth/otp-verify',
+            params: { email: form.email, identifier: form.phone, mode: 'register' }
+          } as any)
+        }],
       );
     } catch (e: any) {
       console.error(e);
@@ -73,7 +80,7 @@ export default function CustomerRegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -108,14 +115,16 @@ export default function CustomerRegisterScreen() {
             placeholder="Enter your name"
             value={form.fullName}
             onChangeText={(t) => setForm({ ...form, fullName: t })}
+            leftIcon={<Ionicons name="person-outline" size={20} color="#6B7280" />}
           />
-          
+
           <Input
             label="Phone Number"
             placeholder="98XXXXXXXX"
             keyboardType="phone-pad"
             value={form.phone}
             onChangeText={(t) => setForm({ ...form, phone: t })}
+            leftIcon={<Ionicons name="call-outline" size={20} color="#6B7280" />}
           />
 
           <Input
@@ -124,17 +133,28 @@ export default function CustomerRegisterScreen() {
             keyboardType="email-address"
             value={form.email}
             onChangeText={(t) => setForm({ ...form, email: t })}
+            leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
           />
 
           <Input
             label="Password"
             placeholder="Enter password"
-            secureTextEntry
+            secureTextEntry={!showPassword}
             value={form.password}
             onChangeText={(t) => setForm({ ...form, password: t })}
+            leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
+            rightIcon={
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#6B7280"
+                />
+              </TouchableOpacity>
+            }
           />
 
-          <Button 
+          <Button
             title={loading ? 'Creating account...' : 'Continue'}
             onPress={handleSubmit}
             disabled={loading}
