@@ -82,10 +82,7 @@ function LayoutContent() {
         <Tabs.Screen
           name="bookings"
           options={{
-            title: 'Bookings',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
-            ),
+            href: null
           }}
         />
         <Tabs.Screen
@@ -107,69 +104,126 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
+          name="services/index"
+          options={{
+            title: 'Pujas',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="cart"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
           name="shop/[id]"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
           name="kundali"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
           name="booking"
           options={{
-            href: null,
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="pandit"
+          options={{
+            href: null
           }}
         />
         <Tabs.Screen
           name="pandit/[id]"
           options={{
-            href: null,
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            href: null
           }}
         />
         <Tabs.Screen
           name="chat/index"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
           name="chat/[id]"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
-          name="services/index"
+          name="payments"
           options={{
-            href: null,
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="payments/checkout"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="video"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="video/[bookingId]"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="services"
+          options={{
+            href: null
           }}
         />
         <Tabs.Screen
           name="services/[id]"
           options={{
-            href: null,
+            href: null
           }}
         />
         <Tabs.Screen
-          name="checkout"
+          name="services/list"
           options={{
-            href: null,
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="shop/ai-recommend"
+          options={{
+            href: null
           }}
         />
         <Tabs.Screen
           name="edit-profile"
           options={{
-            href: null,
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="checkout"
+          options={{
+            href: null
           }}
         />
       </Tabs>

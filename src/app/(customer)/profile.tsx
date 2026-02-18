@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
+import { fetchProfile } from '@/services/auth.service';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, setMode, colors } = useTheme();
@@ -22,8 +24,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const { getMe } = require('@/services/auth.service');
-        const data = await getMe();
+        const data = await fetchProfile();
         updateUser({
           name: data.full_name,
           email: data.email,

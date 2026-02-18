@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { MotiView, MotiText } from 'moti';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMe } from '@/services/auth.service';
+import { fetchProfile } from '@/services/auth.service';
 
 export default function SplashScreen() {
     const router = useRouter();
@@ -13,14 +13,19 @@ export default function SplashScreen() {
         const checkNavigation = async () => {
             console.log('Splash: Starting navigation check...');
             try {
-                // Determine if we should show onboarding
-                const onboardingSeen = await AsyncStorage.getItem('onboarding_seen');
-                const token = await AsyncStorage.getItem('access_token');
+                // Minimum delay of 3 seconds for branding as requested
+                const timer = new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Parallelly check storage
+                const [onboardingSeen, token] = await Promise.all([
+                    AsyncStorage.getItem('onboarding_seen'),
+                    AsyncStorage.getItem('access_token')
+                ]);
 
                 console.log('Splash: Status - seen:', onboardingSeen, 'token:', !!token);
 
-                // Minimum delay of 3 seconds for branding
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Wait for the minimum 3s branding time
+                await timer;
 
                 if (onboardingSeen !== 'true') {
                     console.log('Splash: Navigating to Onboarding');
@@ -31,9 +36,16 @@ export default function SplashScreen() {
                 if (token) {
                     try {
                         console.log('Splash: Verifying token...');
-                        await getMe();
-                        console.log('Splash: Token valid, going Home');
-                        router.replace('/(customer)' as any);
+                        const user = await fetchProfile();
+                        console.log('Splash: Token valid, role:', user.role);
+
+                        if (user.role === 'pandit') {
+                            router.replace('/(pandit)' as any);
+                        } else if (user.role === 'admin') {
+                            router.replace('/admin/dashboard' as any);
+                        } else {
+                            router.replace('/(customer)' as any);
+                        }
                     } catch (e) {
                         console.log('Splash: Token invalid, clearing and going Welcome');
                         await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'role']);

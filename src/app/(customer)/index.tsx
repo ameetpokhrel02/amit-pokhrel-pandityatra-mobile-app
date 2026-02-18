@@ -83,9 +83,9 @@ export default function CustomerHomeScreen() {
 
         {/* Featured Services */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Services</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Sacred Pujas</Text>
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color="#D97706" />
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
               {services.map((service, index) => (
@@ -96,11 +96,11 @@ export default function CustomerHomeScreen() {
                   transition={{ delay: index * 100, type: 'timing', duration: 400 }}
                 >
                   <TouchableOpacity
-                    style={[styles.serviceCard, { backgroundColor: colors.card }]}
+                    style={[styles.serviceCard, { backgroundColor: isDark ? '#2D2D2D' : '#FFF', borderColor: isDark ? '#444' : '#FDE68A' }]}
                     onPress={() => router.push(`/(customer)/services/${service.id}`)}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#2D2D2D' : '#FFF7F0' }]}>
+                    <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#3D3D3D' : '#FEF3C7' }]}>
                       {service.image ? (
                         <Image
                           source={{ uri: service.image }}
@@ -108,9 +108,8 @@ export default function CustomerHomeScreen() {
                           contentFit="cover"
                         />
                       ) : (
-                        <View style={[styles.fallbackIcon, { backgroundColor: colors.primary + '10' }]}>
-                          <Ionicons name="flame-outline" size={32} color={colors.primary} />
-                          <Text style={{ fontSize: 10, color: colors.primary, marginTop: 4, fontWeight: 'bold' }}>Puja</Text>
+                        <View style={[styles.fallbackIcon]}>
+                          <Ionicons name="sparkles-outline" size={32} color="#D97706" />
                         </View>
                       )}
                     </View>
@@ -118,8 +117,8 @@ export default function CustomerHomeScreen() {
                       <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={2}>
                         {service.name}
                       </Text>
-                      <View style={styles.priceBadge}>
-                        <Text style={[styles.priceText, { color: colors.primary }]}>
+                      <View style={[styles.priceBadge, { backgroundColor: '#FEF3C7' }]}>
+                        <Text style={[styles.priceText, { color: '#D97706' }]}>
                           NPR {service.base_price}
                         </Text>
                       </View>
@@ -133,12 +132,12 @@ export default function CustomerHomeScreen() {
 
         {/* Upcoming Booking Card */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Booking</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Next Ritual</Text>
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: 300 }}
-            style={[styles.bookingCard, { backgroundColor: colors.card, borderLeftColor: colors.primary }]}
+            style={[styles.bookingCard, { backgroundColor: colors.card, borderLeftColor: '#D97706' }]}
           >
             <View style={styles.bookingHeader}>
               <View>
@@ -182,14 +181,6 @@ export default function CustomerHomeScreen() {
               icon="basket"
               color="#2196F3"
               onPress={() => router.push('/(customer)/shop')}
-              colors={colors}
-              isDark={isDark}
-            />
-            <QuickActionData
-              title="Generate Kundali"
-              icon="planet"
-              color="#9C27B0"
-              onPress={() => router.push('/(customer)/kundali')}
               colors={colors}
               isDark={isDark}
             />

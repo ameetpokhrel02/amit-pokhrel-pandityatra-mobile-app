@@ -2,10 +2,27 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Daily, { DailyMediaView } from '@daily-co/react-native-daily-js';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchVideoRoom, generateVideoJoinLink } from '@/services/video.service';
+
+// Safely import native module
+const Daily = (() => {
+    try {
+        return require('@daily-co/react-native-daily-js').default;
+    } catch (e) {
+        console.warn('Daily SDK native module not found');
+        return null;
+    }
+})();
+
+const DailyMediaView = (() => {
+    try {
+        return require('@daily-co/react-native-daily-js').DailyMediaView;
+    } catch (e) {
+        return null;
+    }
+})();
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +59,14 @@ export default function VideoCallScreen() {
             setRoomUrl(roomData.room_url);
 
             // 2. Create Call Object
+            if (!Daily || !Daily.createCallObject) {
+                Alert.alert(
+                    'Native Module Missing',
+                    'Daily.co Video SDK requires a development build. It is not available in Expo Go. Please use a development build to test video calls.',
+                    [{ text: 'Back', onPress: () => router.back() }]
+                );
+                return;
+            }
             const call = Daily.createCallObject();
             callObject.current = call;
 
@@ -51,7 +76,7 @@ export default function VideoCallScreen() {
             call.on('participant-left', handleParticipantUpdate);
             call.on('joined-meeting', () => setCallStatus('joined'));
             call.on('left-meeting', () => setCallStatus('ended'));
-            call.on('error', (error) => {
+            call.on('error', (error: any) => {
                 console.error('Daily error:', error);
                 Alert.alert('Error', 'Failed to join video call.');
             });
@@ -108,34 +133,49 @@ export default function VideoCallScreen() {
         <View style={styles.container}>
             {/* Main Video View (Remote Participant or Local for preview) */}
             <View style={styles.videoGrid}>
-                {participants.length === 0 ? (
+                {(!Daily || participants.length === 0) ? (
                     <View style={styles.placeholderView}>
-                        <Text style={styles.placeholderText}>Connecting...</Text>
+                        <Text style={styles.placeholderText}>
+                            {!Daily ? 'Native Video Support Missing' : 'Connecting...'}
+                        </Text>
                     </View>
                 ) : remoteParticipants.length > 0 ? (
                     remoteParticipants.map(participant => (
-                        <DailyMediaView
-                            key={participant.session_id}
-                            style={styles.remoteVideo}
-                            videoTrack={participant.videoTrack}
-                            audioTrack={participant.audioTrack}
-                            objectFit="cover"
-                        />
+                        DailyMediaView ? (
+                            <DailyMediaView
+                                key={participant.session_id}
+                                style={styles.remoteVideo}
+                                videoTrack={participant.videoTrack}
+                                audioTrack={participant.audioTrack}
+                                objectFit="cover"
+                            />
+                        ) : (
+                            <View key={participant.session_id} style={styles.placeholderView}>
+                                <Text style={styles.placeholderText}>Video Unavailable</Text>
+                            </View>
+                        )
                     ))
                 ) : (
-                    <DailyMediaView
-                        key={localParticipant?.session_id}
-                        style={styles.remoteVideo}
-                        videoTrack={localParticipant?.videoTrack}
-                        audioTrack={localParticipant?.audioTrack}
-                        objectFit="cover"
-                        mirror
-                    />
+                    DailyMediaView ? (
+                        <DailyMediaView
+                            key={localParticipant?.session_id}
+                            style={styles.remoteVideo}
+                            videoTrack={localParticipant?.videoTrack}
+                            audioTrack={localParticipant?.audioTrack}
+                            objectFit="cover"
+                            mirror
+                        />
+                    ) : (
+                        <View key={localParticipant?.session_id} style={styles.placeholderView}>
+                            <Text style={styles.placeholderText}>Preview Unavailable</Text>
+                        </View>
+                    )
                 )}
+
             </View>
 
             {/* Inset Local Video View */}
-            {remoteParticipants.length > 0 && localParticipant && (
+            {remoteParticipants.length > 0 && localParticipant && DailyMediaView && (
                 <View style={styles.localPreview}>
                     <DailyMediaView
                         style={styles.previewView}
@@ -146,6 +186,7 @@ export default function VideoCallScreen() {
                     />
                 </View>
             )}
+
 
             {/* Header / Info */}
             <View style={styles.overlayHeader}>

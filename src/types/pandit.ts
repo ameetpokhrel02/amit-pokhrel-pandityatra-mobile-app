@@ -26,6 +26,7 @@ export interface PanditServiceItem {
 export interface PanditFilter {
   searchQuery: string;
   specialization?: string;
+  expertise?: string;
   language?: string;
   location?: string;
   minPrice?: number;

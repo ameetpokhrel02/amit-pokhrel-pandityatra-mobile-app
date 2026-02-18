@@ -7,9 +7,18 @@ import { useTheme } from '@/store/ThemeContext';
 import { Booking } from '@/services/api';
 import { fetchBookingDetail } from '@/services/booking.service';
 import { createPayment, verifyKhaltiPayment } from '@/services/payment.service';
-import KhaltiPaymentSdk from '@bishaldahal/react-native-khalti-checkout';
 import { Button } from '@/components/ui/Button';
 import { MotiView } from 'moti';
+
+// Safely import native module
+const KhaltiPaymentSdk = (() => {
+    try {
+        return require('@bishaldahal/react-native-khalti-checkout').default;
+    } catch (e) {
+        console.warn('Khalti SDK native module not found');
+        return null;
+    }
+})();
 
 export default function CheckoutScreen() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -56,25 +65,35 @@ export default function CheckoutScreen() {
                 });
 
                 // 2. Open Khalti SDK
+                if (!KhaltiPaymentSdk) {
+                    Alert.alert(
+                        'Native Module Missing',
+                        'Khalti Payment SDK requires a development build. It is not available in Expo Go. Please use a development build to test payments.',
+                        [{ text: 'OK' }]
+                    );
+                    setPaying(false);
+                    return;
+                }
+
                 KhaltiPaymentSdk.startPayment({
                     publicKey: "test_public_key_77c4a6311a2f4705ba362035985b88f3",
                     pidx: (paymentIntent.pidx || paymentIntent.payment_url?.split('pidx=')[1]) || "", // Fallback to empty string for TS, though check below handles it
                     environment: "TEST",
-                }).then((payload) => {
+                }).then((payload: any) => {
                     // Handle success from promise if needed, but the SDK also has event listeners
                     // Based on .d.ts, startPayment returns Promise<PaymentSuccessPayload>
                     handleKhaltiSuccess(payload);
-                }).catch((error) => {
+                }).catch((error: any) => {
                     console.error('Khalti Error:', error);
                     Alert.alert('Payment Failed', 'Something went wrong with Khalti.');
                 });
 
                 // Alternatively, use event listeners if the promise doesn't fire as expected in some versions
-                KhaltiPaymentSdk.onPaymentSuccess((payload) => {
+                KhaltiPaymentSdk.onPaymentSuccess((payload: any) => {
                     handleKhaltiSuccess(payload);
                 });
 
-                KhaltiPaymentSdk.onPaymentError((payload) => {
+                KhaltiPaymentSdk.onPaymentError((payload: any) => {
                     console.error('Khalti Error:', payload);
                     Alert.alert('Payment Failed', payload.error || 'Something went wrong.');
                 });

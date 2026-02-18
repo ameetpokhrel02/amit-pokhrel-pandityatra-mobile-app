@@ -29,8 +29,8 @@ export default function RootLayout() {
         {/* Pandit app (tabs) */}
         <Stack.Screen name="(pandit)" />
 
-        {/* Admin dashboard (simple stack as per spec) */}
-        <Stack.Screen name="admin" />
+        {/* Admin dashboard */}
+        <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
       </Stack>
     </UserProvider>
   );

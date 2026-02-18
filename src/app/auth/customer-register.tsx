@@ -66,8 +66,8 @@ export default function CustomerRegisterScreen() {
         [{
           text: 'OK',
           onPress: () => router.push({
-            pathname: '/auth/otp-verify',
-            params: { email: form.email, identifier: form.phone, mode: 'register' }
+            pathname: '/auth/otp',
+            params: { email: form.email, phone: form.phone, mode: 'register' }
           } as any)
         }],
       );

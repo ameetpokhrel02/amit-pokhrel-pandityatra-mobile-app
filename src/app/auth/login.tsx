@@ -14,11 +14,12 @@ import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { requestOtp, googleSignIn, getMe } from "@/services/auth.service";
+import { requestLoginOtp, googleLogin, fetchProfile } from "@/services/auth.service";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -65,8 +66,17 @@ export default function LoginScreen() {
         }
 
         try {
-          await googleSignIn(idToken);
-          const user = await getMe();
+          await googleLogin(idToken);
+          const user = await fetchProfile();
+
+          // Update local state
+          await AsyncStorage.setItem('user', JSON.stringify({
+            name: user.full_name,
+            email: user.email,
+            phone: user.phone_number,
+            role: user.role,
+            photoUri: user.profile_pic_url
+          }));
 
           if (user.role === "pandit") {
             router.replace("/(pandit)" as any);
@@ -99,10 +109,10 @@ export default function LoginScreen() {
           return;
         }
 
-        await requestOtp(
-          method === 'email' ? email : '',
-          method === 'phone' ? phone : ''
-        );
+        await requestLoginOtp({
+          email: method === 'email' ? email : undefined,
+          phone_number: method === 'phone' ? phone : undefined
+        });
 
         router.push({
           pathname: "/auth/otp",
@@ -117,8 +127,19 @@ export default function LoginScreen() {
           return;
         }
 
-        await require('@/services/auth.service').loginWithPassword(identifier, password);
-        const user = await getMe();
+        const loginPayload = method === 'email' ? { email: identifier, password } : { phone_number: identifier, password };
+        const { passwordLogin } = require('@/services/auth.service');
+        await passwordLogin(loginPayload);
+        const user = await fetchProfile();
+
+        // Update local state
+        await AsyncStorage.setItem('user', JSON.stringify({
+          name: user.full_name,
+          email: user.email,
+          phone: user.phone_number,
+          role: user.role,
+          photoUri: user.profile_pic_url
+        }));
 
         if (user.role === "pandit") {
           router.replace("/(pandit)" as any);
