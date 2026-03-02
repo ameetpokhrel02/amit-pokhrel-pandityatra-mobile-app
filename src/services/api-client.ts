@@ -41,6 +41,24 @@ const apiClient = axios.create({
     timeout: 15000, // 15 seconds timeout
 });
 
+/**
+ * Centralized helper to save authentication tokens
+ * @param access The access token string
+ * @param refresh The refresh token string
+ */
+export const saveTokens = async (access: string, refresh: string) => {
+    try {
+        await SecureStore.setItemAsync('access_token', access);
+        await SecureStore.setItemAsync('refresh_token', refresh);
+
+        // Update default header for the current instance session
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+    } catch (error) {
+        console.error('Error saving tokens:', error);
+        throw new Error('Failed to save session securely');
+    }
+};
+
 // ... imports and interceptors ...
 
 // Public API instance (no auth headers, no refresh logic)

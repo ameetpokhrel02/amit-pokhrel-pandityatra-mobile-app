@@ -1,28 +1,33 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TextInputProps, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/store/ThemeContext';
 
 export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, style, leftIcon, rightIcon, ...props }) => {
+export const Input: React.FC<InputProps> = ({ label, error, style, containerStyle, leftIcon, rightIcon, ...props }) => {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+    <View style={[styles.container, containerStyle]}>
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <View style={[
         styles.inputWrapper,
+        { backgroundColor: colors.inputBackground, borderColor: colors.border },
         error ? styles.inputError : null,
         leftIcon ? { paddingLeft: 44 } : null,
         rightIcon ? { paddingRight: 44 } : null
       ]}>
         {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
         <TextInput
-          style={[styles.input, style]}
-          placeholderTextColor="#9CA3AF"
+          style={[styles.input, { color: colors.text }, style]}
+          placeholderTextColor={colors.placeholder}
           {...props}
         />
         {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
@@ -49,7 +54,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 54,
+    minHeight: 54, // Changed from height to minHeight
   },
   leftIconContainer: {
     position: 'absolute',
@@ -69,10 +74,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: '100%',
     paddingHorizontal: 16,
+    paddingVertical: 12, // Added for multiline consistency
     fontSize: 16,
     color: '#1F2937',
+    textAlignVertical: 'top', // Added for Android multiline
   },
   inputError: {
     borderColor: '#EF4444',

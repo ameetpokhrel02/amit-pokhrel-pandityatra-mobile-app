@@ -1,4 +1,4 @@
-import apiClient, { publicApi } from './api-client';
+import apiClient, { publicApi, saveTokens } from './api-client';
 
 export interface RegisterPayload {
   full_name: string;
@@ -48,6 +48,10 @@ export async function requestLoginOtp(payload: { phone_number?: string; email?: 
 export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
   try {
     const response = await publicApi.post('/users/login-otp/', payload);
+    const { access, refresh } = response.data;
+    if (access && refresh) {
+      await saveTokens(access, refresh);
+    }
     return response.data;
   } catch (error: any) {
     throw handleApiError(error);
@@ -57,6 +61,10 @@ export async function verifyOtpAndGetToken(payload: { phone_number?: string; ema
 export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
   try {
     const response = await publicApi.post('/users/login-password/', payload);
+    const { access, refresh } = response.data;
+    if (access && refresh) {
+      await saveTokens(access, refresh);
+    }
     return response.data;
   } catch (error: any) {
     throw handleApiError(error);
@@ -66,6 +74,13 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
 export async function googleLogin(idToken: string) {
   try {
     const response = await publicApi.post('/users/google-login/', { id_token: idToken });
+    const { access, refresh } = response.data;
+    // Backend returns 'access' or 'token' sometimes based on logs/code, 
+    // but standard JWT is access/refresh
+    const accessToken = access || response.data.token;
+    if (accessToken && refresh) {
+      await saveTokens(accessToken, refresh);
+    }
     return response.data;
   } catch (error: any) {
     throw handleApiError(error);

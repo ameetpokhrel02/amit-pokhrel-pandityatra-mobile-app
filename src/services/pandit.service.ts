@@ -62,3 +62,28 @@ export async function updatePanditProfile(id: number, data: any) {
   const response = await apiClient.patch(`/pandits/${id}/`, data);
   return response.data;
 }
+
+export async function fetchPanditDashboardStats() {
+  const response = await apiClient.get('/pandits/dashboard/stats/');
+  return response.data;
+}
+
+export async function fetchPanditCalendar() {
+  const response = await apiClient.get('/pandits/me/calendar/');
+  return response.data;
+}
+
+export async function addAvailabilityBlock(payload: { start_time: string; end_time: string; title: string }) {
+  const response = await apiClient.post('/pandits/me/calendar/', payload);
+  return response.data;
+}
+
+export async function deleteAvailabilityBlock(blockId: number) {
+  const response = await apiClient.delete(`/pandits/me/calendar/blocks/${blockId}/`);
+  return response.data;
+}
+
+export async function fetchPujaCatalog(): Promise<Puja[]> {
+  const response = await publicApi.get('/pandits/services/catalog/');
+  return response.data;
+}

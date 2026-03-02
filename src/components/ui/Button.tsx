@@ -1,13 +1,14 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps, View, StyleProp } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/store/ThemeContext';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'text';
   isLoading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
@@ -23,15 +24,16 @@ export const Button = ({
   rightIcon,
   ...props
 }: ButtonProps) => {
+  const { colors } = useTheme();
 
   const getBackgroundColor = () => {
     if (disabled) return '#E0E0E0';
     switch (variant) {
-      case 'primary': return Colors.light.primary;
-      case 'secondary': return Colors.light.deepRed;
+      case 'primary': return colors.primary;
+      case 'secondary': return colors.deepRed;
       case 'outline': return 'transparent';
       case 'text': return 'transparent';
-      default: return Colors.light.primary;
+      default: return colors.primary;
     }
   };
 
@@ -40,15 +42,15 @@ export const Button = ({
     switch (variant) {
       case 'primary': return '#FFFFFF';
       case 'secondary': return '#FFFFFF';
-      case 'outline': return Colors.light.primary;
-      case 'text': return Colors.light.primary;
+      case 'outline': return colors.primary;
+      case 'text': return colors.primary;
       default: return '#FFFFFF';
     }
   };
 
   const getBorder = () => {
     if (variant === 'outline' && !disabled) {
-      return { borderWidth: 1, borderColor: Colors.light.primary };
+      return { borderWidth: 1, borderColor: colors.primary };
     }
     return {};
   };

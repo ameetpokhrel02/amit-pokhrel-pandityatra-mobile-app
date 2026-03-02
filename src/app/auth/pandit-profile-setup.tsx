@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { registerPandit } from '@/services/pandit.service';
+import { useTheme } from '@/store/ThemeContext';
 
 const EXPERTISE_OPTIONS = [
     'Vedic Rituals', 'Astrology & Kundali',
@@ -19,6 +20,8 @@ const EXPERTISE_OPTIONS = [
 
 export default function PanditProfileSetupScreen() {
     const router = useRouter();
+    const { colors, theme } = useTheme();
+    const isDark = theme === 'dark';
     const [form, setForm] = useState({
         experience: '',
         bio: '',
@@ -63,16 +66,16 @@ export default function PanditProfileSetupScreen() {
 
     if (isSuccess) {
         return (
-            <View style={styles.successContainer}>
-                <Ionicons name="checkmark-circle" size={100} color="#D97706" />
-                <Text style={styles.successTitle}>Profile Submitted!</Text>
-                <Text style={styles.successSubtitle}>
+            <View style={[styles.successContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="checkmark-circle" size={100} color={colors.primary} />
+                <Text style={[styles.successTitle, { color: colors.text }]}>Profile Submitted!</Text>
+                <Text style={[styles.successSubtitle, { color: colors.icon }]}>
                     Your profile is now under review. Our team will verify your details and approve your account shortly.
                 </Text>
                 <Button
                     title="Back to Login"
                     onPress={() => router.replace('/auth/login')}
-                    style={styles.successButton}
+                    style={[styles.successButton, { backgroundColor: colors.primary }] as any}
                 />
             </View>
         );
@@ -81,11 +84,11 @@ export default function PanditProfileSetupScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
         >
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <Text style={styles.headerTitle}>Professional Details</Text>
-                <Text style={styles.headerSubtitle}>Tell us more about your sacred expertise</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Professional Details</Text>
+                <Text style={[styles.headerSubtitle, { color: colors.icon }]}>Tell us more about your sacred expertise</Text>
 
                 <View style={styles.form}>
                     {/* Years of Experience */}
@@ -95,24 +98,26 @@ export default function PanditProfileSetupScreen() {
                         keyboardType="numeric"
                         value={form.experience}
                         onChangeText={(t) => setForm({ ...form, experience: t })}
-                        leftIcon={<Ionicons name="calendar-outline" size={20} color="#6B7280" />}
+                        leftIcon={<Ionicons name="calendar-outline" size={20} color={colors.icon} />}
                     />
 
                     {/* Primary Language */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Primary Language *</Text>
+                        <Text style={[styles.label, { color: colors.text }]}>Primary Language *</Text>
                         <View style={styles.languageContainer}>
                             {['Nepali', 'English', 'Hindi', 'Sanskrit', 'Maithili'].map((lang) => (
                                 <TouchableOpacity
                                     key={lang}
                                     style={[
                                         styles.languageOption,
-                                        form.language === lang && styles.languageOptionSelected
+                                        { backgroundColor: colors.card, borderColor: colors.border },
+                                        form.language === lang && { backgroundColor: colors.primary, borderColor: colors.primary }
                                     ]}
                                     onPress={() => setForm({ ...form, language: lang })}
                                 >
                                     <Text style={[
                                         styles.languageText,
+                                        { color: colors.text },
                                         form.language === lang && styles.languageTextSelected
                                     ]}>{lang}</Text>
                                 </TouchableOpacity>
@@ -122,42 +127,40 @@ export default function PanditProfileSetupScreen() {
 
                     {/* Areas of Expertise */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>Areas of Expertise * (Select all that apply)</Text>
-                        <View style={styles.expertiseGrid}>
+                        <Text style={[styles.sectionLabel, { color: colors.text }]}>Areas of Expertise * (Select all that apply)</Text>
+                        <View style={[styles.expertiseGrid, { backgroundColor: isDark ? colors.card : '#F3E8D6', borderColor: colors.border }]}>
                             {EXPERTISE_OPTIONS.map((item) => (
                                 <TouchableOpacity
                                     key={item}
                                     style={styles.checkboxRow}
                                     onPress={() => toggleExpertise(item)}
                                 >
-                                    <View style={[styles.checkbox, selectedExpertise.includes(item) && styles.checkboxChecked]}>
+                                    <View style={[styles.checkbox, { backgroundColor: colors.background, borderColor: colors.border }, selectedExpertise.includes(item) && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
                                         {selectedExpertise.includes(item) && <Ionicons name="checkmark" size={14} color="#FFF" />}
                                     </View>
-                                    <Text style={styles.checkboxLabel}>{item}</Text>
+                                    <Text style={[styles.checkboxLabel, { color: colors.text }]}>{item}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
                     {/* Brief Bio */}
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Brief Bio</Text>
-                        <Input
-                            placeholder="Tell seekers about your background..."
-                            multiline
-                            numberOfLines={4}
-                            style={styles.textArea}
-                            value={form.bio}
-                            onChangeText={(t) => setForm({ ...form, bio: t })}
-                        />
-                    </View>
+                    <Input
+                        label="Brief Bio"
+                        placeholder="Tell seekers about your background..."
+                        multiline
+                        numberOfLines={4}
+                        style={styles.textArea}
+                        value={form.bio}
+                        onChangeText={(t) => setForm({ ...form, bio: t })}
+                    />
 
                     <Button
                         title={loading ? "Saving..." : "Submit for Verification"}
                         onPress={handleSubmit}
                         isLoading={loading}
                         disabled={loading}
-                        style={styles.submitButton}
+                        style={[styles.submitButton, { backgroundColor: colors.primary }] as any}
                     />
                 </View>
             </ScrollView>
