@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 import { Booking } from '@/services/api';
 import { fetchBookingDetail } from '@/services/booking.service';
-import { createPayment, verifyKhaltiPayment } from '@/services/payment.service';
+import { initiatePayment, verifyKhaltiPayment } from '@/services/payment.service';
 import { Button } from '@/components/ui/Button';
 import { MotiView } from 'moti';
+import { PaymentWebView } from '@/components/common/PaymentWebView';
 
 // Safely import native module
 const KhaltiPaymentSdk = (() => {
@@ -30,6 +31,8 @@ export default function CheckoutScreen() {
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState(false);
     const [selectedMethod, setSelectedMethod] = useState<'khalti' | 'stripe'>('khalti');
+    const [showWebView, setShowWebView] = useState(false);
+    const [paymentUrl, setPaymentUrl] = useState('');
 
     useEffect(() => {
         if (bookingId) {
@@ -58,11 +61,17 @@ export default function CheckoutScreen() {
 
             if (selectedMethod === 'khalti') {
                 // 1. Initiate payment on backend
-                const paymentIntent = await createPayment({
+                const paymentIntent = await initiatePayment({
                     booking: booking.id,
                     payment_method: 'khalti',
                     amount: booking.total_fee,
                 });
+
+                if (paymentIntent.payment_url) {
+                    setPaymentUrl(paymentIntent.payment_url);
+                    setShowWebView(true);
+                    return;
+                }
 
                 // 2. Open Khalti SDK
                 if (!KhaltiPaymentSdk) {
@@ -138,6 +147,36 @@ export default function CheckoutScreen() {
             <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
                 <Text style={{ color: colors.text }}>Booking not found.</Text>
             </View>
+        );
+    }
+
+    if (showWebView && paymentUrl) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+                <View style={[styles.header, { backgroundColor: colors.card }]}>
+                    <TouchableOpacity onPress={() => setShowWebView(false)} style={styles.backButton}>
+                        <Ionicons name="close" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>Complete Payment</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+                <PaymentWebView
+                    url={paymentUrl}
+                    onSuccess={(data) => {
+                        setShowWebView(false);
+                        // Redirect URLs usually contain pidx for Khalti
+                        const pidx = data.url.split('pidx=')[1]?.split('&')[0];
+                        handleKhaltiSuccess({ pidx });
+                    }}
+                    onFailure={() => {
+                        setShowWebView(false);
+                        Alert.alert('Payment Failed', 'The payment process was not successful.');
+                    }}
+                    onCancel={() => {
+                        setShowWebView(false);
+                    }}
+                />
+            </SafeAreaView>
         );
     }
 

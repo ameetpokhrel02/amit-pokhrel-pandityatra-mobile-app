@@ -6,7 +6,7 @@ export async function fetchVideoRoom(bookingId: number): Promise<VideoRoom> {
     return response.data;
 }
 
-export async function generateVideoJoinLink(id: number): Promise<VideoLinkResponse> {
-    const response = await apiClient.get(`/video/generate-link/${id}/`);
+export async function generateVideoJoinLink(bookingId: number): Promise<VideoLinkResponse> {
+    const response = await apiClient.post(`/video/generate-link/${bookingId}/`);
     return response.data;
 }

@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchPandit } from '@/services/pandit.service';
 import { createBooking, BookingPayload } from '@/services/booking.service';
-import { createPayment, PaymentIntentResponse } from '@/services/payment.service';
+import { initiatePayment, PaymentIntentResponse } from '@/services/payment.service';
 import { Booking, PanditService, Pandit } from '@/services/api';
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
@@ -99,7 +99,7 @@ export default function BookingScreen() {
       const booking = await createBooking(bookingPayload);
 
       // 2️⃣ Create payment intent for this booking (default to Khalti for now)
-      const payment = await createPayment({
+      const payment = await initiatePayment({
         booking: booking.id,
         payment_method: 'khalti',
       });

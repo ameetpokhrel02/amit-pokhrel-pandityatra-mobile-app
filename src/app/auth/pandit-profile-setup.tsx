@@ -21,6 +21,22 @@ const EXPERTISE_OPTIONS = [
 export default function PanditProfileSetupScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
+
+    React.useEffect(() => {
+        const checkExistingProfile = async () => {
+            try {
+                const { fetchProfile } = require('@/services/auth.service');
+                const user = await fetchProfile();
+                if (user.role === 'pandit' && (user.pandit_profile || user.expertise || user.experience_years)) {
+                    router.replace('/(pandit)');
+                }
+            } catch (error) {
+                console.error('Error checking profile completion:', error);
+            }
+        };
+        checkExistingProfile();
+    }, []);
+
     const isDark = theme === 'dark';
     const [form, setForm] = useState({
         experience: '',

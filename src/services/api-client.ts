@@ -5,35 +5,53 @@ import { router } from 'expo-router';
 
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
-    const LOCAL_IP = '192.168.1.83'; // Your current machine's LAN IP
+    console.log('[API] Detecting Base URL...');
+    console.log('[API] hostUri:', Constants.expoConfig?.hostUri);
+    console.log('[API] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
+
+    // 1. Priority: Explicit environment variable (from .env file)
+    if (process.env.EXPO_PUBLIC_API_URL) {
+        const url = process.env.EXPO_PUBLIC_API_URL;
+        console.log('[API] Using environment variable URL:', url);
+        return url;
+    }
+
+    const LOCAL_IP = '192.168.1.83'; // Fallback machine's LAN IP
     const PORT = '8000';
 
-    // Option 1: Use local IP address from Expo manifest (Development)
-    // This works if your phone is on the same Wi-Fi as your computer
+    // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
     if (Constants.expoConfig?.hostUri) {
         const host = Constants.expoConfig.hostUri.split(':')[0];
 
         // Fix for tunnel mode: tunnel URL usually doesn't forward the backend port (8000)
-        // If using tunnel, fall back to the LAN IP
         if (host.includes('exp.direct')) {
+            console.log('[API] ⚠️ TUNNEL MODE DETECTED. Using fallback LOCAL_IP:', LOCAL_IP);
+            console.log('[API] Note: If your phone is not on the same Wi-Fi as your computer, this connection will fail.');
+            console.log('[API] Consider using a tunnel for your backend (e.g. ngrok) and updating .env');
             return `http://${LOCAL_IP}:${PORT}/api`;
         }
 
-        // Handle Android Emulator case if it specifically identifies as localhost or 127.0.0.1
+        // Handle Android Emulator case
         if (host === 'localhost' || host === '127.0.0.1') {
-            return `http://10.0.2.2:${PORT}/api`;
+            const url = `http://10.0.2.2:${PORT}/api`;
+            console.log('[API] 📱 Emulator detected, using:', url);
+            return url;
         }
 
-        return `http://${host}:${PORT}/api`;
+        const url = `http://${host}:${PORT}/api`;
+        console.log('[API] 🌐 Using dynamic host URL:', url);
+        return url;
     }
 
-    // Option 2: Hardcoded IP as fallback
-    return `http://${LOCAL_IP}:${PORT}/api`;
+    // 3. Last fallback
+    const url = `http://${LOCAL_IP}:${PORT}/api`;
+    console.log('[API] 📍 Using last fallback URL:', url);
+    return url;
 };
 
 export const API_BASE_URL = getBaseUrl();
 
-console.log('API Base URL:', API_BASE_URL); // Debug logging
+console.log('Current API Base URL:', API_BASE_URL); // Debug logging
 
 // Create Axios instance
 const apiClient = axios.create({

@@ -12,6 +12,7 @@ export interface Category {
 }
 
 export type ServiceCategory = Category;
+export type SamagriCategory = Category;
 
 export interface Service {
     id: number;
@@ -119,6 +120,15 @@ export interface Puja {
     image?: string;
 }
 
+export interface SamagriItem {
+    id: number;
+    name: string;
+    price: number;
+    image: string;
+    description?: string;
+    category?: number | SamagriCategory;
+}
+
 // Recommender APIs (Placeholder) moved or removed
 
 export interface RecommendedPandit extends Pandit {
@@ -147,103 +157,9 @@ export interface Booking {
 
 
 
-// ----------------------
-// Auth APIs
-// ----------------------
+// Auth functions moved to auth.service.ts
 
-export interface RegisterPayload {
-    full_name: string;
-    phone_number: string;
-    email?: string;
-    password?: string;
-    role?: 'user' | 'pandit';
-}
-
-export async function registerUser(payload: RegisterPayload) {
-    try {
-        const response = await publicApi.post('/users/register/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-// Updated Payload to support email or phone
-export async function requestLoginOtp(payload: { phone_number?: string; email?: string }) {
-    try {
-        const response = await publicApi.post('/users/request-otp/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
-    try {
-        const response = await publicApi.post('/users/login-otp/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
-    try {
-        const response = await publicApi.post('/users/login-password/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-export async function googleLogin(idToken: string) {
-    try {
-        const response = await publicApi.post('/users/google-login/', { id_token: idToken });
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-export async function fetchProfile() {
-    // Interceptor handles the token, argument removed as it was unused
-    const response = await apiClient.get('/users/profile/');
-    return response.data;
-}
-
-// ----------------------
-// Forgot Password APIs
-// ----------------------
-
-// Step 1: Request password reset OTP
-export async function requestPasswordResetOtp(payload: { email: string }) {
-    try {
-        const response = await publicApi.post('/users/forgot-password/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-// Step 2: Verify OTP and get temporary reset token
-export async function verifyPasswordResetOtp(payload: { email: string; otp: string }) {
-    try {
-        const response = await publicApi.post('/users/forgot-password/verify-otp/', payload);
-        return response.data; // Returns { token }
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
-
-// Step 3: Reset password using temporary token
-export async function resetPasswordWithToken(payload: { token: string; new_password: string }) {
-    try {
-        const response = await publicApi.post('/users/forgot-password/reset/', payload);
-        return response.data;
-    } catch (error: any) {
-        throw handleApiError(error);
-    }
-}
+// Forgot Password functions moved to auth.service.ts
 
 // ----------------------
 // Admin APIs
@@ -260,102 +176,7 @@ export async function fetchAdminStats(): Promise<AdminStats> {
     return response.data;
 }
 
-// ----------------------
-// Profile APIs
-// ----------------------
-export async function updateUserProfile(data: any) {
-    const response = await apiClient.patch('/users/profile/', data);
-    return response.data;
-}
-
-export async function updatePanditProfile(id: number, data: any) {
-    const response = await apiClient.patch(`/pandits/${id}/`, data);
-    return response.data;
-}
-
-// ----------------------
-// Contact API
-// ----------------------
-export async function submitContactForm(payload: { name: string; email: string; subject?: string; message: string }) {
-    const response = await apiClient.post('/users/contact/', payload);
-    return response.data;
-}
-
-// ----------------------
-// Kundali APIs
-// ----------------------
-export async function generateKundali(payload: {
-    dob: string;
-    time: string;
-    latitude: number;
-    longitude: number;
-    timezone: string
-}) {
-    const response = await apiClient.post('/kundali/generate/', payload);
-    return response.data;
-}
-
-export async function getSavedKundalis() {
-    const response = await apiClient.get('/kundali/list/');
-    return response.data;
-}
-
-// ----------------------
-// Samagri/Shop APIs
-// ----------------------
-export interface SamagriItem {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    category?: number; // category ID
-    stock: number;
-    image?: string;
-    is_available: boolean;
-    unit?: string;
-}
-
-export interface SamagriCategory {
-    id: number;
-    name: string;
-    description?: string;
-}
-
-export async function fetchSamagriItems(params?: any): Promise<SamagriItem[]> {
-    const response = await publicApi.get('/samagri/items/', { params });
-    // Handle pagination result if it exists (Django Rest Framework default)
-    return response.data.results || response.data;
-}
-
-export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
-    const response = await publicApi.get('/samagri/categories/');
-    return response.data.results || response.data;
-}
-
-export async function createSamagriItem(data: FormData | any) {
-    const response = await apiClient.post('/samagri/items/', data);
-    return response.data;
-}
-
-export async function updateSamagriItem(id: number, data: FormData | any) {
-    const response = await apiClient.patch(`/samagri/items/${id}/`, data);
-    return response.data;
-}
-
-export async function deleteSamagriItem(id: number) {
-    const response = await apiClient.delete(`/samagri/items/${id}/`);
-    return response.data;
-}
-
-export async function createSamagriCategory(data: any) {
-    const response = await apiClient.post('/samagri/categories/', data);
-    return response.data;
-}
-
-export async function deleteSamagriCategory(id: number) {
-    const response = await apiClient.delete(`/samagri/categories/${id}/`);
-    return response.data;
-}
+// Samagri/Shop logic moved to shop.service.ts
 
 // Extended Pandit APIs moved to pandit.service.ts
 

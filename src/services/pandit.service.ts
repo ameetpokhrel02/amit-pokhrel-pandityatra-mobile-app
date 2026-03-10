@@ -34,7 +34,7 @@ export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
 }
 
 export async function registerPandit(payload: PanditRegisterPayload) {
-  const response = await apiClient.post('/pandits/register/', payload);
+  const response = await apiClient.put('/users/profile/', payload);
   return response.data;
 }
 
@@ -59,7 +59,7 @@ export async function togglePanditAvailability(is_available: boolean) {
 }
 
 export async function updatePanditProfile(id: number, data: any) {
-  const response = await apiClient.patch(`/pandits/${id}/`, data);
+  const response = await apiClient.put(`/users/profile/`, data);
   return response.data;
 }
 

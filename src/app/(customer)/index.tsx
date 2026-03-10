@@ -10,7 +10,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { MotiView } from 'moti';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { useTranslation } from 'react-i18next';
-import { fetchServices } from '@/services/booking.service';
+import { fetchServices } from '@/services/puja.service';
 import { Service } from '@/services/api';
 
 export default function CustomerHomeScreen() {

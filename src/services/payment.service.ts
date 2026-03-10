@@ -18,8 +18,8 @@ export interface PaymentIntentResponse {
     [key: string]: any;
 }
 
-export async function createPayment(payload: CreatePaymentPayload): Promise<PaymentIntentResponse> {
-    const response = await apiClient.post('/payments/create/', payload);
+export async function initiatePayment(payload: CreatePaymentPayload): Promise<PaymentIntentResponse> {
+    const response = await apiClient.post('/payments/initiate/', payload);
     return response.data;
 }
 

@@ -36,8 +36,8 @@ export default function KundaliScreen() {
             const payload = {
                 dob: formData.dob,
                 time: formData.tob,
-                latitude: 27.7172,  // Kathmandu as default
-                longitude: 85.324,
+                lat: 27.7172,  // Kathmandu as default
+                lon: 85.324,
                 timezone: 'Asia/Kathmandu',
             };
 

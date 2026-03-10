@@ -120,6 +120,6 @@ export async function resetPasswordWithToken(payload: { token: string; new_passw
 }
 
 export async function updateUserProfile(data: any) {
-  const response = await apiClient.patch('/users/profile/', data);
+  const response = await apiClient.put('/users/profile/', data);
   return response.data;
 }

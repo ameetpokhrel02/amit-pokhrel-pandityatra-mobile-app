@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchServiceDetail } from '@/services/booking.service';
+import { fetchServiceDetail } from '@/services/puja.service';
 import { Service } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
 import { MotiView } from 'moti';

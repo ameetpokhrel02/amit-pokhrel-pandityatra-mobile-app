@@ -81,7 +81,8 @@ export default function LoginScreen() {
           }));
 
           if (user.role === "pandit") {
-            if (user.is_pandit_profile_complete) {
+            const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
+            if (isProfileComplete) {
               router.replace("/(pandit)" as any);
             } else {
               router.replace("/auth/pandit-profile-setup" as any);
@@ -166,7 +167,8 @@ export default function LoginScreen() {
         }));
 
         if (user.role === "pandit") {
-          if (user.is_pandit_profile_complete) {
+          const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
+          if (isProfileComplete) {
             router.replace("/(pandit)" as any);
           } else {
             router.replace("/auth/pandit-profile-setup" as any);
@@ -178,8 +180,12 @@ export default function LoginScreen() {
         }
       }
     } catch (err: any) {
+      const { API_BASE_URL } = require('@/services/api-client');
       console.error("Login error:", err);
-      Alert.alert("Login Error", err.message || "Authentication failed. Please try again.");
+      Alert.alert(
+        "Login Error", 
+        `${err.message || "Authentication failed"}\n\nTarget: ${API_BASE_URL}\n\nCheck if your backend is running on this IP and port 8000.`
+      );
     } finally {
       setLoading(false);
     }

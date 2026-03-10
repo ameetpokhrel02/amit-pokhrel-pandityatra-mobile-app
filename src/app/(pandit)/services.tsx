@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { fetchPanditMyServices, addPanditService, MyService } from '@/services/pandit.service';
-import { fetchServices } from '@/services/booking.service';
+import { fetchServices } from '@/services/puja.service';
 import { Puja } from '@/services/api';
 
 export default function ServicesScreen() {

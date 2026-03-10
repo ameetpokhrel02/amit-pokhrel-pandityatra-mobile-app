@@ -25,12 +25,12 @@ export interface CalendarEvent {
 }
 
 export async function createBooking(payload: BookingPayload): Promise<Booking> {
-    const response = await apiClient.post('/bookings/create/', payload);
+    const response = await apiClient.post('/bookings/', payload);
     return response.data;
 }
 
 export async function fetchMyBookings(params?: { status?: string }): Promise<Booking[]> {
-    const response = await apiClient.get('/bookings/my-bookings/', { params });
+    const response = await apiClient.get('/bookings/', { params });
     return response.data;
 }
 
@@ -54,32 +54,12 @@ export async function updateBookingStatus(id: number, status: string) {
     return response.data;
 }
 
-export async function adminCancelBooking(id: number) {
-    const response = await apiClient.post(`/bookings/${id}/admin_cancel/`);
+export async function cancelBooking(id: number, reason?: string) {
+    const response = await apiClient.post(`/bookings/${id}/cancel/`, { reason });
     return response.data;
 }
 
 
-// Fetches ALL available pujas (catalog)
-export async function fetchAllPujas(): Promise<Puja[]> {
-    const response = await publicApi.get('/services/');
-    return response.data;
-}
 
-export async function fetchCategories(): Promise<Category[]> {
-    const response = await publicApi.get('/services/categories/');
-    return response.data;
-}
-
-export const fetchServiceCategories = fetchCategories;
-
-export async function fetchServices(params?: { category?: number; search?: string }): Promise<Service[]> {
-    const response = await publicApi.get('/services/', { params });
-    return response.data;
-}
-
-export async function fetchServiceDetail(id: number): Promise<Service> {
-    const response = await publicApi.get(`/services/${id}/`);
-    return response.data;
-}
+// Services functions moved to puja.service.ts
 

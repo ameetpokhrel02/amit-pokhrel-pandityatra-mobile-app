@@ -100,7 +100,8 @@ export default function OTPScreen() {
 
         // Route by role
         if (user.role === "pandit") {
-          if (user.is_pandit_profile_complete) {
+          const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
+          if (isProfileComplete) {
             router.replace("/(pandit)" as any);
           } else {
             router.replace("/auth/pandit-profile-setup" as any);
