@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
 import { Colors } from '@/constants/Colors';
 import { Pandit } from '@/types/pandit';
 
@@ -14,16 +13,7 @@ interface PanditCardProps {
 
 export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, onBook }) => {
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{
-        type: 'timing',
-        duration: 500,
-        delay: index * 100,
-      }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
         {/* Top Section: Image & Basic Info */}
         <View style={styles.topSection}>
@@ -97,7 +87,7 @@ export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, 
           </View>
         </View>
       </TouchableOpacity>
-    </MotiView>
+    </View>
   );
 };
 

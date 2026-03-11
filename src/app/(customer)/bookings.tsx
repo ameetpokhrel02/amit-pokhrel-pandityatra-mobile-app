@@ -111,11 +111,21 @@ export default function BookingsScreen() {
 
             {(item.status === 'ACCEPTED' || item.status === 'PENDING') && (
               <TouchableOpacity
-                style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: item.payment_status ? 0 : 8 }]}
+                style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: 8 }]}
                 onPress={() => router.push(`/(customer)/video/${item.id}` as any)}
               >
                 <Ionicons name="videocam" size={16} color="#FFF" />
-                <Text style={styles.quickActionText}>Join Video Puja</Text>
+                <Text style={styles.quickActionText}>Video Puja</Text>
+              </TouchableOpacity>
+            )}
+
+            {item.status === 'ACCEPTED' && (
+              <TouchableOpacity
+                style={[styles.quickActionButton, { backgroundColor: colors.primary, marginLeft: 8 }]}
+                onPress={() => router.push(`/(customer)/bookings/samagri-recommendations?bookingId=${item.id}` as any)}
+              >
+                <Ionicons name="sparkles" size={16} color="#FFF" />
+                <Text style={styles.quickActionText}>Samagri</Text>
               </TouchableOpacity>
             )}
           </View>

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 import { aiRecommendSamagri } from '@/services/shop.service';
+import { fetchSamagriItems } from '@/services/shop.service';
 import { SamagriItem } from '@/services/api';
 import { Button } from '@/components/ui/Button';
-import { MotiView, MotiText } from 'moti';
 import { useCart } from '@/store/CartContext';
 
 export default function AIRecommendScreen() {
@@ -61,9 +62,7 @@ export default function AIRecommendScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <MotiView
-                    from={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                <View
                     style={[styles.searchCard, { backgroundColor: colors.card }]}
                 >
                     <Ionicons name="sparkles" size={32} color={colors.primary} style={styles.sparkleIcon} />
@@ -90,24 +89,15 @@ export default function AIRecommendScreen() {
                         isLoading={loading}
                         style={styles.searchButton}
                     />
-                </MotiView>
+                </View>
 
                 {loading ? (
-                    <View style={styles.loadingContainer}>
+                    <View key="loading" style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={colors.primary} />
-                        <MotiText
-                            from={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ loop: true, duration: 1000 }}
-                            style={[styles.loadingText, { color: colors.text }]}
-                        >
-                            Our AI is consulting the scriptures...
-                        </MotiText>
+                        <Text style={[styles.loadingText, { color: colors.text }]}>AI Analyst is matching items with your puja requirements...</Text>
                     </View>
                 ) : hasSearched && (
-                    <MotiView
-                        from={{ opacity: 0, translateY: 20 }}
-                        animate={{ opacity: 1, translateY: 0 }}
+                    <View
                         style={styles.resultsContainer}
                     >
                         <View style={styles.resultsHeader}>
@@ -120,31 +110,35 @@ export default function AIRecommendScreen() {
                         </View>
 
                         {recommendations.length > 0 ? (
-                            recommendations.map((item, index) => (
-                                <MotiView
-                                    key={item.id}
-                                    from={{ opacity: 0, translateX: -20 }}
-                                    animate={{ opacity: 1, translateX: 0 }}
-                                    transition={{ delay: index * 100 }}
-                                    style={[styles.itemCard, { backgroundColor: colors.card }]}
-                                >
-                                    <View style={styles.itemInfo}>
-                                        <View style={[styles.itemIconContainer, { backgroundColor: isDark ? '#333' : '#F9731615' }]}>
-                                            <Ionicons name="leaf-outline" size={24} color={colors.primary} />
+                            <View key="results">
+                                <View style={[styles.recommendationCard, { backgroundColor: isDark ? '#1F2937' : '#EFF6FF' }]}>
+                                    <Ionicons name="sparkles" size={24} color={colors.primary} />
+                                    <Text style={[styles.recommendationText, { color: colors.text }]}>
+                                        Based on your selected puja, our AI suggests these essential items for a complete ritual experience.
+                                    </Text>
+                                </View>
+
+                                <View style={styles.grid}>
+                                    {recommendations.map((item, index) => (
+                                        <View
+                                            key={item.id}
+                                            style={[styles.productCard, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }]}
+                                        >
+                                            <Image source={{ uri: item.image }} style={styles.productImage} contentFit="cover" />
+                                            <View style={styles.productInfo}>
+                                                <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                                                <Text style={[styles.productPrice, { color: colors.primary }]}>NPR {item.price}</Text>
+                                                <TouchableOpacity
+                                                    style={[styles.addButton, { backgroundColor: colors.primary }]}
+                                                    onPress={() => handleAddToCart(item)}
+                                                >
+                                                    <Ionicons name="add" size={20} color="#FFF" />
+                                                </TouchableOpacity>
+                                            </View>
                                         </View>
-                                        <View style={styles.itemTextContainer}>
-                                            <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-                                            <Text style={[styles.itemPrice, { color: colors.primary }]}>NPR {item.price}</Text>
-                                        </View>
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={() => handleAddToCart(item)}
-                                        style={[styles.addButton, { backgroundColor: colors.primary }]}
-                                    >
-                                        <Ionicons name="add" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </MotiView>
-                            ))
+                                    ))}
+                                </View>
+                            </View>
                         ) : (
                             <View style={styles.emptyResults}>
                                 <Ionicons name="alert-circle-outline" size={48} color={isDark ? '#444' : '#CCC'} />
@@ -153,7 +147,7 @@ export default function AIRecommendScreen() {
                                 </Text>
                             </View>
                         )}
-                    </MotiView>
+                    </View>
                 )}
             </ScrollView>
         </View>
@@ -228,6 +222,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
         fontSize: 14,
         fontStyle: 'italic',
+        textAlign: 'center',
     },
     resultsContainer: {
         marginBottom: 40,
@@ -241,6 +236,58 @@ const styles = StyleSheet.create({
     resultsTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    recommendationCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+        gap: 12,
+    },
+    recommendationText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 16,
+    },
+    productCard: {
+        width: '47%',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        marginBottom: 8,
+    },
+    productImage: {
+        width: '100%',
+        height: 120,
+    },
+    productInfo: {
+        padding: 12,
+    },
+    productName: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    productPrice: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    addButton: {
+        position: 'absolute',
+        right: 8,
+        bottom: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     itemCard: {
         flexDirection: 'row',
@@ -275,13 +322,6 @@ const styles = StyleSheet.create({
     itemPrice: {
         fontSize: 14,
         fontWeight: 'bold',
-    },
-    addButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     emptyResults: {
         alignItems: 'center',

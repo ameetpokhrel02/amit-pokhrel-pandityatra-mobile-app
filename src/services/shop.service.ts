@@ -37,7 +37,7 @@ export async function deleteSamagriCategory(id: number) {
 }
 
 export async function checkoutSamagri(payload: SamagriCheckoutPayload) {
-    const response = await apiClient.post('/samagri/checkout/', payload);
+    const response = await apiClient.post('/samagri/checkout/initiate/', payload);
     return response.data;
 }
 

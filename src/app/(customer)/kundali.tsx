@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { MotiView } from 'moti';
 import { useTheme } from '@/store/ThemeContext';
 import { generateKundali } from '@/services/kundali.service';
 
@@ -65,34 +64,18 @@ export default function KundaliScreen() {
             <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
                 {/* 1. Hero Section */}
                 <View style={styles.heroSection}>
-                    <MotiView
-                        from={{ rotate: '0deg' }}
-                        animate={{ rotate: '360deg' }}
-                        transition={{
-                            type: 'timing',
-                            duration: 20000,
-                            loop: true,
-                            repeatReverse: false,
-                        }}
+                    <View
                         style={[styles.heroIconContainer, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
                     >
                         <Ionicons name="planet-outline" size={64} color="#f97316" />
-                    </MotiView>
+                    </View>
                     <Text style={[styles.heroTitle, { color: colors.text }]}>Offline Kundali – Your Birth Chart, Private & Secure</Text>
                     <Text style={[styles.heroSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Generate your Kundali without internet. Your data stays on your device.</Text>
-                    <MotiView
-                        from={{ scale: 1 }}
-                        animate={{ scale: 1.05 }}
-                        transition={{
-                            type: 'timing',
-                            duration: 1500,
-                            loop: true,
-                        }}
-                    >
+                    <View>
                         <TouchableOpacity style={styles.heroButton} onPress={handleGenerate} disabled={loading}>
                             <Text style={styles.heroButtonText}>Generate Kundali</Text>
                         </TouchableOpacity>
-                    </MotiView>
+                    </View>
                 </View>
 
                 {/* 2. What Is Offline Kundali? */}

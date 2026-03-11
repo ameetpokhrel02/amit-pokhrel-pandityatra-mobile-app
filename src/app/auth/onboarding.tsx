@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,10 +73,7 @@ export default function OnboardingScreen() {
     const Slide = ({ item, index }: { item: typeof SLIDES[0], index: number }) => {
         return (
             <View style={styles.slide}>
-                <MotiView
-                    from={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', duration: 1000 }}
+                <View
                     style={styles.imageContainer}
                 >
                     <View style={styles.imageOverlay}>
@@ -95,16 +91,13 @@ export default function OnboardingScreen() {
                     <View style={[styles.mandalaIcon, { bottom: -30, right: -30, opacity: 0.5 }]}>
                         <Ionicons name="sunny-outline" size={60} color="#D97706" />
                     </View>
-                </MotiView>
-                <MotiView
-                    from={{ opacity: 0, translateY: 20 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ delay: 300, type: 'timing', duration: 800 }}
+                </View>
+                <View
                     style={styles.textContainer}
                 >
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.description}>{item.description}</Text>
-                </MotiView>
+                </View>
             </View>
         );
     };

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIn
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView, MotiText } from 'moti';
 import { Colors } from '@/constants/Colors';
 import { fetchPandit } from '@/services/pandit.service';
 import { Pandit } from '@/types/pandit';
@@ -92,10 +91,7 @@ export default function PanditProfileScreen() {
         </View>
 
         {/* Content Section */}
-        <MotiView
-          from={{ translateY: 50, opacity: 0 }}
-          animate={{ translateY: 0, opacity: 1 }}
-          transition={{ type: 'spring', damping: 20 }}
+        <View
           style={[styles.contentContainer, { backgroundColor: colors.background }]}
         >
           {/* Header Info */}
@@ -211,14 +207,11 @@ export default function PanditProfileScreen() {
               </Text>
             </View>
           </View>
-        </MotiView>
+        </View>
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <MotiView
-        from={{ translateY: 100 }}
-        animate={{ translateY: 0 }}
-        transition={{ type: 'timing', duration: 500, delay: 300 }}
+      <View
         style={[styles.bottomBar, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
       >
         <View>
@@ -232,7 +225,7 @@ export default function PanditProfileScreen() {
         >
           <Text style={styles.bookButtonText}>Book Now</Text>
         </TouchableOpacity>
-      </MotiView>
+      </View>
     </View>
   );
 }

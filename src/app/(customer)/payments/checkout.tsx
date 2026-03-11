@@ -8,7 +8,6 @@ import { Booking } from '@/services/api';
 import { fetchBookingDetail } from '@/services/booking.service';
 import { initiatePayment, verifyKhaltiPayment } from '@/services/payment.service';
 import { Button } from '@/components/ui/Button';
-import { MotiView } from 'moti';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
 
 // Safely import native module
@@ -191,9 +190,7 @@ export default function CheckoutScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <MotiView
-                    from={{ opacity: 0, translateY: 20 }}
-                    animate={{ opacity: 1, translateY: 0 }}
+                <View
                     style={[styles.summaryCard, { backgroundColor: colors.card }]}
                 >
                     <Text style={[styles.summaryTitle, { color: colors.text }]}>Order Summary</Text>
@@ -214,7 +211,7 @@ export default function CheckoutScreen() {
                         <Text style={[styles.totalLabel, { color: colors.text }]}>Total Amount</Text>
                         <Text style={[styles.totalValue, { color: colors.primary }]}>NPR {booking.total_fee}</Text>
                     </View>
-                </MotiView>
+                </View>
 
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Payment Method</Text>

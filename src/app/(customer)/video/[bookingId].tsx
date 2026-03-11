@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchVideoRoom, generateVideoJoinLink } from '@/services/video.service';
+import { generateVideoJoinLink } from '@/services/video.service';
 
 // Safely import native module
 const Daily = (() => {

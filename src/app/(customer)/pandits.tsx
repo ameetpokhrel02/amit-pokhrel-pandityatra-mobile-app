@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshC
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { MotiView } from 'moti';
 import { Colors } from '@/constants/Colors';
 import { usePanditStore } from '@/store/pandit.store';
 import { PanditCard } from '@/components/pandit/PanditCard';
@@ -43,12 +42,7 @@ export default function PanditListingPage() {
   );
 
   const renderEmptyState = () => (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'timing', duration: 500 }}
-      style={styles.emptyState}
-    >
+    <View style={styles.emptyState}>
       <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
         <Ionicons name="search" size={48} color={isDark ? '#666' : '#CCC'} />
       </View>
@@ -57,16 +51,13 @@ export default function PanditListingPage() {
       <TouchableOpacity style={[styles.clearButton, { borderColor: colors.primary }]} onPress={() => setFilter({ searchQuery: '', location: undefined, minRating: undefined, availability: undefined })}>
         <Text style={[styles.clearButtonText, { color: colors.primary }]}>Clear Filters</Text>
       </TouchableOpacity>
-    </MotiView>
+    </View>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Sticky Header with Search & Filter */}
-      <MotiView
-        from={{ translateY: -100, opacity: 0 }}
-        animate={{ translateY: 0, opacity: 1 }}
-        transition={{ type: 'spring', damping: 20 }}
+      <View
         style={[styles.header, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
       >
         <View style={[styles.searchContainer, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
@@ -82,7 +73,7 @@ export default function PanditListingPage() {
         <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={() => setFilterVisible(true)}>
           <Ionicons name="options-outline" size={24} color="#FFF" />
         </TouchableOpacity>
-      </MotiView>
+      </View>
 
       {/* Content */}
       {isLoading && !refreshing && pandits.length === 0 ? (

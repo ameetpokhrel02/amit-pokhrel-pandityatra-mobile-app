@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { MotiView, MotiText } from 'moti';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchProfile } from '@/services/auth.service';
 
@@ -76,34 +75,19 @@ export default function SplashScreen() {
                 resizeMode="cover"
             >
                 <View style={styles.overlay}>
-                    <MotiView
-                        from={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ type: 'spring', duration: 1500 }}
-                        style={styles.logoContainer}
-                    >
+                    <View style={styles.logoContainer}>
                         <Image
                             source={require('@/assets/images/pandit-logo.png')}
                             style={styles.logo}
                             contentFit="contain"
                         />
-                        <MotiText
-                            from={{ opacity: 0, translateY: 20 }}
-                            animate={{ opacity: 1, translateY: 0 }}
-                            transition={{ delay: 500, type: 'timing', duration: 1000 }}
-                            style={styles.title}
-                        >
+                        <Text style={styles.title}>
                             PanditYatra
-                        </MotiText>
-                        <MotiText
-                            from={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 1000, type: 'timing', duration: 1000 }}
-                            style={styles.subtitle}
-                        >
+                        </Text>
+                        <Text style={styles.subtitle}>
                             Connecting Faith with Excellence
-                        </MotiText>
-                    </MotiView>
+                        </Text>
+                    </View>
                 </View>
             </ImageBackground>
         </View>

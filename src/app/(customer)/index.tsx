@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import { useCart } from '@/store/CartContext';
 import { useUser } from '@/store/UserContext';
 import { useTheme } from '@/store/ThemeContext';
-import { MotiView } from 'moti';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { useTranslation } from 'react-i18next';
 import { fetchServices } from '@/services/puja.service';
@@ -174,10 +173,7 @@ export default function CustomerHomeScreen() {
         {upcomingBooking && (
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Upcoming Puja</Text>
-            <MotiView
-              from={{ opacity: 0, translateY: 20 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ delay: 300 }}
+            <View
               style={[styles.bookingCard, { backgroundColor: '#FFF', borderLeftColor: '#F97316' }]}
             >
               <View style={styles.bookingHeader}>
@@ -205,7 +201,7 @@ export default function CustomerHomeScreen() {
               >
                 <Text style={[styles.viewBookingText, { color: '#F97316' }]}>Join Puja</Text>
               </TouchableOpacity>
-            </MotiView>
+            </View>
           </View>
         )}
 
@@ -232,15 +228,13 @@ export default function CustomerHomeScreen() {
 
         {/* Spiritual Quote */}
         <View style={[styles.sectionContainer, styles.quoteSection]}>
-          <MotiView
-            from={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <View
             style={styles.quoteCard}
           >
             <Text style={styles.quoteText}>
               "Faith and devotion bring peace{"\n"}to the mind and soul."
             </Text>
-          </MotiView>
+          </View>
         </View>
 
       </ScrollView>
@@ -250,11 +244,7 @@ export default function CustomerHomeScreen() {
 
 function ServiceCard({ service, index, colors, isDark, router }: any) {
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9, translateY: 10 }}
-      animate={{ opacity: 1, scale: 1, translateY: 0 }}
-      transition={{ delay: index * 100, type: 'timing', duration: 400 }}
-    >
+    <View>
       <TouchableOpacity
         style={[styles.serviceCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#F3F4F6' }]}
         onPress={() => router.push(`/(customer)/services/${service.id}`)}
@@ -270,17 +260,13 @@ function ServiceCard({ service, index, colors, isDark, router }: any) {
           <Text style={styles.priceText}>NPR {service.base_price}</Text>
         </View>
       </TouchableOpacity>
-    </MotiView>
+    </View>
   );
 }
 
 function PanditCard({ pandit, index, colors, isDark, router }: any) {
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9, translateY: 10 }}
-      animate={{ opacity: 1, scale: 1, translateY: 0 }}
-      transition={{ delay: index * 100, type: 'timing', duration: 400 }}
-    >
+    <View>
       <TouchableOpacity
         style={[styles.panditCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#F3F4F6' }]}
         onPress={() => router.push(`/(customer)/pandit/${pandit.id}`)}
@@ -300,7 +286,7 @@ function PanditCard({ pandit, index, colors, isDark, router }: any) {
           </View>
         </View>
       </TouchableOpacity>
-    </MotiView>
+    </View>
   );
 }
 

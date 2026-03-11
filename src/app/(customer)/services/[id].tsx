@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchServiceDetail } from '@/services/puja.service';
 import { Service } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
-import { MotiView } from 'moti';
 
 export default function ServiceDetailScreen() {
   const router = useRouter();
@@ -77,10 +76,8 @@ export default function ServiceDetailScreen() {
         </View>
 
         <View style={styles.content}>
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            style={styles.infoCard}
+          <View
+            style={[styles.infoCard, { backgroundColor: colors.card }]}
           >
             <Text style={[styles.title, { color: colors.text }]}>{service.name}</Text>
 
@@ -99,7 +96,7 @@ export default function ServiceDetailScreen() {
               <Text style={[styles.priceLabel, { color: isDark ? '#AAA' : '#666' }]}>Starting from</Text>
               <Text style={[styles.priceValue, { color: colors.text }]}>NPR {service.base_price}</Text>
             </View>
-          </MotiView>
+          </View>
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>About this Service</Text>
@@ -112,8 +109,12 @@ export default function ServiceDetailScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Required Samagri</Text>
-                <TouchableOpacity onPress={() => router.push('/(customer)/shop')}>
-                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Get Items</Text>
+                <TouchableOpacity 
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  onPress={() => router.push(`/(customer)/bookings/samagri-recommendations?pujaId=${service.id}`)}
+                >
+                  <Ionicons name="sparkles" size={16} color={colors.primary} />
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>AI Suggestions</Text>
                 </TouchableOpacity>
               </View>
               <View style={[styles.samagriList, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F3F4F6' }]}>
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
     marginTop: -30,
   },
   infoCard: {
-    backgroundColor: '#FFF',
     padding: 24,
     borderRadius: 24,
     elevation: 8,

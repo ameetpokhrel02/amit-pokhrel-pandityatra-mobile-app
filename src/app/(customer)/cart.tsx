@@ -8,7 +8,7 @@ import { useTheme } from '@/store/ThemeContext';
 
 export default function CartScreen() {
   const router = useRouter();
-  const { items, updateQuantity, addToCart, totalPrice } = useCart();
+  const { items, updateQuantity, addToCart, removeFromCart, totalPrice } = useCart();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -79,6 +79,12 @@ export default function CartScreen() {
                 <Ionicons name="add" size={16} color={colors.text} />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity 
+              style={styles.deleteButton}
+              onPress={() => removeFromCart(item.id)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </TouchableOpacity>
           </View>
         ))}
 
@@ -179,6 +185,10 @@ const styles = StyleSheet.create({
   qtyText: {
     marginHorizontal: 8,
     fontWeight: 'bold',
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   summaryCard: {
     borderRadius: 12,

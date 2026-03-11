@@ -240,7 +240,7 @@ export interface SamagriCheckoutPayload {
     shipping_address: string;
     city: string;
     payment_method: 'STRIPE' | 'KHALTI';
-    items: { id: number; qty: number }[];
+    items: { id: number; quantity: number }[];
 }
 
 // Helper to standardize error messages

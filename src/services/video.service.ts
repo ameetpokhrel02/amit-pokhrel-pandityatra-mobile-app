@@ -10,3 +10,5 @@ export async function joinVideoRoom(bookingId: number): Promise<VideoLinkRespons
     const response = await apiClient.post(`/video/room/${bookingId}/join/`);
     return response.data;
 }
+
+export const generateVideoJoinLink = joinVideoRoom;

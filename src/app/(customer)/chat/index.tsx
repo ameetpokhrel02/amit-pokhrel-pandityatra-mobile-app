@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { fetchChatRooms } from '@/services/chat.service';
 import { ChatRoom } from '@/types/chat';
@@ -74,6 +75,20 @@ export default function ChatListScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
       </View>
 
+      <TouchableOpacity
+        style={[styles.aiGuideCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
+        onPress={() => router.push('/(customer)/chat/ai-guide')}
+      >
+        <View style={[styles.aiIcon, { backgroundColor: colors.primary }]}>
+          <Ionicons name="sparkles" size={24} color="#FFF" />
+        </View>
+        <View style={styles.aiContent}>
+          <Text style={[styles.aiTitle, { color: colors.text }]}>AI Ritual Guide</Text>
+          <Text style={[styles.aiSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Ask anything about pujas & rituals</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+      </TouchableOpacity>
+
       <FlatList
         data={chats}
         renderItem={renderItem}
@@ -103,6 +118,33 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
+  },
+  aiGuideCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 16,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  aiIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  aiContent: {
+    flex: 1,
+  },
+  aiTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  aiSubtitle: {
+    fontSize: 13,
   },
   listContent: {
     padding: 16,

@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { quickChat, getChatWebSocketUrl } from '@/services/chat.service';
 import { ChatMessage } from '@/types/chat';
-import { MotiView, AnimatePresence } from 'moti';
 
 interface ChatModalProps {
     visible: boolean;

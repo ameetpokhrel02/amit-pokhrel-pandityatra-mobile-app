@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView, AnimatePresence } from 'moti';
 import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
@@ -118,36 +117,32 @@ export default function BookingScreen() {
           loop={false}
           style={styles.lottie}
         />
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 1000 }}
-        >
-          <Text style={[styles.successTitle, { color: colors.text }]}>Booking Created</Text>
-          <Text style={[styles.successMessage, { color: isDark ? '#AAA' : '#666' }]}>
-            Your booking with {pandit?.user_details?.full_name} for {selectedService?.puja_details?.name} has been created.
-          </Text>
+      <View>
+        <Text style={[styles.successTitle, { color: colors.text }]}>Booking Created</Text>
+        <Text style={[styles.successMessage, { color: isDark ? '#AAA' : '#666' }]}>
+          Your booking with {pandit?.user_details?.full_name} for {selectedService?.puja_details?.name} has been created.
+        </Text>
 
-          <Text style={[styles.successMessage, { color: isDark ? '#A7F3D0' : '#047857' }]}>
-            Please complete your payment to finalize the booking.
-          </Text>
+        <Text style={[styles.successMessage, { color: isDark ? '#A7F3D0' : '#047857' }]}>
+          Please complete your payment to finalize the booking.
+        </Text>
 
-          <View style={{ gap: 12 }}>
-            <TouchableOpacity
-              style={[styles.homeButton, { backgroundColor: colors.primary }]}
-              onPress={() => router.replace(`/(customer)/payments/checkout?bookingId=${(paymentInfo as any)?.bookingId}`)}
-            >
-              <Text style={styles.homeButtonText}>Pay Now</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.homeButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary }]}
-              onPress={() => router.push('/(customer)/bookings')}
-            >
-              <Text style={[styles.homeButtonText, { color: colors.primary }]}>Pay Later (Go to my Bookings)</Text>
-            </TouchableOpacity>
-          </View>
-        </MotiView>
+        <View style={{ gap: 12 }}>
+          <TouchableOpacity
+            style={[styles.homeButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.replace(`/(customer)/payments/checkout?bookingId=${(paymentInfo as any)?.bookingId}`)}
+          >
+            <Text style={styles.homeButtonText}>Pay Now</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.homeButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary }]}
+            onPress={() => router.push('/(customer)/bookings')}
+          >
+            <Text style={[styles.homeButtonText, { color: colors.primary }]}>Pay Later (Go to my Bookings)</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       </View>
     );
   }
@@ -192,15 +187,8 @@ export default function BookingScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <AnimatePresence exitBeforeEnter>
           {currentStep === 0 && (
-            <MotiView
-              key="step0"
-              from={{ opacity: 0, translateX: 20 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              exit={{ opacity: 0, translateX: -20 }}
-              transition={{ type: 'timing', duration: 300 }}
-            >
+            <View key="step0">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Select Service</Text>
               <View style={styles.optionsContainer}>
                 {pandit?.services?.map((service) => (
@@ -218,17 +206,11 @@ export default function BookingScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </MotiView>
+            </View>
           )}
 
           {currentStep === 1 && (
-            <MotiView
-              key="step1"
-              from={{ opacity: 0, translateX: 20 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              exit={{ opacity: 0, translateX: -20 }}
-              transition={{ type: 'timing', duration: 300 }}
-            >
+            <View key="step1">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Select Date & Time</Text>
 
               <Text style={[styles.subLabel, { color: colors.text }]}>Select Date</Text>
@@ -278,17 +260,11 @@ export default function BookingScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </MotiView>
+            </View>
           )}
 
           {currentStep === 2 && (
-            <MotiView
-              key="step2"
-              from={{ opacity: 0, translateX: 20 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              exit={{ opacity: 0, translateX: -20 }}
-              transition={{ type: 'timing', duration: 300 }}
-            >
+            <View key="step2">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Location Details</Text>
 
               <View style={styles.inputGroup}>
@@ -315,17 +291,11 @@ export default function BookingScreen() {
                   textAlignVertical="top"
                 />
               </View>
-            </MotiView>
+            </View>
           )}
 
           {currentStep === 3 && (
-            <MotiView
-              key="step3"
-              from={{ opacity: 0, translateX: 20 }}
-              animate={{ opacity: 1, translateX: 0 }}
-              exit={{ opacity: 0, translateX: -20 }}
-              transition={{ type: 'timing', duration: 300 }}
-            >
+            <View key="step3">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Review Booking</Text>
 
               <View style={[styles.summaryCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
@@ -363,10 +333,9 @@ export default function BookingScreen() {
                   Payment will be collected after the service is completed.
                 </Text>
               </View>
-            </MotiView>
+            </View>
           )}
-        </AnimatePresence>
-      </ScrollView>
+        </ScrollView>
 
       {/* Footer */}
       <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#F0F0F0' }]}>

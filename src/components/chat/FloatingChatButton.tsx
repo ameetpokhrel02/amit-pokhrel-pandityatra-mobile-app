@@ -1,9 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
-import { MotiView } from 'moti';
 
 interface FloatingChatButtonProps {
     onPress: () => void;
@@ -14,12 +13,7 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({ onPress,
     const { colors } = useTheme();
 
     return (
-        <MotiView
-            from={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 15, delay: 500 }}
-            style={[styles.container, style]}
-        >
+        <View style={[styles.container, style]}>
             <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={onPress}
@@ -27,7 +21,7 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({ onPress,
             >
                 <Ionicons name="chatbubble-ellipses" size={28} color="white" />
             </TouchableOpacity>
-        </MotiView>
+        </View>
     );
 };
 

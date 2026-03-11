@@ -6,7 +6,6 @@ import { Image } from 'expo-image';
 import { fetchServices } from '@/services/puja.service';
 import { Service } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
-import { MotiView } from 'moti';
 
 export default function ServicesListScreen() {
     const router = useRouter();
@@ -37,10 +36,7 @@ export default function ServicesListScreen() {
     };
 
     const renderItem = ({ item, index }: { item: Service, index: number }) => (
-        <MotiView
-            from={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 50 }}
+        <View
             style={[styles.productCard, { backgroundColor: isDark ? '#1F1F1F' : '#FFF9F4', borderColor: isDark ? '#333' : '#FDE68A' }]}
         >
             <TouchableOpacity
@@ -71,7 +67,7 @@ export default function ServicesListScreen() {
             >
                 <Ionicons name="calendar-outline" size={18} color="#FFF" />
             </TouchableOpacity>
-        </MotiView>
+        </View>
     );
 
     return (

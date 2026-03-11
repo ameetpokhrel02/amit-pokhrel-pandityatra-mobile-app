@@ -1,7 +1,5 @@
-import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Button } from './Button';
@@ -25,10 +23,7 @@ export const LogoutModal = ({ visible, onClose, onConfirm }: LogoutModalProps) =
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <MotiView
-          from={{ opacity: 0, scale: 0.8, translateY: 20 }}
-          animate={{ opacity: 1, scale: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 15 }}
+        <View
           style={styles.container}
         >
           {/* Logo Section */}
@@ -62,7 +57,7 @@ export const LogoutModal = ({ visible, onClose, onConfirm }: LogoutModalProps) =
               style={styles.confirmButton}
             />
           </View>
-        </MotiView>
+        </View>
       </View>
     </Modal>
   );

@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchCategories as fetchServiceCategories } from '@/services/puja.service';
 import { ServiceCategory } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
-import { MotiView } from 'moti';
 
 export default function ServiceCategoriesScreen() {
   const router = useRouter();
@@ -39,11 +38,8 @@ export default function ServiceCategoriesScreen() {
     if (category.name.toLowerCase().includes('festival')) categoryIcon = "flame-outline";
 
     return (
-      <MotiView
+      <View
         key={category.id}
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ delay: index * 100, type: 'timing', duration: 500 }}
         style={[styles.categoryCard, {
           backgroundColor: isDark ? '#2D2D2D' : '#FFF',
           borderColor: isDark ? '#444' : '#FDE68A',
@@ -83,7 +79,7 @@ export default function ServiceCategoriesScreen() {
             </View>
           </View>
         </TouchableOpacity>
-      </MotiView>
+      </View>
     );
   };
 

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchPanchang } from '@/services/panchang.service';
 import { PanchangData } from '@/services/api';
@@ -61,12 +60,7 @@ export const DailyPanchang = () => {
 
   return (
     <View style={styles.sectionContainer}>
-      <MotiView
-        from={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'timing', duration: 600, delay: 200 }}
-        style={styles.panchangCard}
-      >
+      <View style={styles.panchangCard}>
         <View style={styles.mainDateRow}>
           <View style={styles.calendarGraphic}>
             <View style={styles.calendarHeader}>
@@ -106,7 +100,7 @@ export const DailyPanchang = () => {
           <Text style={styles.viewFullBtnText}>View Full Panchang</Text>
           <Ionicons name="chevron-forward" size={16} color="#F97316" />
         </TouchableOpacity>
-      </MotiView>
+      </View>
     </View>
   );
 };

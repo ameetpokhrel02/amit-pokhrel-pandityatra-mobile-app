@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 
@@ -19,10 +18,7 @@ export const DailyQuote = () => {
   const isDark = theme === 'dark';
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 600, delay: 300 }}
+    <View
       style={[styles.container, { backgroundColor: colors.primary }]}
     >
       <View style={styles.quoteIcon}>
@@ -30,7 +26,7 @@ export const DailyQuote = () => {
       </View>
       <Text style={styles.quoteText}>"{quote.text}"</Text>
       <Text style={styles.authorText}>- {quote.author}</Text>
-    </MotiView>
+    </View>
   );
 };
 

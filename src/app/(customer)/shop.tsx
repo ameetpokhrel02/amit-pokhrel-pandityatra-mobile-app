@@ -6,7 +6,6 @@ import { Colors } from '@/constants/Colors';
 import { useCart } from '@/store/CartContext';
 import { fetchSamagriItems, fetchSamagriCategories, aiRecommendSamagri } from '@/services/shop.service';
 import { SamagriItem } from '@/services/api';
-import { MotiView } from 'moti';
 import { useTheme } from '@/store/ThemeContext';
 
 export default function ShopScreen() {
@@ -193,11 +192,8 @@ export default function ShopScreen() {
               {filteredProducts.map((item, index) => {
                 // const quantity = getItemCount(String(item.id)); // Not needed for card view unless we show +/-
                 return (
-                  <MotiView
+                  <View
                     key={item.id}
-                    from={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 50 }}
                     style={[styles.productCard, { backgroundColor: isDark ? '#1F1F1F' : '#FFF9F4', borderColor: isDark ? '#333' : '#FDE68A' }]}
                   >
                     <TouchableOpacity
@@ -236,7 +232,7 @@ export default function ShopScreen() {
                     >
                       <Ionicons name="bag-handle-outline" size={18} color="#FFF" />
                     </TouchableOpacity>
-                  </MotiView>
+                  </View>
                 );
               })}
             </View>

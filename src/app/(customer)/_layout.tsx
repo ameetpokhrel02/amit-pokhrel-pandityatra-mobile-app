@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme, View, Text } from 'react-native';
 import { CartProvider, useCart } from '@/store/CartContext';
-import { MotiView } from 'moti';
 
 function CartIcon({ color, focused }: { color: string, focused: boolean }) {
   const { totalItems } = useCart();
@@ -11,11 +10,7 @@ function CartIcon({ color, focused }: { color: string, focused: boolean }) {
     <View>
       <Ionicons name={focused ? 'cart' : 'cart-outline'} size={24} color={color} />
       {totalItems > 0 && (
-        <MotiView
-          key={totalItems}
-          from={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 15 }}
+        <View
           style={{
             position: 'absolute',
             right: -6,
@@ -29,7 +24,7 @@ function CartIcon({ color, focused }: { color: string, focused: boolean }) {
           }}
         >
           <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{totalItems}</Text>
-        </MotiView>
+        </View>
       )}
     </View>
   );
@@ -80,12 +75,6 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="bookings"
-          options={{
-            href: null
-          }}
-        />
-        <Tabs.Screen
           name="shop"
           options={{
             title: 'Shop',
@@ -104,12 +93,36 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="services/index"
+          name="chat/index"
           options={{
-            title: 'Pujas',
+            title: 'Chat',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={24} color={color} />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="bookings"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="booking"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="chat/ai-guide"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="bookings/samagri-recommendations"
+          options={{
+            href: null
           }}
         />
         <Tabs.Screen
@@ -131,31 +144,25 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="booking"
+          name="edit-profile"
           options={{
             href: null
           }}
         />
         <Tabs.Screen
-          name="pandit"
+          name="checkout"
           options={{
             href: null
           }}
         />
         <Tabs.Screen
-          name="pandit/[id]"
+          name="panchang"
           options={{
             href: null
           }}
         />
         <Tabs.Screen
-          name="chat"
-          options={{
-            href: null
-          }}
-        />
-        <Tabs.Screen
-          name="chat/index"
+          name="services/index"
           options={{
             href: null
           }}
@@ -167,13 +174,13 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="payments"
+          name="pandit/[id]"
           options={{
             href: null
           }}
         />
         <Tabs.Screen
-          name="video"
+          name="payments"
           options={{
             href: null
           }}
@@ -185,7 +192,7 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="services"
+          name="services/list"
           options={{
             href: null
           }}
@@ -197,25 +204,7 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="services/list"
-          options={{
-            href: null
-          }}
-        />
-        <Tabs.Screen
           name="shop/ai-recommend"
-          options={{
-            href: null
-          }}
-        />
-        <Tabs.Screen
-          name="edit-profile"
-          options={{
-            href: null
-          }}
-        />
-        <Tabs.Screen
-          name="checkout"
           options={{
             href: null
           }}

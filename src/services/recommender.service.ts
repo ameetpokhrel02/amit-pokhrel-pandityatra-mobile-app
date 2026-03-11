@@ -10,3 +10,8 @@ export async function fetchBookingSamagriRecommendations(bookingId: number): Pro
     const response = await apiClient.post(`/recommender/bookings/${bookingId}/samagri/recommendations/`);
     return response.data;
 }
+
+export async function fetchPujaSamagriRecommendations(pujaId: number): Promise<any> {
+    const response = await apiClient.post('/samagri/ai_recommend/', { puja_id: pujaId });
+    return response.data;
+}
