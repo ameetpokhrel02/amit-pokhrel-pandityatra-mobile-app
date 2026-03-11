@@ -44,4 +44,5 @@ app_backup/
 /android
 
 #env
+.env
 .env.env
