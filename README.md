@@ -1,50 +1,299 @@
-# Welcome to your Expo app 👋
+🕉️ PanditYatra Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+PanditYatra is a spiritual service platform that connects users with verified Vedic Pandits for pujas, consultations, astrology, and religious services. The mobile app allows users to book pujas, consult pandits, buy samagri, generate kundali, and attend live video pujas directly from their phones.
 
-## Get started
+The mobile application is built using React Native with Expo, while the backend runs on Django REST Framework with PostgreSQL.
 
-1. Install dependencies
+📱 Features
+🔐 Authentication
 
-   ```bash
-   pnpm install
-   ```
+Users can securely sign in using multiple methods:
 
-2. Start the app
+Email + Password Login
 
-   ```bash
-   pnpm start
-   ```
+Phone OTP Login
 
-In the output, you'll find options to open the app in a
+Google Login
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Guest Explore Mode
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+📿 Puja Booking
 
-## Get a fresh project
+Users can browse and book pujas easily.
 
-When you're ready, run:
+Features:
 
-```bash
-pnpm reset-project
-```
+Browse puja categories
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+View puja details
 
-## Learn more
+Select pandit
 
-To learn more about developing your project with Expo, look at the following resources:
+Schedule date & time
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Book instantly
 
-## Join the community
+👳 Pandit Discovery
 
-Join our community of developers creating universal apps.
+Users can discover verified pandits.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Includes:
+
+Pandit profiles
+
+Languages spoken
+
+Experience
+
+Ratings & reviews
+
+Services offered
+
+🛍 Samagri Shop
+
+Users can purchase puja materials directly from the app.
+
+Includes:
+
+Samagri catalog
+
+Category filters
+
+AI-based samagri recommendation
+
+Checkout and payment
+
+🔮 Kundali & Astrology
+
+Users can generate personalized horoscope charts.
+
+Features:
+
+Kundali generation
+
+Kundali history
+
+Panchang information
+
+Astrology insights
+
+📹 Live Video Puja
+
+Users can attend puja ceremonies remotely.
+
+Powered by Daily.co video SDK.
+
+Flow:
+
+Booking → Payment → Join Video Puja
+💬 Chat System
+
+Users can chat with pandits or use an AI guide.
+
+Features:
+
+Chat rooms
+
+Real-time messages
+
+Quick AI spiritual guide
+
+🔔 Notifications
+
+Users receive updates for:
+
+Upcoming bookings
+
+Puja reminders
+
+Payment updates
+
+Platform announcements
+
+🏠 Home Screen Layout
+
+The home screen is designed to highlight daily spiritual information and quick actions.
+
+Sections include:
+
+Hero Banner
+
+Displays PanditYatra branding with a spiritual guide illustration.
+
+Quick Actions
+Book Puja
+Find Pandit
+Shop Samagri
+Generate Kundali
+Panchang
+AI Guide
+Daily Panchang
+
+Shows important astrological data for the day.
+
+Example:
+
+Tithi
+Nakshatra
+Sunrise
+Sunset
+Auspicious Time
+Featured Pujas
+
+Shows popular pujas available for booking.
+
+Top Pandits
+
+Displays recommended pandits.
+
+Upcoming Booking
+
+Shows user's upcoming scheduled puja.
+
+🧱 Tech Stack
+Mobile App
+
+React Native
+
+Expo
+
+Expo Router
+
+TypeScript
+
+Tailwind / Native styles
+
+Backend
+
+Django REST Framework
+
+PostgreSQL
+
+Docker
+
+Integrations
+
+Google OAuth
+
+Khalti Payment Gateway
+
+Daily.co Video SDK
+
+OpenAI (AI Guide)
+
+🔌 API Integration
+
+The mobile app uses the same backend APIs used by the web application.
+
+Base API URL example:
+
+http://your-server-ip:8000/api/
+🔐 Authentication APIs
+POST /api/token/
+POST /api/token/refresh/
+POST /api/users/register/
+POST /api/users/request-otp/
+POST /api/users/login-otp/
+POST /api/users/login-password/
+POST /api/users/google-login/
+GET /api/users/profile/
+📿 Services APIs
+GET /api/services/
+GET /api/services/categories/
+GET /api/services/{id}/
+👳 Pandit APIs
+GET /api/pandits/
+GET /api/pandits/{id}/
+POST /api/pandits/register/
+GET /api/pandits/my-services/
+📅 Booking APIs
+GET /api/bookings/
+POST /api/bookings/
+GET /api/bookings/{id}/
+💳 Payment APIs
+POST /api/payments/create/
+GET /api/payments/check-status/{booking_id}/
+POST /api/payments/khalti/verify/
+🛍 Samagri APIs
+GET /api/samagri/items/
+GET /api/samagri/categories/
+POST /api/samagri/checkout/
+POST /api/samagri/ai_recommend/
+🔮 Kundali APIs
+POST /api/kundali/generate/
+GET /api/kundali/list/
+GET /api/panchang/data/
+💬 Chat APIs
+GET /api/chat/rooms/
+GET /api/chat/rooms/{id}/messages/
+POST /api/chat/quick-chat/
+📹 Video APIs
+GET /api/video/room/{booking_id}/
+POST /api/video/room/{booking_id}/join/
+⚙️ Getting Started
+1️⃣ Install dependencies
+pnpm install
+2️⃣ Start development server
+pnpm start
+3️⃣ Run Android
+npx expo run:android
+4️⃣ Build APK
+eas build -p android --profile preview
+📂 Project Structure
+pandityatra-app
+ ├── app
+ │   ├── auth
+ │   ├── home
+ │   ├── services
+ │   ├── pandits
+ │   ├── bookings
+ │   ├── shop
+ │   ├── kundali
+ │   └── profile
+ │
+ ├── components
+ │   ├── common
+ │   ├── home
+ │   └── ui
+ │
+ ├── services
+ │   ├── api.ts
+ │   ├── auth.service.ts
+ │   ├── booking.service.ts
+ │   └── payment.service.ts
+ │
+ ├── assets
+ │
+ └── navigation
+👤 Guest Mode
+
+Users can explore the app without login.
+
+Allowed actions:
+
+Browse pujas
+Browse pandits
+View shop
+View panchang
+
+Restricted actions:
+
+Booking
+Chat
+Payments
+Video puja
+📦 Deployment
+
+The mobile app can be distributed using APK builds generated via Expo EAS Build.
+
+Example:
+
+eas build -p android --profile preview
+🌐 Website
+
+PanditYatra Web Platform
+(Provide your web link here)
+
+📜 License
+
+This project is developed as part of the PanditYatra platform.
