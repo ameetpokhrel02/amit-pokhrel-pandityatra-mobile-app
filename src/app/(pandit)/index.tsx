@@ -112,22 +112,22 @@ export default function PanditDashboardScreen() {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: '#FF6F00', paddingBottom: 30, marginBottom: 0 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Namaste, {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!</Text>
+          <Text style={[styles.greeting, { color: '#FFF' }]}>Namaste, {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!</Text>
           <View style={styles.headerRow}>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
-              <Text style={styles.verifiedText}>Verified</Text>
+            <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, borderRadius: 20 }]}>
+              <Ionicons name="checkmark-circle" size={16} color="#FFD700" />
+              <Text style={[styles.verifiedText, { color: '#FFF' }]}>Verified</Text>
             </View>
             <View style={styles.availabilityToggle}>
-              <Text style={[styles.availabilityText, { color: isAvailable ? '#10B981' : '#666' }]}>
+              <Text style={[styles.availabilityText, { color: isAvailable ? '#FFF' : 'rgba(255,255,255,0.7)' }]}>
                 {isAvailable ? 'Online' : 'Offline'}
               </Text>
               <Switch
                 value={isAvailable}
                 onValueChange={handleToggleAvailability}
-                trackColor={{ false: '#767577', true: '#10B981' }}
+                trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#FFD700' }}
                 thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
                 ios_backgroundColor="#3e3e3e"
               />
@@ -135,16 +135,16 @@ export default function PanditDashboardScreen() {
           </View>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(pandit)/profile')}>
-          <Ionicons name="person-circle-outline" size={50} color={Colors.light.primary} />
+          <Ionicons name="person-circle-outline" size={50} color="#FFF" />
         </TouchableOpacity>
       </View>
 
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
-        <StatCard label="Pending" value={stats.pending} icon="time-outline" color="#F59E0B" />
+        <StatCard label="Pending" value={stats.pending} icon="time-outline" color="#FF6F00" />
         <StatCard label="Upcoming" value={stats.upcoming} icon="calendar-outline" color="#3B82F6" />
-        <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#10B981" />
-        <StatCard label="Reviews" value={stats.rating} icon="star-outline" color="#FBBF24" />
+        <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#16A34A" />
+        <StatCard label="Reviews" value={stats.rating} icon="star-outline" color="#FFD700" />
       </View>
 
       {/* Upcoming Pujas */}
@@ -293,14 +293,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contentContainer: {
-    padding: 20,
-    paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    padding: 20,
+    paddingTop: 60,
   },
   headerRow: {
     flexDirection: 'row',
@@ -339,6 +339,8 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: -20,
     marginBottom: 32,
   },
   statCard: {
@@ -372,6 +374,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+    paddingHorizontal: 20,
   },
   sectionHeader: {
     flexDirection: 'row',

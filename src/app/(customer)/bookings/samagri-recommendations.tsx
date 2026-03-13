@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   shopButton: {
     flexDirection: 'row',
-    backgroundColor: '#F97316',
+    backgroundColor: '#FF6F00',
     padding: 16,
     borderRadius: 12,
     justifyContent: 'center',

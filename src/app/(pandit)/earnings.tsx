@@ -97,7 +97,7 @@ export default function EarningsScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
             >
                 {/* Wallet Balance Card */}
-                <View style={[styles.walletCard, { backgroundColor: colors.primary }]}>
+                <View style={[styles.walletCard, { backgroundColor: '#FF6F00' }]}>
                     <Text style={styles.walletLabel}>Available Balance</Text>
                     <Text style={styles.walletBalance}>NPR {wallet?.balance || '0.00'}</Text>
                     <TouchableOpacity 
@@ -107,7 +107,7 @@ export default function EarningsScreen() {
                         <Text style={styles.withdrawToggleText}>
                             {showWithdrawForm ? 'Cancel Request' : 'Request Withdrawal'}
                         </Text>
-                        <Ionicons name={showWithdrawForm ? "close-circle" : "arrow-forward-circle"} size={20} color="#FFF" />
+                        <Ionicons name={showWithdrawForm ? "close-circle" : "arrow-forward-circle"} size={20} color="#FFD700" />
                     </TouchableOpacity>
                 </View>
 
@@ -158,9 +158,9 @@ export default function EarningsScreen() {
                         <Text style={[styles.statLabel, { color: isDark ? '#AAA' : '#666' }]}>Completed</Text>
                         <Text style={[styles.statValue, { color: '#16A34A' }]}>{stats?.completed_bookings || 0}</Text>
                     </View>
-                    <View style={[styles.statBox, { backgroundColor: colors.card }]}>
+                     <View style={[styles.statBox, { backgroundColor: colors.card }]}>
                         <Text style={[styles.statLabel, { color: isDark ? '#AAA' : '#666' }]}>Total Earnings</Text>
-                        <Text style={[styles.statValue, { color: colors.primary }]}>NPR {stats?.total_earnings || 0}</Text>
+                        <Text style={[styles.statValue, { color: '#FF6F00' }]}>NPR {stats?.total_earnings || 0}</Text>
                     </View>
                     <View style={[styles.statBox, { backgroundColor: colors.card }]}>
                         <Text style={[styles.statLabel, { color: isDark ? '#AAA' : '#666' }]}>Pending</Text>

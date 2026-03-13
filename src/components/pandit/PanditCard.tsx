@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Pandit } from '@/types/pandit';
+import { getImageUrl } from '@/utils/image';
 
 interface PanditCardProps {
   pandit: Pandit;
@@ -12,77 +13,79 @@ interface PanditCardProps {
 }
 
 export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, onBook }) => {
+  // Handle both mapped frontend type and raw backend user_details
+  const imageUri = getImageUrl(pandit.image || (pandit as any).user_details?.profile_pic_url) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+
   return (
     <View style={styles.container}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
-        {/* Top Section: Image & Basic Info */}
         <View style={styles.topSection}>
           <View style={styles.imageContainer}>
-            <Image source={{ uri: pandit.image }} style={styles.image} />
+            <Image 
+              source={{ uri: imageUri }} 
+              style={styles.image} 
+            />
             {pandit.isVerified && (
               <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+                <Ionicons name="checkmark-circle" size={16} color="#FF6F00" />
               </View>
             )}
           </View>
           
           <View style={styles.infoContainer}>
             <View style={styles.headerRow}>
-              <Text style={styles.name}>{pandit.name}</Text>
-              {pandit.isTopRated && (
-                <View style={styles.topRatedBadge}>
-                  <Ionicons name="star" size={10} color="#FFF" />
-                  <Text style={styles.topRatedText}>TOP</Text>
-                </View>
-              )}
+              <Text style={styles.name} numberOfLines={1}>{pandit.name}</Text>
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={12} color="#FFD700" />
+                <Text style={styles.ratingText}>{pandit.rating}</Text>
+              </View>
             </View>
             
-            <Text style={styles.specialization}>
-              {pandit.specialization.slice(0, 2).join(', ')}
-              {pandit.specialization.length > 2 && ' +more'}
+            <Text style={styles.specialization} numberOfLines={1}>
+              {pandit.specialization.join(', ') || 'Vedic Astrology, Puja Specialist'}
             </Text>
             
             <View style={styles.statsRow}>
-              <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={14} color="#FFD700" />
-                <Text style={styles.rating}>{pandit.rating}</Text>
-                <Text style={styles.reviewCount}>({pandit.reviewCount})</Text>
+              <View style={styles.statItem}>
+                <Ionicons name="time-outline" size={14} color="#9C1C1C" />
+                <Text style={styles.statText}>{pandit.experience} Yrs Exp.</Text>
               </View>
-              <View style={styles.dot} />
-              <Text style={styles.experience}>{pandit.experience} Yrs Exp.</Text>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Ionicons name="chatbubble-outline" size={14} color="#9C1C1C" />
+                <Text style={styles.statText}>{pandit.reviewCount} Reviews</Text>
+              </View>
             </View>
 
             <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="#666" />
-              <Text style={styles.location}>{pandit.location}</Text>
+              <Ionicons name="location-outline" size={14} color="#3E2723" />
+              <Text style={styles.locationText}>{pandit.location}</Text>
             </View>
           </View>
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Bottom Section: Price & Actions */}
-        <View style={styles.bottomSection}>
-          <View>
+        <View style={styles.footer}>
+          <View style={styles.priceContainer}>
             <Text style={styles.priceLabel}>Starting from</Text>
-            <Text style={styles.price}>NPR {pandit.price}</Text>
+            <Text style={styles.priceValue}>NPR {pandit.price}</Text>
           </View>
-
-          <View style={styles.actionButtons}>
-            <View style={[styles.statusBadge, !pandit.isAvailable && styles.statusBusy]}>
-              <View style={[styles.statusDot, !pandit.isAvailable && styles.statusDotBusy]} />
-              <Text style={[styles.statusText, !pandit.isAvailable && styles.statusTextBusy]}>
-                {pandit.isAvailable ? 'Available' : 'Busy'}
-              </Text>
-            </View>
+          
+          <View style={styles.actionRow}>
+            <TouchableOpacity 
+              style={styles.chatIconButton}
+              onPress={() => {/* Handle chat */}}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color="#FF6F00" />
+            </TouchableOpacity>
             
             <TouchableOpacity 
               style={[styles.bookButton, !pandit.isAvailable && styles.bookButtonDisabled]} 
               onPress={onBook}
               disabled={!pandit.isAvailable}
             >
-              <Text style={styles.bookButtonText}>Book Now</Text>
+              <Text style={styles.bookButtonText}>
+                {pandit.isAvailable ? 'Book Now' : 'Busy'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -93,18 +96,20 @@ export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, 
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
     paddingHorizontal: 20,
+    marginBottom: 16,
   },
   card: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.1)',
+    shadowColor: '#FF6F00',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 15,
+    elevation: 4,
   },
   topSection: {
     flexDirection: 'row',
@@ -112,164 +117,142 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    marginRight: 16,
   },
   image: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: '#F5F5F5',
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -2,
+    right: -2,
     backgroundColor: '#FFF',
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#FFF',
+    padding: 1,
   },
   infoContainer: {
     flex: 1,
-    justifyContent: 'center',
+    marginLeft: 16,
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
   name: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#3E2723',
     flex: 1,
   },
-  topRatedBadge: {
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8,
+    backgroundColor: '#FFF8E1',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
   },
-  topRatedText: {
-    color: '#FFF',
-    fontSize: 10,
+  ratingText: {
+    fontSize: 12,
     fontWeight: 'bold',
-    marginLeft: 2,
+    color: '#FF6F00',
   },
   specialization: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: 13,
+    color: '#3E2723' + '80', // Dark brown with opacity
+    marginBottom: 12,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    gap: 12,
+    marginBottom: 8,
   },
-  ratingContainer: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  rating: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 4,
-  },
-  reviewCount: {
+  statText: {
     fontSize: 12,
-    color: '#999',
-    marginLeft: 2,
+    color: '#3E2723' + '90',
+    fontWeight: '500',
   },
-  dot: {
+  statDivider: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CCC',
-    marginHorizontal: 8,
-  },
-  experience: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  location: {
+  locationText: {
     fontSize: 12,
-    color: '#999',
+    color: '#3E2723' + '60',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginBottom: 12,
-  },
-  bottomSection: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.03)',
+  },
+  priceContainer: {
+    flex: 1,
   },
   priceLabel: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 10,
+    color: '#3E2723' + '60',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
-  price: {
+  priceValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: Colors.light.primary,
+    color: '#FF6F00',
   },
-  actionButtons: {
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
-  statusBadge: {
-    flexDirection: 'row',
+  chatIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#FF6F00',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  statusBusy: {
-    backgroundColor: '#FFEBEE',
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#4CAF50',
-  },
-  statusDotBusy: {
-    backgroundColor: '#F44336',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  statusTextBusy: {
-    color: '#F44336',
   },
   bookButton: {
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#FF6F00',
+    paddingHorizontal: 20,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FF6F00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   bookButtonDisabled: {
-    backgroundColor: '#CCC',
+    backgroundColor: '#D1D5DB',
+    shadowOpacity: 0,
   },
   bookButtonText: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 14,
   },

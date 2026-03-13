@@ -82,7 +82,7 @@ export const DailyPanchang = () => {
         <View style={styles.divider} />
 
         {loading ? (
-          <ActivityIndicator size="small" color="#F97316" style={{ marginVertical: 10 }} />
+          <ActivityIndicator size="small" color="#FF6F00" style={{ marginVertical: 10 }} />
         ) : (
           <View style={styles.detailsGrid}>
             <View style={styles.gridRow}>
@@ -98,7 +98,7 @@ export const DailyPanchang = () => {
           onPress={() => router.push('/(customer)/panchang' as any)}
         >
           <Text style={styles.viewFullBtnText}>View Full Panchang</Text>
-          <Ionicons name="chevron-forward" size={16} color="#F97316" />
+          <Ionicons name="chevron-forward" size={16} color="#FF6F00" />
         </TouchableOpacity>
       </View>
     </View>
@@ -173,14 +173,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tithiBadge: {
-    backgroundColor: '#F9731615',
+    backgroundColor: '#FF6F0015',
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
   },
   tithiText: {
-    color: '#F97316',
+    color: '#FF6F00',
     fontSize: 14,
     fontWeight: '700',
   },

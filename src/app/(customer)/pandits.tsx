@@ -58,20 +58,20 @@ export default function PanditListingPage() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Sticky Header with Search & Filter */}
       <View
-        style={[styles.header, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
+        style={[styles.header, { backgroundColor: '#FF6F00' }]}
       >
-        <View style={[styles.searchContainer, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-          <Ionicons name="search-outline" size={20} color={isDark ? '#AAA' : '#999'} />
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color="rgba(255,255,255,0.7)" />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={styles.searchInput}
             placeholder="Search Pandit, Puja..."
-            placeholderTextColor={isDark ? '#AAA' : '#999'}
+            placeholderTextColor="rgba(255,255,255,0.6)"
             value={filter.searchQuery}
             onChangeText={handleSearch}
           />
         </View>
-        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={() => setFilterVisible(true)}>
-          <Ionicons name="options-outline" size={24} color="#FFF" />
+        <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)}>
+          <Ionicons name="options-outline" size={24} color="#FF6F00" />
         </TouchableOpacity>
       </View>
 
@@ -112,33 +112,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    zIndex: 10,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingTop: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 46,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 50,
     marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   filterButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   listContent: {
     paddingTop: 20,

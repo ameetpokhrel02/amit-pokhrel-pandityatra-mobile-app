@@ -195,9 +195,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: Colors.light.primary,
+    color: '#FF6F00',
     marginBottom: 8,
   },
   headerSubtitle: {
@@ -256,9 +256,9 @@ const styles = StyleSheet.create({
   phoneContainer: {
     width: "100%",
     borderRadius: 8,
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: '#FF6F00',
     height: 56,
   },
   phoneTextContainer: {

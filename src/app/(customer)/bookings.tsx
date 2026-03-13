@@ -16,6 +16,14 @@ export default function BookingsScreen() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED'>('PENDING');
+
+  const tabs = [
+    { id: 'PENDING', label: 'Pending' },
+    { id: 'ACCEPTED', label: 'Accepted' },
+    { id: 'COMPLETED', label: 'Completed' },
+    { id: 'CANCELLED', label: 'Cancelled' },
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -136,8 +144,32 @@ export default function BookingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: isDark ? '#333' : '#E5E7EB' }]}>
-        <Text style={[styles.title, { color: colors.text }]}>My Bookings</Text>
+      <View style={[styles.header, { backgroundColor: '#FF6F00' }]}>
+        <Text style={[styles.title, { color: '#FFF' }]}>My Bookings</Text>
+      </View>
+
+      {/* Tabs */}
+      <View style={[styles.tabContainer, { backgroundColor: '#FFF' }]}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            onPress={() => setSelectedTab(tab.id as any)}
+            style={[
+              styles.tab,
+              selectedTab === tab.id && { borderBottomColor: '#FF6F00', borderBottomWidth: 3 }
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabLabel,
+                { color: selectedTab === tab.id ? '#FF6F00' : '#666' },
+                selectedTab === tab.id && { fontWeight: '700' }
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {loading ? (
@@ -150,7 +182,7 @@ export default function BookingsScreen() {
         </View>
       ) : (
         <FlatList
-          data={bookings}
+          data={bookings.filter(b => b.status === selectedTab)}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           contentContainerStyle={bookings.length === 0 ? styles.emptyContent : styles.listContent}
@@ -186,12 +218,32 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   center: {
     flex: 1,

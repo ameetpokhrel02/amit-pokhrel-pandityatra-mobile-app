@@ -20,7 +20,7 @@ export default function ShopCheckoutScreen() {
     shipping_address: '',
     city: '',
   });
-  const [selectedMethod, setSelectedMethod] = useState<'KHALTI' | 'STRIPE'>('KHALTI');
+  const [selectedMethod, setSelectedMethod] = useState<'KHALTI' | 'STRIPE' | 'ESEWA'>('KHALTI');
   const [loading, setLoading] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState('');
@@ -155,6 +155,19 @@ export default function ShopCheckoutScreen() {
               <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
             </View>
             <Ionicons name={selectedMethod === 'KHALTI' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'KHALTI' ? colors.primary : '#AAA'} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'ESEWA' && { borderColor: colors.primary, borderWidth: 1 }]}
+            onPress={() => setSelectedMethod('ESEWA')}
+          >
+            <View style={styles.methodInfo}>
+              <View style={[styles.methodIcon, { backgroundColor: '#60BB46' }]}>
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>e</Text>
+              </View>
+              <Text style={[styles.methodName, { color: colors.text }]}>eSewa</Text>
+            </View>
+            <Ionicons name={selectedMethod === 'ESEWA' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'ESEWA' ? colors.primary : '#AAA'} />
           </TouchableOpacity>
 
           <TouchableOpacity

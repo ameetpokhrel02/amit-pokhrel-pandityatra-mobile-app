@@ -12,21 +12,24 @@ const { width, height } = Dimensions.get('window');
 const SLIDES = [
     {
         id: '1',
-        title: 'Connect with Verified Nepali Pandits',
-        description: 'Find expert Pandits for all your religious needs with full verification and trust.',
+        title: 'Authentic Vedic Rituals',
+        description: 'Experience sacred traditions with verified Pandits who bring purity and devotion to every ritual.',
         image: require('@/assets/images/splash 1.jpeg'),
+        icon: 'heart-outline',
     },
     {
         id: '2',
-        title: 'Book Puja Online from Anywhere',
-        description: 'Schedule and book pujas with just a few taps. We bring the ritual to your home.',
+        title: 'Vibrant Spiritual Community',
+        description: 'Join a community of believers and expert priests. Shared faith, connected through excellence.',
         image: require('@/assets/images/splash 3.jpeg'),
+        icon: 'people-outline',
     },
     {
         id: '3',
-        title: 'AI Samagri & Live Puja',
-        description: 'Get AI-recommended samagri lists and join live pujas through high-quality video.',
+        title: 'Sacred Ease of Use',
+        description: 'Booking a puja is now as peaceful as the prayer itself. Seamless, secure, and spiritual.',
         image: require('@/assets/images/spash 4.png'),
+        icon: 'leaf-outline',
     },
 ];
 
@@ -141,11 +144,11 @@ export default function OnboardingScreen() {
                     <View style={styles.buttonContainer}>
                         {currentSlideIndex >= SLIDES.length - 1 ? (
                             <TouchableOpacity
-                                style={[styles.getStartedBtn, { backgroundColor: '#D97706' }]}
+                                style={[styles.getStartedBtn, { backgroundColor: '#FF6F00' }]}
                                 onPress={getStarted}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.getStartedText}>Get Started</Text>
+                                <Text style={styles.getStartedText}>Enter Sanctuary</Text>
                                 <Ionicons name="arrow-forward" size={22} color="#FFF" />
                             </TouchableOpacity>
                         ) : (
@@ -153,8 +156,13 @@ export default function OnboardingScreen() {
                                 <TouchableOpacity onPress={skip} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                     <Text style={styles.skipText}>Skip</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.nextBtn} onPress={goToNextSlide} activeOpacity={0.7}>
+                                <TouchableOpacity 
+                                    style={[styles.nextBtn, { backgroundColor: '#FF6F00' }]} 
+                                    onPress={goToNextSlide} 
+                                    activeOpacity={0.7}
+                                >
                                     <Text style={styles.nextText}>Next</Text>
+                                    <Ionicons name="chevron-forward" size={18} color="#FFF" style={{ marginLeft: 4 }} />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -217,18 +225,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     title: {
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: 'bold',
-        color: '#D97706',
+        color: '#FF6F00',
         textAlign: 'center',
-        lineHeight: 34,
+        lineHeight: 36,
     },
     description: {
         fontSize: 16,
-        color: '#555',
+        color: '#3E2723',
         textAlign: 'center',
         marginTop: 15,
         lineHeight: 24,
+        paddingHorizontal: 10,
     },
     footer: {
         height: height * 0.2,
@@ -249,8 +258,8 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
     activeIndicator: {
-        backgroundColor: '#D97706',
-        width: 20,
+        backgroundColor: '#FF6F00',
+        width: 24,
     },
     buttonContainer: {
         width: '100%',

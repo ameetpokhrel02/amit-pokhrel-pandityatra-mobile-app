@@ -14,6 +14,7 @@ import { fetchPandits } from '@/services/pandit.service';
 import { fetchMyBookings } from '@/services/booking.service';
 import { fetchBookingSamagriRecommendations } from '@/services/recommender.service';
 import { Service, Pandit, Booking, SamagriItem } from '@/services/api';
+import { getImageUrl } from '@/utils/image';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
@@ -62,12 +63,12 @@ export default function CustomerHomeScreen() {
   const upcomingBooking = bookings.length > 0 ? bookings[0] : null;
 
   return (
-    <View style={[styles.container, { backgroundColor: '#FFF7ED' }]}>
+    <View style={[styles.container, { backgroundColor: '#F5F5F5' }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: '#FF6F00' }]}>
         <View>
-          <Text style={[styles.greeting, { color: '#000' }]}>Namaste, {user?.name || 'Amit'} 🙏</Text>
-          <Text style={[styles.subGreeting, { color: '#666' }]}>Book authentic Vedic pujas</Text>
+          <Text style={[styles.greeting, { color: '#FFF' }]}>Namaste, {user?.name || 'Amit'} 🙏</Text>
+          <Text style={[styles.subGreeting, { color: 'rgba(255,255,255,0.8)' }]}>Book authentic Vedic pujas</Text>
         </View>
       </View>
 
@@ -106,7 +107,7 @@ export default function CustomerHomeScreen() {
             <QuickActionItem
               title="Find Pandit"
               icon="people-outline"
-              color="#F97316"
+              color="#FF6F00"
               onPress={() => router.push('/(customer)/pandits')}
             />
             <QuickActionItem
@@ -144,7 +145,7 @@ export default function CustomerHomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Pujas</Text>
             <TouchableOpacity onPress={() => router.push('/(customer)/services' as any)}>
-              <Text style={[styles.seeAll, { color: '#F97316' }]}>See All</Text>
+              <Text style={[styles.seeAll, { color: '#FF6F00' }]}>See All</Text>
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
@@ -159,7 +160,7 @@ export default function CustomerHomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Pandits Near You</Text>
             <TouchableOpacity onPress={() => router.push('/(customer)/pandits' as any)}>
-              <Text style={[styles.seeAll, { color: '#F97316' }]}>See All</Text>
+              <Text style={[styles.seeAll, { color: '#FF6F00' }]}>See All</Text>
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
@@ -182,7 +183,7 @@ export default function CustomerHomeScreen() {
                   <Text style={[styles.bookingPandit, { color: '#666' }]}>with {upcomingBooking.pandit_full_name}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: '#FFF7ED' }]}>
-                  <Text style={[styles.statusText, { color: '#F97316' }]}>{upcomingBooking.status}</Text>
+                  <Text style={[styles.statusText, { color: '#FF6F00' }]}>{upcomingBooking.status}</Text>
                 </View>
               </View>
               <View style={styles.bookingDetails}>
@@ -199,7 +200,7 @@ export default function CustomerHomeScreen() {
                 style={[styles.viewBookingButton, { borderColor: '#F97316' }]}
                 onPress={() => router.push(`/(customer)/bookings/${upcomingBooking.id}` as any)}
               >
-                <Text style={[styles.viewBookingText, { color: '#F97316' }]}>Join Puja</Text>
+                <Text style={[styles.viewBookingText, { color: '#FF6F00' }]}>Join Puja</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -211,7 +212,7 @@ export default function CustomerHomeScreen() {
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: '#000' }]}>Recommended Samagri for {upcomingBooking.service_name}</Text>
               <TouchableOpacity onPress={() => router.push('/(customer)/shop' as any)}>
-                <Text style={[styles.seeAll, { color: '#F97316' }]}>Shop All</Text>
+                <Text style={[styles.seeAll, { color: '#FF6F00' }]}>Shop All</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
@@ -251,7 +252,7 @@ function ServiceCard({ service, index, colors, isDark, router }: any) {
         activeOpacity={0.7}
       >
         <Image
-          source={{ uri: service.image || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }}
+          source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }}
           style={styles.serviceImage}
           contentFit="cover"
         />
@@ -265,28 +266,38 @@ function ServiceCard({ service, index, colors, isDark, router }: any) {
 }
 
 function PanditCard({ pandit, index, colors, isDark, router }: any) {
+  const rating = pandit.rating && parseFloat(pandit.rating) > 0 ? pandit.rating : '4.5';
+  const name = pandit.user_details?.full_name || 'Pandit';
+  const image = getImageUrl(pandit.user_details?.profile_pic_url) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+  
   return (
-    <View>
-      <TouchableOpacity
-        style={[styles.panditCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#F3F4F6' }]}
-        onPress={() => router.push(`/(customer)/pandit/${pandit.id}`)}
-        activeOpacity={0.7}
-      >
+    <TouchableOpacity
+      style={styles.panditCardHifi}
+      onPress={() => router.push(`/(customer)/pandit/${pandit.id}`)}
+      activeOpacity={0.9}
+    >
+      <View style={styles.panditImageWrapper}>
         <Image
-          source={{ uri: pandit.user_details?.profile_pic_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200' }}
-          style={styles.panditImage}
+          source={{ uri: image }}
+          style={styles.panditImageHifi}
           contentFit="cover"
         />
-        <View style={styles.panditInfo}>
-          <Text style={[styles.panditName, { color: colors.text }]} numberOfLines={1}>{pandit.user_details?.full_name}</Text>
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={14} color="#F59E0B" />
-            <Text style={styles.ratingText}>{pandit.rating || '4.5'}</Text>
-            <Text style={styles.experienceText}>• {pandit.experience_years}y exp</Text>
+        <View style={styles.panditRatingRibbon}>
+          <Ionicons name="star" size={10} color="#FFD700" />
+          <Text style={styles.panditRatingTxt}>{rating}</Text>
+        </View>
+      </View>
+      <View style={styles.panditInfoHifi}>
+        <Text style={styles.panditNameHifi} numberOfLines={1}>{name}</Text>
+        <Text style={styles.panditExpHifi}>{pandit.experience_years || '5'}+ Yrs Exp.</Text>
+        <View style={styles.panditActionRow}>
+          <Text style={styles.panditPriceHifi}>NPR {pandit.price || 500}</Text>
+          <View style={styles.panditBookIcon}>
+            <Ionicons name="arrow-forward" size={12} color="#FFF" />
           </View>
         </View>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -318,8 +329,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#FFF7ED',
+    paddingBottom: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -348,13 +360,20 @@ const styles = StyleSheet.create({
   },
   heroBanner: {
     height: 220,
-    backgroundColor: '#FFF7ED',
-    marginHorizontal: 0,
+    backgroundColor: '#FFFFFF',
+    marginTop: -20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    borderRadius: 24,
+    marginHorizontal: 16,
     overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   heroTextContent: {
     flex: 1,
@@ -363,7 +382,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#F97316',
+    color: '#FF6F00',
   },
   heroSubtitle: {
     fontSize: 22,
@@ -373,7 +392,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   heroButton: {
-    backgroundColor: '#F97316',
+    backgroundColor: '#FF6F00',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
@@ -428,19 +447,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickActionIconSmall: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#FF6F00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
   quickActionTitleSmall: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3E2723',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   horizontalList: {
     marginHorizontal: -20,
@@ -471,51 +495,86 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   priceText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#F97316',
+    color: '#FF6F00',
   },
-  panditCard: {
-    width: 170,
-    borderRadius: 24,
-    marginRight: 16,
-    padding: 16,
+  panditCardHifi: {
+    width: 160,
     backgroundColor: '#FFF',
-    alignItems: 'center',
-    shadowColor: '#000',
+    borderRadius: 20,
+    marginRight: 16,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.08)',
+    shadowColor: '#FF6F00',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  panditImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 12,
+  panditImageWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 120,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F5F5F5',
   },
-  panditInfo: {
-    alignItems: 'center',
+  panditImageHifi: {
+    width: '100%',
+    height: '100%',
   },
-  panditName: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  ratingRow: {
+  panditRatingRibbon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+    gap: 3,
   },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
+  panditRatingTxt: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
-  experienceText: {
+  panditInfoHifi: {
+    marginTop: 10,
+    paddingHorizontal: 2,
+  },
+  panditNameHifi: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#3E2723',
+    marginBottom: 2,
+  },
+  panditExpHifi: {
     fontSize: 11,
-    color: '#6B7280',
+    color: '#9C1C1C',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  panditActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  panditPriceHifi: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FF6F00',
+  },
+  panditBookIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#FF6F00',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bookingCard: {
     padding: 20,
@@ -602,7 +661,7 @@ const styles = StyleSheet.create({
   recoPrice: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#F97316',
+    color: '#FF6F00',
   },
   quoteSection: {
     alignItems: 'center',

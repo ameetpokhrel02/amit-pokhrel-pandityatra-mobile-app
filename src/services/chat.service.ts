@@ -4,24 +4,26 @@ import { ChatRoom, ChatMessage, ChatUser } from '@/types/chat';
 
 // Helper to map API ChatMessage to Frontend ChatMessage
 function mapChatMessage(apiMsg: any): ChatMessage {
+  if (!apiMsg) return {} as ChatMessage;
   return {
-    id: apiMsg.id.toString(),
-    chatId: apiMsg.room.toString(),
-    senderId: apiMsg.sender.toString(),
+    id: String(apiMsg.id || ''),
+    chatId: String(apiMsg.room || apiMsg.chat_id || ''),
+    senderId: String(apiMsg.sender || apiMsg.sender_id || ''),
     text: apiMsg.content || apiMsg.text || '',
     type: (apiMsg.type as any) || 'text',
-    timestamp: new Date(apiMsg.created_at || apiMsg.timestamp).getTime(),
-    isRead: apiMsg.is_read || false,
+    timestamp: new Date(apiMsg.created_at || apiMsg.timestamp || Date.now()).getTime(),
+    isRead: apiMsg.is_read || apiMsg.read || false,
     metadata: apiMsg.metadata,
   };
 }
 
 // Helper to map API ChatRoom to Frontend ChatRoom
 function mapChatRoom(apiRoom: any): ChatRoom {
+  if (!apiRoom) return {} as ChatRoom;
   return {
-    id: apiRoom.id.toString(),
+    id: String(apiRoom.id || ''),
     participants: (apiRoom.participants || []).map((p: any) => ({
-      id: p.id.toString(),
+      id: String(p.id || ''),
       name: p.full_name || p.name || 'User',
       avatar: p.profile_pic_url || p.avatar,
       role: p.role || 'user',
@@ -34,14 +36,14 @@ function mapChatRoom(apiRoom: any): ChatRoom {
 
 // List chat rooms (optionally filter by booking)
 export async function fetchChatRooms(params?: { booking?: number }): Promise<ChatRoom[]> {
-  const response = await apiClient.get('/chat/rooms/', { params });
+  const response = await apiClient.get('chat/rooms/', { params });
   const data = response.data.results || response.data;
   return Array.isArray(data) ? data.map(mapChatRoom) : [mapChatRoom(data)];
 }
 
 // Get messages for a specific room
 export async function fetchChatRoomMessages(roomId: string | number): Promise<ChatMessage[]> {
-  const response = await apiClient.get(`/chat/rooms/${roomId}/messages/`);
+  const response = await apiClient.get(`chat/rooms/${roomId}/messages/`);
   const data = response.data.results || response.data;
   return Array.isArray(data) ? data.map(mapChatMessage) : [mapChatMessage(data)];
 }
@@ -49,36 +51,37 @@ export async function fetchChatRoomMessages(roomId: string | number): Promise<Ch
 
 // Send a message to a specific room
 export async function sendMessage(roomId: string | number, text: string): Promise<ChatMessage> {
-  const response = await apiClient.post(`/chat/rooms/${roomId}/messages/`, { content: text });
+  const response = await apiClient.post(`chat/rooms/${roomId}/messages/`, { content: text });
   return mapChatMessage(response.data);
 }
 
 // Get AI suggestion for a response
 export async function getAISuggestion(roomId: string | number, lastMessage: string): Promise<ChatMessage> {
-  const response = await apiClient.post(`/chat/rooms/${roomId}/ai-suggestion/`, { last_message: lastMessage });
+  const response = await apiClient.post(`chat/rooms/${roomId}/ai-suggestion/`, { last_message: lastMessage });
   return mapChatMessage(response.data);
 }
 
-
-
-// Convenience helper: fetch or create room for a booking (as per web spec)
-export async function fetchBookingChatRoom(bookingId: number): Promise<ChatRoom> {
-  const response = await apiClient.get('/chat/rooms/', { params: { booking: bookingId } });
-  const data = response.data;
-  let room;
-  if (Array.isArray(data)) {
-    room = data[0];
-  } else if (data.results && Array.isArray(data.results)) {
-    room = data.results[0];
-  } else {
-    room = data;
-  }
-  return mapChatRoom(room);
+// Initiate a chat room (e.g. from Pandit Profile)
+export async function initiateChat(panditId: number): Promise<ChatRoom> {
+  const response = await apiClient.post('chat/rooms/initiate/', { pandit_id: panditId });
+  return mapChatRoom(response.data);
 }
 
-// AI Quick Guide Chat
+// AI Mode: Ritual Guide (Suggestions/Initial)
+export async function fetchAiGuide(): Promise<string> {
+  const response = await apiClient.get('ai/guide/');
+  return response.data.response || response.data.message || response.data.detail;
+}
+
+// AI Mode: General AI Chat
+export async function generalAiChat(message: string): Promise<string> {
+  const response = await apiClient.post('ai/chat/', { message });
+  return response.data.response || response.data.message;
+}
+
+// AI Quick Guide Chat (Existing legacy helper)
 export async function quickChat(message: string): Promise<string> {
-  const response = await apiClient.post('/chat/quick-chat/', { message });
+  const response = await apiClient.post('chat/quick-chat/', { message });
   return response.data.response;
 }
 

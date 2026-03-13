@@ -1,16 +1,13 @@
 export const Colors = {
   light: {
     primary: '#FF6F00', // Saffron
-    background: '#F5F5F5', // Cream (User spec)
+    secondary: '#9C1C1C', // Deep Red
+    accent: '#FFD700', // Gold
+    background: '#F5F5F5', // Cream
     card: '#FFFFFF',
     text: '#3E2723', // Dark Brown
     border: '#E5E5EA',
     tint: '#FF6F00',
-    icon: '#3E2723',
-    tabIconDefault: '#3E2723',
-    tabIconSelected: '#FF6F00',
-    deepRed: '#9C1C1C',
-    gold: '#FFD700',
     lightGreen: '#A5D6A7',
     pastelYellow: '#FFEB3B',
     amber: '#FFB300',
@@ -19,6 +16,7 @@ export const Colors = {
     inputBackground: '#FFFFFF',
     inputBorder: '#FF6F00',
     placeholder: '#9E9E9E',
+    deepRed: '#9C1C1C',
   },
   dark: {
     primary: '#FF6F00',

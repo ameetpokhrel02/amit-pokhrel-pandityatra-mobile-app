@@ -21,6 +21,8 @@ export interface PanditServiceItem {
   name: string;
   price: number;
   duration: number;
+  image?: string;
+  description?: string;
 }
 
 export interface PanditFilter {

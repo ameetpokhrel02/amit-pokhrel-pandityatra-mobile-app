@@ -4,28 +4,51 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme, View, Text } from 'react-native';
 import { CartProvider, useCart } from '@/store/CartContext';
 
-function CartIcon({ color, focused }: { color: string, focused: boolean }) {
+function ShopIcon({ color, focused }: { color: string, focused: boolean }) {
   const { totalItems } = useCart();
   return (
-    <View>
-      <Ionicons name={focused ? 'cart' : 'cart-outline'} size={24} color={color} />
-      {totalItems > 0 && (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons name={focused ? 'bag-handle' : 'bag-handle-outline'} size={24} color={color} />
+      {totalItems >= 0 && (
         <View
           style={{
             position: 'absolute',
-            right: -6,
-            top: -3,
-            backgroundColor: '#EF4444',
-            borderRadius: 8,
-            width: 16,
+            right: -8,
+            top: -4,
+            backgroundColor: '#111', // Dark badge as in reference
+            borderRadius: 10,
+            minWidth: 16,
             height: 16,
             justifyContent: 'center',
             alignItems: 'center',
+            paddingHorizontal: 2,
+            borderWidth: 1.5,
+            borderColor: Colors.light.background,
           }}
         >
-          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{totalItems}</Text>
+          <Text style={{ color: '#FF6F00', fontSize: 9, fontWeight: 'bold' }}>{totalItems}</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+function AIChatIcon({ color, focused }: { color: string, focused: boolean }) {
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons 
+        name={focused ? 'chatbox' : 'chatbox-outline'} 
+        size={26} 
+        color={color} 
+      />
+      <View style={{ position: 'absolute', top: 6 }}>
+        <Text style={{ 
+          fontSize: 8, 
+          fontWeight: 'bold', 
+          color: color,
+          textTransform: 'uppercase'
+        }}>AI</Text>
+      </View>
     </View>
   );
 }
@@ -70,7 +93,7 @@ function LayoutContent() {
           options={{
             title: 'Pandits',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'reorder-two' : 'reorder-two-outline'} size={32} color={color} />
             ),
           }}
         />
@@ -79,7 +102,7 @@ function LayoutContent() {
           options={{
             title: 'Shop',
             tabBarIcon: ({ color, focused }) => (
-              <CartIcon color={color} focused={focused} />
+              <ShopIcon color={color} focused={focused} />
             ),
           }}
         />
@@ -97,116 +120,176 @@ function LayoutContent() {
           options={{
             title: 'Chat',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={24} color={color} />
+              <AIChatIcon color={color} focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="bookings"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="bookings/[id]"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="booking"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="chat/ai-guide"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="bookings/samagri-recommendations"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="cart"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="shop/[id]"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="kundali"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="edit-profile"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="checkout"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="panchang"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="services/index"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="chat/[id]"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="pandit/[id]"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="payments"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="payments/checkout"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="video/[bookingId]"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="services/list"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="services/[id]"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
         <Tabs.Screen
           name="shop/ai-recommend"
           options={{
-            href: null
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="reviews/pending"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="reviews/history"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="reviews/platform-feedback"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+        <Tabs.Screen
+          name="bookings/review"
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
           }}
         />
       </Tabs>

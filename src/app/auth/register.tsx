@@ -31,9 +31,9 @@ export default function RegisterScreen() {
           
           <Button 
             title="Register as Pandit" 
-            variant="secondary"
+            variant="outline"
             onPress={() => router.push('/auth/pandit-register' as any)} 
-            style={styles.button}
+            style={styles.panditButton}
           />
         </View>
 
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.light.primary,
+    color: '#FF6F00',
     marginBottom: 8,
   },
   subtitle: {
@@ -83,6 +83,10 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
+  },
+  panditButton: {
+    width: '100%',
+    borderColor: '#FF6F00',
   },
   footer: {
     flexDirection: 'row',

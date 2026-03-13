@@ -238,7 +238,7 @@ export default function LoginScreen() {
                 variant="outline"
                 onPress={() => setLoginView('email')}
                 style={styles.mainButton}
-                leftIcon={<Ionicons name="mail-outline" size={20} color={Colors.light.primary} />}
+                leftIcon={<Ionicons name="mail-outline" size={20} color="#FF6F00" />}
               />
 
               <View style={styles.orRow}>
@@ -390,11 +390,12 @@ const styles = StyleSheet.create({
     height: 120,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: Colors.light.primary,
+    color: '#FF6F00',
     textAlign: "center",
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   activeTabText: {
-    color: Colors.light.primary,
+    color: '#FF6F00',
   },
   methodContainer: {
     flexDirection: "row",
@@ -496,9 +497,9 @@ const styles = StyleSheet.create({
   phoneContainer: {
     width: "100%",
     borderRadius: 8,
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: '#FF6F00',
     height: 56,
   },
   phoneTextContainer: {

@@ -155,7 +155,7 @@ export default function OTPScreen() {
                 ref={(ref) => { inputRefs.current[index] = ref; }}
                 style={[
                   styles.otpInput,
-                  { borderColor: digit ? Colors.light.primary : '#E0E0E0' }
+                  { borderColor: digit ? '#FF6F00' : '#E0E0E0' }
                 ]}
                 keyboardType="number-pad"
                 maxLength={1}
@@ -163,7 +163,7 @@ export default function OTPScreen() {
                 onChangeText={(text) => handleOtpChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 selectTextOnFocus
-                cursorColor={Colors.light.primary}
+                cursorColor="#FF6F00"
               />
             ))}
           </View>
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   verifyButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: '#FF6F00',
     width: '100%',
     paddingVertical: 14,
     borderRadius: 12,

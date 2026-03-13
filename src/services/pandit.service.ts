@@ -24,7 +24,7 @@ export async function fetchPandits(): Promise<Pandit[]> {
 }
 
 export async function fetchPandit(id: number): Promise<Pandit> {
-  const response = await publicApi.get(`/pandits/${id}/`);
+  const response = await publicApi.get(`/pandits/${id}/profile/`);
   return response.data;
 }
 

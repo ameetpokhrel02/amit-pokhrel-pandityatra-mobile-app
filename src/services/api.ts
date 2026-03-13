@@ -153,6 +153,7 @@ export interface Booking {
     service_name?: string;
     payment_status?: string | boolean;
     total_fee?: number;
+    is_reviewed?: boolean;
 }
 
 
@@ -239,7 +240,7 @@ export interface SamagriCheckoutPayload {
     phone_number: string;
     shipping_address: string;
     city: string;
-    payment_method: 'STRIPE' | 'KHALTI';
+    payment_method: 'STRIPE' | 'KHALTI' | 'ESEWA';
     items: { id: number; quantity: number }[];
 }
 

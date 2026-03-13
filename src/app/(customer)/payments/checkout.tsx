@@ -29,7 +29,7 @@ export default function CheckoutScreen() {
     const [booking, setBooking] = useState<Booking | null>(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState(false);
-    const [selectedMethod, setSelectedMethod] = useState<'khalti' | 'stripe'>('khalti');
+    const [selectedMethod, setSelectedMethod] = useState<'khalti' | 'stripe' | 'esewa'>('khalti');
     const [showWebView, setShowWebView] = useState(false);
     const [paymentUrl, setPaymentUrl] = useState('');
 
@@ -105,6 +105,20 @@ export default function CheckoutScreen() {
                     console.error('Khalti Error:', payload);
                     Alert.alert('Payment Failed', payload.error || 'Something went wrong.');
                 });
+            } else if (selectedMethod === 'esewa') {
+                // Initiate eSewa payment
+                const paymentIntent = await initiatePayment({
+                    booking: booking.id,
+                    payment_method: 'esewa',
+                    amount: booking.total_fee,
+                });
+
+                if (paymentIntent.payment_url) {
+                    setPaymentUrl(paymentIntent.payment_url);
+                    setShowWebView(true);
+                } else {
+                    Alert.alert('Error', 'Failed to get eSewa payment URL.');
+                }
             } else {
                 // Handle Stripe or other methods
                 Alert.alert('Coming Soon', 'Stripe payment is not yet integrated in this demo.');
@@ -234,6 +248,27 @@ export default function CheckoutScreen() {
                             name={selectedMethod === 'khalti' ? "radio-button-on" : "radio-button-off"}
                             size={24}
                             color={selectedMethod === 'khalti' ? colors.primary : '#AAA'}
+                        />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.methodCard,
+                            { backgroundColor: colors.card },
+                            selectedMethod === 'esewa' && { borderColor: colors.primary, borderWidth: 2 }
+                        ]}
+                        onPress={() => setSelectedMethod('esewa')}
+                    >
+                        <View style={styles.methodInfo}>
+                            <View style={[styles.methodIcon, { backgroundColor: '#60BB46' }]}>
+                                <Text style={{ color: 'white', fontWeight: 'bold' }}>e</Text>
+                            </View>
+                            <Text style={[styles.methodName, { color: colors.text }]}>eSewa Wallet</Text>
+                        </View>
+                        <Ionicons
+                            name={selectedMethod === 'esewa' ? "radio-button-on" : "radio-button-off"}
+                            size={24}
+                            color={selectedMethod === 'esewa' ? colors.primary : '#AAA'}
                         />
                     </TouchableOpacity>
 

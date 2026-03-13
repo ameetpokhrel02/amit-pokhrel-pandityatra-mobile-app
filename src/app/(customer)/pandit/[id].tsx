@@ -7,6 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { fetchPandit } from '@/services/pandit.service';
 import { Pandit } from '@/types/pandit';
 import { useTheme } from '@/store/ThemeContext';
+import { getImageUrl } from '@/utils/image';
 
 export default function PanditProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -25,7 +26,7 @@ export default function PanditProfileScreen() {
             const mappedPandit: Pandit = {
               id: String(data.id),
               name: data.user_details?.full_name || 'Unknown',
-              image: data.user_details?.profile_pic_url || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+              image: getImageUrl(data.user_details?.profile_pic_url) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
               location: 'Kathmandu, Nepal',
               rating: data.rating || 5.0,
               reviewCount: data.review_count || 0,
@@ -38,7 +39,9 @@ export default function PanditProfileScreen() {
                 id: s.id,
                 name: s.puja_details?.name || 'Service',
                 duration: s.duration_minutes,
-                price: parseFloat(s.custom_price) || s.puja_details?.base_price || 0
+                price: parseFloat(s.custom_price) || s.puja_details?.base_price || 0,
+                image: s.puja_details?.image,
+                description: s.puja_details?.description
               })),
               price: data.services && data.services.length > 0 ? Math.min(...data.services.map(s => parseFloat(s.custom_price))) : 500,
               isVerified: data.is_verified
@@ -75,155 +78,172 @@ export default function PanditProfileScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: '#F5F5F5' }]}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header Image */}
         <View style={styles.imageContainer}>
           <Image source={{ uri: pandit.image }} style={styles.image} />
-          <View style={styles.overlay} />
-          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.shareButton}>
-            <Ionicons name="share-social-outline" size={24} color="#FFF" />
-          </TouchableOpacity>
+          <View style={styles.imageOverlay} />
+          
+          <View style={styles.headerTopActions}>
+            <TouchableOpacity style={styles.headerCircleBtn} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={22} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerCircleBtn}>
+              <Ionicons name="share-social-outline" size={22} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.headerInfoOverlay}>
+            <View style={styles.topNameRow}>
+              <Text style={styles.heroName}>{pandit.name}</Text>
+              {pandit.isVerified && (
+                <View style={styles.verifiedBadgeLarge}>
+                  <Ionicons name="checkmark-circle" size={20} color="#FF6F00" />
+                </View>
+              )}
+            </View>
+            <View style={styles.locationTag}>
+              <Ionicons name="location" size={12} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.locationTextHero}>{pandit.location}</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Content Section */}
-        <View
-          style={[styles.contentContainer, { backgroundColor: colors.background }]}
-        >
-          {/* Header Info */}
-          <View style={styles.headerInfo}>
-            <View style={styles.nameRow}>
-              <Text style={[styles.name, { color: colors.text }]}>{pandit.name}</Text>
-              {pandit.isVerified && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
+        <View style={styles.statsCardContainer}>
+          <View style={styles.statsCard}>
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>{pandit.rating}</Text>
+              <View style={styles.statLabelRow}>
+                <Ionicons name="star" size={10} color="#FFD700" />
+                <Text style={styles.statLbl}>Rating</Text>
+              </View>
             </View>
-            <Text style={[styles.location, { color: isDark ? '#AAA' : '#666' }]}>
-              <Ionicons name="location" size={14} color={isDark ? '#AAA' : '#666'} /> {pandit.location}
-            </Text>
-
-            <View style={[styles.statsRow, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{pandit.rating} <Ionicons name="star" size={12} color="#FFD700" /></Text>
-                <Text style={[styles.statLabel, { color: isDark ? '#AAA' : '#999' }]}>{pandit.reviewCount} Reviews</Text>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{pandit.experience}+ Years</Text>
-                <Text style={[styles.statLabel, { color: isDark ? '#AAA' : '#999' }]}>Experience</Text>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{pandit.isAvailable ? 'Yes' : 'No'}</Text>
-                <Text style={[styles.statLabel, { color: pandit.isAvailable ? 'green' : 'red' }]}>
-                  {pandit.isAvailable ? 'Available' : 'Busy'}
-                </Text>
-              </View>
+            <View style={styles.statVerticalDivider} />
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>{pandit.experience}+</Text>
+              <Text style={styles.statLbl}>Exp Years</Text>
+            </View>
+            <View style={styles.statVerticalDivider} />
+            <View style={styles.statBox}>
+              <Text style={styles.statVal}>{pandit.reviewCount}</Text>
+              <Text style={styles.statLbl}>Reviews</Text>
+            </View>
+            <View style={styles.statVerticalDivider} />
+            <View style={styles.statBox}>
+              <Ionicons 
+                name={pandit.isAvailable ? "checkmark-circle" : "time"} 
+                size={18} 
+                color={pandit.isAvailable ? "#10B981" : "#EF4444"} 
+              />
+              <Text style={[styles.statLbl, { color: pandit.isAvailable ? "#10B981" : "#EF4444", fontWeight: 'bold' }]}>
+                {pandit.isAvailable ? "Available" : "Busy"}
+              </Text>
             </View>
           </View>
+        </View>
 
-          {/* About Section */}
+        <View style={styles.mainContent}>
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-            <Text style={[styles.description, { color: isDark ? '#CCC' : '#555' }]}>
-              {pandit.bio || `${pandit.name} is a highly experienced Vedic scholar specializing in ${pandit.specialization.join(', ')}.`}
+            <Text style={styles.sectionHeaderTitle}>About Pandit ji</Text>
+            <Text style={styles.aboutDescription}>
+              {pandit.bio || `${pandit.name} is a renowned Vedic scholar with over ${pandit.experience} years of experience in performing sacred rituals.`}
             </Text>
           </View>
 
-          {/* Services Section */}
-          {pandit.services && pandit.services.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Offered Services</Text>
-              <View style={styles.verticalList}>
-                {pandit.services.map((service) => (
-                  <View key={service.id} style={[styles.serviceMiniCard, { backgroundColor: colors.card }]}>
-                    <View>
-                      <Text style={[styles.serviceMiniName, { color: colors.text }]}>{service.name}</Text>
-                      <Text style={[styles.serviceMiniDetails, { color: isDark ? '#AAA' : '#666' }]}>
-                        {service.duration} Mins • NPR {service.price}
-                      </Text>
+          <View style={styles.section}>
+            <View style={styles.tagWrap}>
+              {pandit.specialization.map((spec, i) => (
+                <View key={i} style={styles.chipTag}>
+                  <Text style={styles.chipText}>{spec}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.flexRowBetween}>
+              <Text style={styles.sectionHeaderTitle}>Puja Services</Text>
+              <Text style={styles.seeAllServices}>All Services</Text>
+            </View>
+            <View style={styles.serviceListColumn}>
+              {(pandit.services || []).map((service, idx) => (
+                <View key={idx} style={styles.serviceHifiCardComplex}>
+                  <View style={styles.serviceHifiTop}>
+                    <Image 
+                      source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }} 
+                      style={styles.serviceHifiImage} 
+                    />
+                    <View style={styles.serviceHifiContent}>
+                      <Text style={styles.serviceHifiTitle}>{service.name}</Text>
+                      <View style={styles.serviceHifiMetaRow}>
+                        <Ionicons name="time-outline" size={12} color="#999" />
+                        <Text style={styles.serviceHifiMeta}>{service.duration} Mins</Text>
+                      </View>
+                      <Text style={styles.serviceHifiPriceBadge}>NPR {service.price}</Text>
                     </View>
-                    <TouchableOpacity
-                      style={[styles.smallBookButton, { backgroundColor: colors.primary }]}
-                      onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}&serviceId=${service.id}`)}
-                    >
-                      <Text style={styles.smallBookButtonText}>Book</Text>
-                    </TouchableOpacity>
                   </View>
-                ))}
-              </View>
-            </View>
-          )}
+                  
+                  {service.description && (
+                    <Text style={styles.serviceHifiDesc} numberOfLines={2}>
+                      {service.description}
+                    </Text>
+                  )}
 
-          {/* Specializations */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Specializations</Text>
-            <View style={styles.tagsContainer}>
-              {pandit.specialization.map((spec, index) => (
-                <View key={index} style={[styles.tag, { backgroundColor: isDark ? '#332' : '#FFF3E0', borderColor: isDark ? '#443' : '#FFE0B2' }]}>
-                  <Text style={[styles.tagText, { color: isDark ? '#FFB74D' : '#E65100' }]}>{spec}</Text>
+                  <TouchableOpacity 
+                    style={styles.serviceHifiBookBtn}
+                    onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}&serviceId=${service.id}`)}
+                  >
+                    <Text style={styles.serviceHifiBookText}>Book Now</Text>
+                    <Ionicons name="calendar-outline" size={14} color="#FFF" />
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
           </View>
 
-          {/* Languages */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Languages</Text>
-            <View style={styles.tagsContainer}>
-              {pandit.languages.map((lang, index) => (
-                <View key={index} style={[styles.langTag, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}>
-                  <Text style={[styles.langTagText, { color: isDark ? '#AAA' : '#666' }]}>{lang}</Text>
-                </View>
-              ))}
+            <View style={styles.flexRowBetween}>
+              <Text style={styles.sectionHeaderTitle}>Recent Reviews</Text>
+              <TouchableOpacity><Text style={styles.seeAllServices}>View All</Text></TouchableOpacity>
             </View>
-          </View>
-
-          {/* Reviews Preview (Mock) */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Reviews</Text>
-              <TouchableOpacity>
-                <Text style={[styles.seeAllText, { color: colors.primary }]}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.reviewCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
-              <View style={styles.reviewHeader}>
-                <View style={styles.reviewerInfo}>
-                  <View style={[styles.reviewerAvatar, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.avatarText}>R</Text>
+            <View style={styles.reviewCardHifi}>
+              <View style={styles.revTop}>
+                <View style={styles.revUserRow}>
+                  <View style={styles.revAvatar}><Text style={styles.revInitial}>R</Text></View>
+                  <View style={{ marginLeft: 10 }}>
+                    <Text style={styles.revUserName}>Ramesh Khetri</Text>
+                    <Text style={styles.revDate}>2 days ago</Text>
                   </View>
-                  <Text style={[styles.reviewerName, { color: colors.text }]}>Ramesh K.</Text>
                 </View>
-                <View style={[styles.reviewRating, { backgroundColor: isDark ? '#332' : '#FFF7ED' }]}>
+                <View style={styles.revRatingBadge}>
                   <Ionicons name="star" size={12} color="#FFD700" />
-                  <Text style={[styles.reviewRatingText, { color: colors.text }]}>5.0</Text>
+                  <Text style={styles.revRatingTxt}>5.0</Text>
                 </View>
               </View>
-              <Text style={[styles.reviewText, { color: isDark ? '#CCC' : '#555' }]}>
-                Very knowledgeable and punctual. The Griha Pravesh puja was conducted beautifully. Highly recommended!
+              <Text style={styles.revComment}>
+                Very peaceful and authentic recitation of mantras. Pandit ji explained every ritual's meaning which made it very special.
               </Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Action Bar */}
-      <View
-        style={[styles.bottomBar, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
-      >
-        <View>
-          <Text style={[styles.priceLabel, { color: isDark ? '#AAA' : '#999' }]}>Dakshina starts from</Text>
-          <Text style={[styles.priceValue, { color: colors.primary }]}>NPR {pandit.price}</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.bookButton, { backgroundColor: colors.primary }, !pandit.isAvailable && styles.bookButtonDisabled]}
+      <View style={styles.hifiBottomBar}>
+        <TouchableOpacity 
+          style={styles.bottomChatBtn}
+          onPress={() => router.push(`/(customer)/chat/${pandit.id}` as any)}
+        >
+          <Ionicons name="chatbubbles-outline" size={24} color="#FF6F00" />
+          <Text style={styles.bottomChatText}>Chat</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.bottomBookBtn, !pandit.isAvailable && styles.bottomBookDisabled]}
           onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}`)}
           disabled={!pandit.isAvailable}
         >
-          <Text style={styles.bookButtonText}>Book Now</Text>
+          <Text style={styles.bottomBookText}>{pandit.isAvailable ? "Book Now" : "Busy Now"}</Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
     </View>
@@ -231,281 +251,187 @@ export default function PanditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { fontSize: 18, marginBottom: 20 },
+  scrollContent: { paddingBottom: 120 },
+  
+  // Header section
+  imageContainer: { width: '100%', height: 420, position: 'relative' },
+  image: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imageOverlay: { 
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    zIndex: 1
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerTopActions: { 
+    position: 'absolute', top: 50, left: 20, right: 20, 
+    flexDirection: 'row', justifyContent: 'space-between', zIndex: 10 
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerCircleBtn: { 
+    width: 44, height: 44, borderRadius: 22, 
+    backgroundColor: 'rgba(255,111,0, 0.4)', 
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)'
   },
-  errorText: {
-    fontSize: 18,
-    marginBottom: 16,
+  headerInfoOverlay: { position: 'absolute', bottom: 60, left: 24, zIndex: 10 },
+  topNameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  heroName: { fontSize: 32, fontWeight: 'bold', color: '#FFF' },
+  verifiedBadgeLarge: { backgroundColor: '#FFF', borderRadius: 20, padding: 2 },
+  locationTag: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  locationTextHero: { color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '500' },
+
+  // Stats Card
+  statsCardContainer: { marginTop: -40, paddingHorizontal: 20, zIndex: 20 },
+  statsCard: { 
+    backgroundColor: '#FFF', borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10,
+    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20,
+    elevation: 8, borderWidth: 1, borderColor: '#FF6F00' + '10'
   },
-  backButton: {
-    padding: 12,
-    borderRadius: 8,
+  statBox: { alignItems: 'center', flex: 1 },
+  statVal: { fontSize: 18, fontWeight: 'bold', color: '#3E2723', marginBottom: 2 },
+  statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statLbl: { fontSize: 11, color: '#999', fontWeight: '600', textTransform: 'uppercase' },
+  statVerticalDivider: { width: 1, height: 30, backgroundColor: 'rgba(0,0,0,0.05)' },
+
+  // Content
+  mainContent: { padding: 24, paddingTop: 32 },
+  section: { marginBottom: 32 },
+  sectionHeaderTitle: { fontSize: 20, fontWeight: 'bold', color: '#3E2723', marginBottom: 12 },
+  aboutDescription: { fontSize: 15, color: '#3E2723' + '80', lineHeight: 24 },
+  
+  flexRowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  seeAllServices: { color: '#FF6F00', fontWeight: 'bold', fontSize: 14 },
+  
+  // Tags
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chipTag: { 
+    backgroundColor: '#FF6F00' + '10', paddingHorizontal: 14, paddingVertical: 8, 
+    borderRadius: 12, borderWidth: 1, borderColor: '#FF6F00' + '20' 
   },
-  backButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  imageContainer: {
-    height: 300,
-    width: '100%',
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  headerBackButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contentContainer: {
-    marginTop: -40,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-  },
-  headerInfo: {
-    marginBottom: 24,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  location: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  chipText: { color: '#FF6F00', fontSize: 13, fontWeight: '600' },
+
+  serviceListColumn: { gap: 12 },
+
+  // Services Complex Card
+  serviceHifiCardComplex: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     padding: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-  },
-  statDivider: {
-    width: 1,
-    height: '100%',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  seeAllText: {
-    fontWeight: '600',
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    marginBottom: 16,
     borderWidth: 1,
-  },
-  tagText: {
-    fontSize: 14,
-  },
-  langTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  langTagText: {
-    fontSize: 14,
-  },
-  reviewCard: {
-    padding: 16,
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    borderColor: 'rgba(255,111,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     elevation: 2,
   },
-  reviewHeader: {
+  serviceHifiTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 12,
   },
-  reviewerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  reviewerAvatar: {
-    width: 32,
-    height: 32,
+  serviceHifiImage: {
+    width: 80,
+    height: 80,
     borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+  },
+  serviceHifiContent: {
+    flex: 1,
+    marginLeft: 16,
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  avatarText: {
-    color: '#FFF',
+  serviceHifiTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#3E2723',
+    marginBottom: 4,
   },
-  reviewerName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reviewRating: {
+  serviceHifiMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 8,
+  },
+  serviceHifiMeta: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '500',
+  },
+  serviceHifiPriceBadge: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF6F00',
+    backgroundColor: '#FFF8E1',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-  },
-  reviewRatingText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  reviewText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 30,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  priceLabel: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  priceValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  bookButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 16,
-  },
-  bookButtonDisabled: {
-    backgroundColor: '#CCC',
-  },
-  bookButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  verticalList: {
-    gap: 12,
-  },
-  serviceMiniCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  serviceMiniName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  serviceMiniDetails: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  smallBookButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 8,
+    alignSelf: 'flex-start',
   },
-  smallBookButtonText: {
+  serviceHifiDesc: {
+    fontSize: 13,
+    color: '#3E2723' + '80',
+    lineHeight: 18,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  serviceHifiBookBtn: {
+    backgroundColor: '#FF6F00',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 8,
+  },
+  serviceHifiBookText: {
     color: '#FFF',
     fontSize: 14,
     fontWeight: 'bold',
   },
+
+  // Reviews
+  reviewCardHifi: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' },
+  revTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  revUserRow: { flexDirection: 'row', alignItems: 'center' },
+  revAvatar: { 
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#9C1C1C', 
+    justifyContent: 'center', alignItems: 'center' 
+  },
+  revInitial: { color: '#FFF', fontWeight: 'bold' },
+  revUserName: { fontSize: 15, fontWeight: 'bold', color: '#3E2723' },
+  revDate: { fontSize: 11, color: '#999' },
+  revRatingBadge: { 
+    flexDirection: 'row', alignItems: 'center', gap: 4, 
+    backgroundColor: '#FFF8E1', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 
+  },
+  revRatingTxt: { fontSize: 12, fontWeight: 'bold', color: '#FF6F00' },
+  revComment: { fontSize: 14, color: '#3E2723' + '80', lineHeight: 22, fontStyle: 'italic' },
+
+  // Bottom Bar
+  hifiBottomBar: { 
+    position: 'absolute', bottom: 0, left: 0, right: 0, 
+    backgroundColor: '#FFF', height: 100, borderTopLeftRadius: 30, borderTopRightRadius: 30,
+    paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20,
+    elevation: 20
+  },
+  bottomChatBtn: { 
+    width: 70, height: 56, borderRadius: 18, borderWidth: 1.5, borderColor: '#FF6F00',
+    justifyContent: 'center', alignItems: 'center'
+  },
+  bottomChatText: { fontSize: 10, fontWeight: 'bold', color: '#FF6F00', marginTop: 2 },
+  bottomBookBtn: { 
+    flex: 1, marginLeft: 16, height: 56, borderRadius: 18, backgroundColor: '#FF6F00',
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#FF6F00', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15
+  },
+  bottomBookDisabled: { backgroundColor: '#D1D5DB', shadowOpacity: 0 },
+  bottomBookText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  backButton: { padding: 12, borderRadius: 8 },
+  backButtonText: { color: '#FFF', fontWeight: 'bold' },
 });

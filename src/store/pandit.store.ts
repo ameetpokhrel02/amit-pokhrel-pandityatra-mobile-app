@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Pandit, PanditFilter } from '@/types/pandit';
+import { getImageUrl } from '@/utils/image';
 import * as PanditService from '@/services/pandit.service';
 
 interface PanditState {
@@ -56,7 +57,7 @@ export const usePanditStore = create<PanditState>((set, get) => ({
       const mappedData: Pandit[] = rawData.map((p: any) => ({
         id: String(p.id),
         name: p.user_details?.full_name || 'Pandit Ji',
-        image: p.user_details?.profile_pic_url || 'https://via.placeholder.com/150',
+        image: getImageUrl(p.user_details?.profile_pic_url) || 'https://via.placeholder.com/150',
         experience: p.experience_years || 0,
         specialization: p.expertise ? p.expertise.split(',').map((s: string) => s.trim()) : [],
         languages: p.language ? p.language.split(',').map((l: string) => l.trim()) : [],

@@ -45,3 +45,18 @@ export async function aiRecommendSamagri(payload: { service_id?: number; puja_na
     const response = await apiClient.post('/samagri/ai_recommend/', payload);
     return response.data;
 }
+
+export async function fetchWishlist(): Promise<SamagriItem[]> {
+    const response = await apiClient.get('/samagri/wishlist/');
+    return response.data.results || response.data;
+}
+
+export async function toggleWishlist(itemId: number) {
+    const response = await apiClient.post('/samagri/wishlist/toggle/', { item_id: itemId });
+    return response.data;
+}
+
+export async function checkWishlistStatus(itemId: number): Promise<{ is_favorite: boolean }> {
+    const response = await apiClient.get(`/samagri/wishlist/check/${itemId}/`);
+    return response.data;
+}

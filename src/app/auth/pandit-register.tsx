@@ -155,7 +155,7 @@ export default function PanditRegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FDF8F6', // Light cream background
+    backgroundColor: '#F5F5F5', 
   },
   scrollContent: {
     padding: 24,
@@ -171,9 +171,9 @@ const styles = StyleSheet.create({
     height: 100,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#FF6F00',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 16,
-    backgroundColor: '#E09F7D', // Match the button color in screenshot
+    backgroundColor: '#FF6F00', 
   },
   footer: {
     flexDirection: 'row',
@@ -334,8 +334,8 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 8,
     backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderWidth: 1.5,
+    borderColor: '#FF6F00',
     height: 56,
   },
   phoneTextContainer: {

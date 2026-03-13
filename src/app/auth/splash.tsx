@@ -97,6 +97,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#FF6F00',
     },
     background: {
         flex: 1,
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backgroundColor: 'rgba(255, 111, 0, 0.85)', // Saffron with slight transparency
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -113,20 +114,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logo: {
-        width: 180,
-        height: 180,
-        marginBottom: 10,
+        width: 200,
+        height: 200,
+        marginBottom: 20,
     },
     title: {
-        fontSize: 36,
+        fontSize: 42,
         fontWeight: 'bold',
-        color: '#D97706',
+        color: '#FFD700', // Gold
         textAlign: 'center',
+        letterSpacing: 1,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#555',
-        marginTop: 8,
+        fontSize: 18,
+        color: '#FFFFFF', // White for better contrast on saffron
+        marginTop: 10,
         textAlign: 'center',
+        fontWeight: '500',
     },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Keyboa
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
-import { quickChat } from '@/services/chat.service';
+import { quickChat, generalAiChat, fetchAiGuide } from '@/services/chat.service';
 
 interface Message {
   id: string;
@@ -12,21 +12,47 @@ interface Message {
   timestamp: Date;
 }
 
+type ChatMode = 'guide' | 'general';
+
 export default function AIGuideScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Namaste! I am your PanditYatra AI Guru. How can I guide you today regarding rituals, samagri, or auspicious timings?',
-      sender: 'ai',
-      timestamp: new Date(),
-    },
-  ]);
+  const [mode, setMode] = useState<ChatMode>('guide');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    initChat();
+  }, [mode]);
+
+  const initChat = async () => {
+    setLoading(true);
+    try {
+      let initialText = 'Namaste! How can I help you today?';
+      if (mode === 'guide') {
+        const guideText = await fetchAiGuide();
+        initialText = guideText || 'Namaste! I am your Ritual Guide. Ask me anything about pujas or samagri.';
+      } else {
+        initialText = 'Hello! I am your General AI Assistant. You can ask me anything about Vedic culture or spirituality.';
+      }
+
+      setMessages([
+        {
+          id: 'initial',
+          text: initialText,
+          sender: 'ai',
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
@@ -43,7 +69,13 @@ export default function AIGuideScreen() {
     setLoading(true);
 
     try {
-      const aiResponse = await quickChat(userMessage.text);
+      let aiResponse = '';
+      if (mode === 'guide') {
+        aiResponse = await quickChat(userMessage.text);
+      } else {
+        aiResponse = await generalAiChat(userMessage.text);
+      }
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: aiResponse,
@@ -81,9 +113,20 @@ export default function AIGuideScreen() {
           <View style={[styles.aiBadge, { backgroundColor: colors.primary }]}>
             <Ionicons name="sparkles" size={12} color="#FFF" />
           </View>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>AI Ritual Guide</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {mode === 'guide' ? 'AI Ritual Guide' : 'General AI Chat'}
+          </Text>
         </View>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity 
+          onPress={() => setMode(mode === 'guide' ? 'general' : 'guide')}
+          style={styles.modeSwitch}
+        >
+          <Ionicons 
+            name={mode === 'guide' ? "chatbox-ellipses-outline" : "book-outline"} 
+            size={24} 
+            color={colors.primary} 
+          />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -157,6 +200,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
+  },
+  modeSwitch: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 111, 0, 0.05)',
   },
   headerInfo: {
     flexDirection: 'row',

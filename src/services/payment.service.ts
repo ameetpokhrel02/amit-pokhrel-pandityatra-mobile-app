@@ -3,7 +3,7 @@ import { Payment } from './api'; // Keep common types in api.ts for now or move 
 
 export interface CreatePaymentPayload {
     booking: number;
-    payment_method: 'stripe' | 'khalti';
+    payment_method: 'stripe' | 'khalti' | 'esewa';
     amount?: number;
     currency?: string;
     [key: string]: any;
@@ -30,5 +30,10 @@ export async function checkPaymentStatus(id: number): Promise<Payment> {
 
 export async function verifyKhaltiPayment(payload: { token: string; amount: number }) {
     const response = await apiClient.post('/payments/khalti/verify/', payload);
+    return response.data;
+}
+
+export async function verifyEsewaPayment(payload: { refId: string; amt: number; oid: string }) {
+    const response = await apiClient.get('/payments/esewa/verify/', { params: payload });
     return response.data;
 }

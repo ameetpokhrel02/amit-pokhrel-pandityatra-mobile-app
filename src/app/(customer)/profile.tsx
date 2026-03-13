@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
 import { fetchProfile } from '@/services/auth.service';
+import { fetchMyBookings } from '@/services/booking.service';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -20,23 +21,34 @@ export default function ProfileScreen() {
   const isDark = theme === 'dark';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchProfile();
+        setLoading(true);
+        const [profileData, bookingsData] = await Promise.all([
+          fetchProfile(),
+          fetchMyBookings()
+        ]);
+
         updateUser({
-          name: data.full_name,
-          email: data.email,
-          phone: data.phone_number,
-          role: data.role,
-          photoUri: data.profile_image ? data.profile_image : null,
+          name: profileData.full_name,
+          email: profileData.email,
+          phone: profileData.phone_number,
+          role: profileData.role,
+          photoUri: profileData.profile_image ? profileData.profile_image : null,
         } as any);
+
+        const pending = bookingsData.filter(b => b.status === 'COMPLETED' && !b.is_reviewed);
+        setPendingReviewCount(pending.length);
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error loading profile data:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    loadProfile();
+    loadData();
   }, []);
 
   const toggleTheme = () => {
@@ -135,6 +147,38 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Reviews & Feedback Section */}
+      <View style={[styles.section, { backgroundColor: colors.card, marginTop: 10 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Reviews & Feedback</Text>
+        
+        {renderSettingItem(
+          "star-outline", 
+          "Rate Recent Services", 
+          () => router.push('/(customer)/reviews/pending' as any),
+          pendingReviewCount > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{pendingReviewCount}</Text>
+            </View>
+          ) : null
+        )}
+        
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        
+        {renderSettingItem(
+          "chatbubble-ellipses-outline", 
+          "My Past Reviews", 
+          () => router.push('/(customer)/reviews/history' as any)
+        )}
+        
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        
+        {renderSettingItem(
+          "heart-outline", 
+          "Rate PanditYatra", 
+          () => router.push('/(customer)/reviews/platform-feedback' as any)
+        )}
+      </View>
+
       {/* More Settings */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         {renderSettingItem("notifications-outline", "Notifications", () => { })}
@@ -146,14 +190,25 @@ export default function ProfileScreen() {
         {renderSettingItem("help-circle-outline", "Help & Support", () => { })}
       </View>
 
-      <View style={styles.logoutContainer}>
-        <Button
-          title={t('profile.logout')}
-          onPress={() => setShowLogoutModal(true)}
-          variant="outline"
-          style={{ borderColor: colors.deepRed }}
-          textStyle={{ color: colors.deepRed }}
-        />
+      {/* Account Section - Based on User Screenshot */}
+      <Text style={[styles.sectionHeaderTitle, { color: colors.text + '80' }]}>Account</Text>
+      <View style={[styles.section, { backgroundColor: isDark ? colors.card : '#F3F4F6', paddingTop: 8, paddingBottom: 8 }]}>
+        {renderSettingItem(
+          "trash-outline", 
+          "Delete account", 
+          () => Alert.alert("Delete Account", "Are you sure you want to delete your account? This action is irreversible.", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Delete", style: "destructive", onPress: () => Alert.alert("Requested", "Account deletion request submitted.") }
+          ], { cancelable: true }),
+          <Ionicons name="chevron-forward" size={20} color={colors.text + '40'} />
+        )}
+        <View style={[styles.divider, { backgroundColor: colors.border, marginVertical: 8 }]} />
+        {renderSettingItem(
+          "log-out-outline", 
+          "Logout", 
+          () => setShowLogoutModal(true),
+          <Ionicons name="chevron-forward" size={20} color={colors.text + '40'} />
+        )}
       </View>
 
       <LogoutModal
@@ -248,6 +303,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  sectionHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  badge: {
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginRight: 8,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   row: {
     flexDirection: 'row',
