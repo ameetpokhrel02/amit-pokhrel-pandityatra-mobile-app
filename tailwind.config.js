@@ -49,7 +49,7 @@ module.exports = {
                     900: '#F57F17',
                 },
                 background: '#F5F5F5', // Cream/White
-                textDark: '#3E2723', // Dark Brown
+                textDark: '#3E2723', // Dark Brown  
             },
         },
     },

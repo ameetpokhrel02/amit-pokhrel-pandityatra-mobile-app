@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/store/CartContext';
-import { useUser } from '@/store/UserContext';
+import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ import { getImageUrl } from '@/utils/image';
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isAuthenticated } = useAuthStore();
   const { colors, theme } = useTheme();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
@@ -31,26 +31,41 @@ export default function CustomerHomeScreen() {
 
   useEffect(() => {
     loadHomeData();
-  }, []);
+  }, [isAuthenticated]);
 
   const loadHomeData = async () => {
     try {
       setLoading(true);
-      const [servicesData, panditsData, bookingsData] = await Promise.all([
+      
+      // 1. Fetch Guest-accessible data
+      const [servicesData, panditsData] = await Promise.all([
         fetchServices(),
         fetchPandits(),
-        fetchMyBookings({ status: 'PENDING' }),
       ]);
       setServices(servicesData.slice(0, 6));
       setPandits(panditsData.slice(0, 6));
-      setBookings(bookingsData);
 
-      if (bookingsData.length > 0) {
+      // 2. Fetch authenticated data only if logged in and user object exists
+      if (isAuthenticated && user?.id) {
         try {
-          const recoData = await fetchBookingSamagriRecommendations(bookingsData[0].id);
-          setRecommendations(recoData);
-        } catch (recoErr) {
-          console.warn("Could not fetch recommendations", recoErr);
+          const bookingsData = await fetchMyBookings({ status: 'PENDING' });
+          setBookings(bookingsData);
+
+          if (bookingsData.length > 0) {
+            try {
+              const recoData = await fetchBookingSamagriRecommendations(bookingsData[0].id);
+              setRecommendations(recoData);
+            } catch (recoErr) {
+              console.warn("Could not fetch recommendations", recoErr);
+            }
+          }
+        } catch (authErr: any) {
+          // Silent failure for session-related errors when not primary
+          if (authErr?.response?.status === 401) {
+             console.warn("Guest session unauthorized, skipping authenticated data");
+          } else {
+             console.error("Auth-only data fetch failed:", authErr);
+          }
         }
       }
     } catch (error) {

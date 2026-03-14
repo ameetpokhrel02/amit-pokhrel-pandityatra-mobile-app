@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { useAuthStore } from '@/store/auth.store';
 
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
@@ -59,15 +60,21 @@ const apiClient = axios.create({
     timeout: 15000, // 15 seconds timeout
 });
 
+
 /**
  * Centralized helper to save authentication tokens
  * @param access The access token string
  * @param refresh The refresh token string
+ * @param userData Optional user data to update the store
  */
-export const saveTokens = async (access: string, refresh: string) => {
+export const saveTokens = async (access: string, refresh: string, userData?: any) => {
     try {
         await SecureStore.setItemAsync('access_token', access);
         await SecureStore.setItemAsync('refresh_token', refresh);
+
+        if (userData) {
+            await useAuthStore.getState().login(userData, { access, refresh });
+        }
 
         // Update default header for the current instance session
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
@@ -153,8 +160,8 @@ apiClient.interceptors.response.use(
             const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
             if (!refreshToken) {
-                // No refresh token, force logout
-                handleLogout();
+                // No refresh token, force logout using store
+                useAuthStore.getState().logout();
                 return Promise.reject(error);
             }
 
@@ -173,7 +180,7 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (err) {
                 processQueue(err, null);
-                handleLogout();
+                useAuthStore.getState().logout();
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;
@@ -184,13 +191,7 @@ apiClient.interceptors.response.use(
     }
 );
 
-async function handleLogout() {
-    await SecureStore.deleteItemAsync('access_token');
-    await SecureStore.deleteItemAsync('refresh_token');
-    await SecureStore.deleteItemAsync('role');
-    await SecureStore.deleteItemAsync('user');
-    router.replace('/auth/login');
-}
+// handleLogout is now handled by useAuthStore.getState().logout()
 
 
 

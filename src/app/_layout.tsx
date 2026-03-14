@@ -2,9 +2,9 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { AuthProvider } from '@/store/AuthContext';
 import { ThemeProvider } from '@/store/ThemeContext';
-import { UserProvider } from '@/store/UserContext';
+import { CartProvider } from '@/store/CartContext';
+import { useAuthStore } from '@/store/auth.store';
 import '@/i18n'; // Initialize i18n
 import '../../global.css'; // Import NativeWind styles
 
@@ -12,30 +12,39 @@ import '../../global.css'; // Import NativeWind styles
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const { initialize, isLoading } = useAuthStore();
+
   useEffect(() => {
-    SplashScreen.hideAsync();
+    initialize();
   }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <UserProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* Auth / startup routing */}
-            <Stack.Screen name="index" />
-            <Stack.Screen name="auth" />
+      <CartProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* Auth / startup routing */}
+          <Stack.Screen name="index" />
+          <Stack.Screen name="auth" />
+          
+          {/* Public screens (About, Contact, etc.) */}
+          <Stack.Screen name="(public)" />
 
-            {/* Customer app (tabs) */}
-            <Stack.Screen name="(customer)" />
+          {/* Customer app (tabs) */}
+          <Stack.Screen name="(customer)" />
 
-            {/* Pandit app (tabs) */}
-            <Stack.Screen name="(pandit)" />
+          {/* Pandit app (tabs) */}
+          <Stack.Screen name="(pandit)" />
 
-            {/* Admin dashboard */}
-            <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
-          </Stack>
-        </UserProvider>
-      </AuthProvider>
+          {/* Admin dashboard */}
+          <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
+        </Stack>
+      </CartProvider>
     </ThemeProvider>
   );
 }

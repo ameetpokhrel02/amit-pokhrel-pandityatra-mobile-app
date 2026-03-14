@@ -7,6 +7,7 @@ export const Colors = {
     card: '#FFFFFF',
     text: '#3E2723', // Dark Brown
     border: '#E5E5EA',
+    icon: '#6B7280',
     tint: '#FF6F00',
     lightGreen: '#A5D6A7',
     pastelYellow: '#FFEB3B',

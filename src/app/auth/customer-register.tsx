@@ -89,86 +89,88 @@ export default function CustomerRegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/pandit-logo.png')}
-            style={styles.logo}
-            contentFit="contain"
-          />
-        </View>
-        <Text style={styles.headerTitle}>Join as Customer</Text>
-        <Text style={styles.headerSubtitle}>Create an account to book Pujas</Text>
-
-        <Button
-          title="Sign up with Google"
-          variant="outline"
-          onPress={() => router.push('/auth/login' as any)}
-          style={styles.googleButton}
-          leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
-        />
-
-        <View style={styles.orRow}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>OR</Text>
-          <View style={styles.orLine} />
-        </View>
-
-        <View style={styles.form}>
-          <Input
-            label="Full Name"
-            placeholder="Enter your name"
-            value={form.fullName}
-            onChangeText={(t) => setForm({ ...form, fullName: t })}
-            leftIcon={<Ionicons name="person-outline" size={20} color="#6B7280" />}
-          />
-
-          <View style={styles.phoneInputContainer}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <CustomPhoneInput
-              value={form.phone}
-              onChangeText={(text) => setForm({ ...form, phone: text })}
-              onFormattedChange={setFormattedValue}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/pandit-logo.png')}
+              style={styles.logo}
+              contentFit="contain"
             />
           </View>
-
-          <Input
-            label="Email Address"
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            value={form.email}
-            onChangeText={(t) => setForm({ ...form, email: t })}
-            leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
-          />
-
-          <Input
-            label="Password"
-            placeholder="Enter password"
-            secureTextEntry={!showPassword}
-            value={form.password}
-            onChangeText={(t) => setForm({ ...form, password: t })}
-            leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
-            rightIcon={
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            }
-          />
+          <Text style={styles.headerTitle}>Join as Customer</Text>
+          <Text style={styles.headerSubtitle}>Create an account to book Pujas</Text>
 
           <Button
-            title={loading ? 'Creating account...' : 'Continue'}
-            onPress={handleSubmit}
-            disabled={loading}
-            style={styles.submitButton}
+            title="Sign up with Google"
+            variant="outline"
+            onPress={() => {}}
+            style={styles.googleButton}
+            leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
           />
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Text style={styles.link} onPress={() => router.push('/auth/login' as any)}>Login</Text>
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          <View style={styles.form}>
+            <Input
+              label="Full Name"
+              placeholder="Enter your name"
+              value={form.fullName}
+              onChangeText={(t) => setForm({ ...form, fullName: t })}
+              leftIcon={<Ionicons name="person-outline" size={20} color="#6B7280" />}
+            />
+
+            <View style={styles.phoneInputContainer}>
+              <Text style={styles.inputLabel}>Phone Number</Text>
+              <CustomPhoneInput
+                value={form.phone}
+                onChangeText={(text) => setForm({ ...form, phone: text })}
+                onFormattedChange={setFormattedValue}
+              />
+            </View>
+
+            <Input
+              label="Email Address"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              value={form.email}
+              onChangeText={(t) => setForm({ ...form, email: t })}
+              leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
+            />
+
+            <Input
+              label="Password"
+              placeholder="Enter password"
+              secureTextEntry={!showPassword}
+              value={form.password}
+              onChangeText={(t) => setForm({ ...form, password: t })}
+              leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              }
+            />
+
+            <Button
+              title={loading ? 'Creating account...' : 'Continue'}
+              onPress={handleSubmit}
+              disabled={loading}
+              style={styles.submitButton}
+            />
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={styles.link} onPress={() => router.push('/auth/login' as any)}>Login</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -181,6 +183,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
+  scrollContent: {
+    padding: 24,
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
@@ -189,24 +206,21 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
   },
-  scrollContent: {
-    padding: 24,
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#FF6F00',
+    textAlign: 'center',
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
     color: Colors.light.text,
+    textAlign: 'center',
     marginBottom: 32,
   },
   form: {
-    gap: 16,
+    gap: 8,
   },
   googleButton: {
     marginBottom: 12,
@@ -214,6 +228,7 @@ const styles = StyleSheet.create({
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 8,
     marginBottom: 16,
   },
   orLine: {
@@ -252,31 +267,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#374151',
     marginBottom: 6,
-  },
-  phoneContainer: {
-    width: "100%",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: '#FF6F00',
-    height: 56,
-  },
-  phoneTextContainer: {
-    borderRadius: 8,
-    backgroundColor: "#F9FAFB",
-    paddingVertical: 0,
-  },
-  phoneTextInput: {
-    fontSize: 16,
-    color: '#1F2937',
-    height: 56,
-  },
-  phoneCodeText: {
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  phoneFlagButton: {
-    borderRightWidth: 1,
-    borderRightColor: '#E5E7EB',
   },
 });

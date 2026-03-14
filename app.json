@@ -61,7 +61,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": false
     },
     "extra": {
       "expoPublicGoogleClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",

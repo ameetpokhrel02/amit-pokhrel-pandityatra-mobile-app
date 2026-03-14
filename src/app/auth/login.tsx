@@ -16,12 +16,13 @@ import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { requestLoginOtp, googleLogin, fetchProfile, passwordLogin } from "@/services/auth.service";
+import { useAuthStore } from "@/store/auth.store";
+import { API_BASE_URL } from "@/services/api-client";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -39,6 +40,7 @@ export default function LoginScreen() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login: storeLogin, logout: storeLogout } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [formattedPhone, setFormattedPhone] = useState("");
 
@@ -69,10 +71,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     // DEBUG: Check what URL we are hitting
-    import('@/services/api-client').then(module => {
-      console.log("Current API Base URL:", module.API_BASE_URL);
-      // Alert.alert("Debug Info", `API URL: ${module.API_BASE_URL}`); // Uncomment if you want to see it on screen
-    });
+    console.log("Current API Base URL:", API_BASE_URL);
   }, []);
 
   useEffect(() => {
@@ -85,17 +84,19 @@ export default function LoginScreen() {
         }
 
         try {
-          await googleLogin(idToken);
+          const { access, refresh } = await googleLogin(idToken);
           const user = await fetchProfile();
 
-          // Update local state
-          await AsyncStorage.setItem('user', JSON.stringify({
+          const userProfile = {
+            id: user.id || "",
             name: user.full_name,
             email: user.email,
             phone: user.phone_number,
             role: user.role,
-            photoUri: user.profile_pic_url
-          }));
+            profile_pic_url: user.profile_pic_url
+          };
+
+          await storeLogin(userProfile, { access, refresh });
 
           if (user.role === "pandit") {
             const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
@@ -147,17 +148,19 @@ export default function LoginScreen() {
           return;
         }
 
-        await passwordLogin({ email, password });
+        const { access, refresh } = await passwordLogin({ email, password });
         const user = await fetchProfile();
 
-        // Update local state
-        await AsyncStorage.setItem('user', JSON.stringify({
+        const userProfile = {
+          id: user.id || "",
           name: user.full_name,
           email: user.email,
           phone: user.phone_number,
           role: user.role,
-          photoUri: user.profile_pic_url
-        }));
+          profile_pic_url: user.profile_pic_url
+        };
+
+        await storeLogin(userProfile, { access, refresh });
 
         if (user.role === "pandit") {
           const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
@@ -173,7 +176,6 @@ export default function LoginScreen() {
         }
       }
     } catch (err: any) {
-      const { API_BASE_URL } = require('@/services/api-client');
       console.error("Login error:", err);
       Alert.alert(
         "Login Error", 
@@ -185,7 +187,7 @@ export default function LoginScreen() {
   };
 
   const handleGuestLogin = async () => {
-    await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'role']);
+    await storeLogout(); // Ensure session is fully cleared before navigating
     router.replace("/(customer)" as any);
   };
 
@@ -228,17 +230,18 @@ export default function LoginScreen() {
 
               <Button
                 title="Continue with Phone"
+                variant="primary"
                 onPress={() => setLoginView('phone')}
                 style={styles.mainButton}
-                leftIcon={<Ionicons name="call-outline" size={20} color="#FFF" />}
+                leftIcon={<Ionicons name="call" size={20} color="#FFF" />}
               />
 
               <Button
                 title="Continue with Email"
                 variant="outline"
                 onPress={() => setLoginView('email')}
-                style={styles.mainButton}
-                leftIcon={<Ionicons name="mail-outline" size={20} color="#FF6F00" />}
+                style={styles.emailButton}
+                leftIcon={<Ionicons name="mail" size={20} color="#FF6F00" />}
               />
 
               <View style={styles.orRow}>
@@ -273,8 +276,8 @@ export default function LoginScreen() {
 
           {loginView === 'phone' && (
             <>
-              <Text style={styles.title}>Login</Text>
-              <Text style={styles.subtitle}>We will send you an OTP to verify.</Text>
+              <Text style={styles.titleSmall}>Login</Text>
+              <Text style={styles.subtitleSmall}>We will send you an OTP to verify.</Text>
 
               <View style={styles.phoneInputContainer}>
                 <Text style={styles.inputLabel}>Phone Number</Text>
@@ -301,8 +304,8 @@ export default function LoginScreen() {
 
           {loginView === 'email' && (
             <>
-              <Text style={styles.title}>Login</Text>
-              <Text style={styles.subtitle}>Enter your credentials to continue.</Text>
+              <Text style={styles.titleSmall}>Login</Text>
+              <Text style={styles.subtitleSmall}>Enter your credentials to continue.</Text>
 
               <Input
                 label="Email Address"
@@ -364,182 +367,150 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#FFFFFF', // Pure white background to match card
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     padding: 24,
+    backgroundColor: '#F5F5F5', // Screen background is slight grey
   },
   card: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 20,
-    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    padding: 30,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 20,
+    elevation: 10,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 5,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 140,
+    height: 140,
   },
   title: {
-    fontSize: 32,
+    fontSize: 40,
+    fontWeight: "bold",
+    color: '#FF6F00',
+    textAlign: "center",
+    marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
+  },
+  titleSmall: {
+    fontSize: 28,
     fontWeight: "bold",
     color: '#FF6F00',
     textAlign: "center",
     marginBottom: 8,
-    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.light.text,
+    color: '#333333',
+    textAlign: "center",
+    marginBottom: 35,
+    fontWeight: '400',
+  },
+  subtitleSmall: {
+    fontSize: 16,
+    color: '#666666',
     textAlign: "center",
     marginBottom: 20,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    backgroundColor: '#F5F5F7',
-    borderRadius: 12,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  activeTab: {
-    backgroundColor: '#FFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#FF6F00',
-  },
-  methodContainer: {
-    flexDirection: "row",
-    gap: 12,
+  mainButton: {
     marginBottom: 16,
+    height: 58,
+    borderRadius: 14,
+    backgroundColor: '#FF6F00',
   },
-  methodButton: {
-    flex: 1,
-    paddingVertical: 10,
-  },
-  forgotPasswordContainer: {
-    alignItems: "flex-end",
+  emailButton: {
     marginBottom: 16,
-  },
-  forgotPasswordLink: {
-    color: Colors.light.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  submitButton: {
-    marginTop: 8,
-  },
-  orRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E5EA",
-  },
-  orText: {
-    marginHorizontal: 8,
-    color: "#9E9E9E",
-    fontSize: 12,
-    fontWeight: "500",
+    height: 58,
+    borderRadius: 14,
+    borderColor: '#FF6F00',
+    borderWidth: 1.5,
   },
   googleButton: {
-    marginBottom: 8,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  footerText: {
-    color: "#757575",
-  },
-  link: {
-    color: Colors.light.primary,
-    fontWeight: "600",
+    marginBottom: 24,
+    height: 58,
+    borderRadius: 14,
+    borderColor: '#E5E7EB',
+    borderWidth: 1.5,
   },
   phoneInputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
     color: '#374151',
-    marginBottom: 6,
+    marginBottom: 8,
   },
-  phoneContainer: {
-    width: "100%",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: '#FF6F00',
-    height: 56,
+  orRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
   },
-  phoneTextContainer: {
-    borderRadius: 8,
-    backgroundColor: "#F9FAFB",
-    paddingVertical: 0,
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#EEEEEE",
   },
-  phoneTextInput: {
-    fontSize: 16,
-    color: '#1F2937',
-    height: 56,
+  orText: {
+    marginHorizontal: 12,
+    color: "#999999",
+    fontSize: 13,
+    fontWeight: "500",
   },
-  phoneCodeText: {
-    fontSize: 16,
-    color: '#1F2937',
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
   },
-  phoneFlagButton: {
-    borderRightWidth: 1,
-    borderRightColor: '#E5E7EB',
+  footerText: {
+    color: "#666666",
+    fontSize: 15,
   },
-  mainButton: {
-    marginBottom: 12,
+  link: {
+    color: '#FF6F00',
+    fontWeight: "bold",
+    fontSize: 15,
   },
   guestButton: {
-    marginTop: 24,
+    marginTop: 35,
     alignItems: 'center',
-    paddingVertical: 12,
   },
   guestButtonText: {
     color: '#6B7280',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
+  forgotPasswordContainer: {
+    alignItems: "flex-end",
+    marginBottom: 20,
+    marginTop: 4,
+  },
+  forgotPasswordLink: {
+    color: '#FF6F00',
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  submitButton: {
+    height: 58,
+    borderRadius: 14,
+    backgroundColor: '#FF6F00',
+  },
   backLinkContainer: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: 'center',
   },
   backLink: {
-    color: '#6B7280',
-    fontSize: 14,
+    color: '#999999',
+    fontSize: 15,
     fontWeight: '500',
   },
 });

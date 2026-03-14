@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, SafeAreaView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '@/store/CartContext';
@@ -149,8 +149,12 @@ export default function ShopCheckoutScreen() {
             onPress={() => setSelectedMethod('KHALTI')}
           >
             <View style={styles.methodInfo}>
-              <View style={[styles.methodIcon, { backgroundColor: '#5C2D91' }]}>
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>K</Text>
+              <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
+                <Image 
+                  source={require('@/assets/images/khalti.png')} 
+                  style={{ width: '100%', height: '100%' }} 
+                  resizeMode="contain" 
+                />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
             </View>
@@ -162,8 +166,12 @@ export default function ShopCheckoutScreen() {
             onPress={() => setSelectedMethod('ESEWA')}
           >
             <View style={styles.methodInfo}>
-              <View style={[styles.methodIcon, { backgroundColor: '#60BB46' }]}>
-                <Text style={{ color: 'white', fontWeight: 'bold' }}>e</Text>
+              <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
+                <Image 
+                  source={require('@/assets/images/eswa.jpg')} 
+                  style={{ width: '100%', height: '100%' }} 
+                  resizeMode="contain" 
+                />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>eSewa</Text>
             </View>

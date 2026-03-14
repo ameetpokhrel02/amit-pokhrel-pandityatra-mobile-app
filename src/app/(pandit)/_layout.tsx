@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/store/ThemeContext';
 
 export default function PanditTabLayout() {
-  const activeColor = Colors.light.primary; // Saffron
+  const { colors } = useTheme();
+  const activeColor = colors.primary;
   const inactiveColor = '#8E8E93';
 
   return (
@@ -13,7 +15,7 @@ export default function PanditTabLayout() {
         tabBarInactiveTintColor: inactiveColor,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.light.background,
+          backgroundColor: colors.background,
           borderTopColor: '#E5E5EA',
         },
       }}
@@ -46,11 +48,11 @@ export default function PanditTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="messages"
         options={{
-          title: 'Calendar',
+          title: 'Messages',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={24} color={color} />
           ),
         }}
       />
@@ -63,12 +65,19 @@ export default function PanditTabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="earnings"
-        options={{
-          href: null,
-        }}
-      />
+      {/* Hidden Screens */}
+      {[
+        'calendar', 'earnings', 'feedback', 'reviews'
+      ].map(screen => (
+        <Tabs.Screen
+          key={screen}
+          name={screen}
+          options={{
+            href: null,
+            tabBarItemStyle: { display: 'none' }
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

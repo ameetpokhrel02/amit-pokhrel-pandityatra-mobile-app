@@ -8,6 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { registerPandit } from '@/services/pandit.service';
 import { useTheme } from '@/store/ThemeContext';
+import { fetchProfile } from '@/services/auth.service';
 
 const EXPERTISE_OPTIONS = [
     'Vedic Rituals', 'Astrology & Kundali',
@@ -25,7 +26,6 @@ export default function PanditProfileSetupScreen() {
     React.useEffect(() => {
         const checkExistingProfile = async () => {
             try {
-                const { fetchProfile } = require('@/services/auth.service');
                 const user = await fetchProfile();
                 if (user.role === 'pandit' && (user.pandit_profile || user.expertise || user.experience_years)) {
                     router.replace('/(pandit)');
