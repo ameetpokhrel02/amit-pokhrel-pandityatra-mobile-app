@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           phone: userData.phone_number || userData.phone || '',
           email: userData.email || '',
           role: userData.role || 'customer',
-          profile_pic_url: userData.profile_image || userData.profile_pic_url,
+          profile_pic_url: userData.profile_pic || userData.profile_image || userData.profile_pic_url,
         };
         await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
         await SecureStore.setItemAsync('role', mappedUser.role);

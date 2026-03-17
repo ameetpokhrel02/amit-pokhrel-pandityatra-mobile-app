@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityI
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { getImageUrl } from '@/utils/image';
 import { fetchProfile } from '@/services/auth.service';
 import { PanditService } from '@/services/api';
 import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
@@ -142,7 +144,15 @@ export default function PanditDashboardScreen() {
           </View>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(pandit)/profile')}>
-          <Ionicons name="person-circle-outline" size={50} color="#FFF" />
+          {profile?.profile_pic ? (
+            <Image
+              source={{ uri: getImageUrl(profile.profile_pic) || '' }}
+              style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#FFF' }}
+              contentFit="cover"
+            />
+          ) : (
+            <Ionicons name="person-circle-outline" size={50} color="#FFF" />
+          )}
         </TouchableOpacity>
       </View>
 

@@ -15,11 +15,11 @@ export default function ResetPasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleReset = async () => {
-    // Validation
-    if (!password.trim()) {
-      Alert.alert('Error', 'Please enter a new password');
+    if (!password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
@@ -59,7 +59,11 @@ export default function ResetPasswordScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity style={styles.backButtonTop} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+
         <View style={styles.card}>
           <View style={styles.logoContainer}>
             <Image
@@ -72,39 +76,50 @@ export default function ResetPasswordScreen() {
           <Text style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>Create a new strong password for your account</Text>
 
-          <Input
-            label="New Password"
-            placeholder="Enter new password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
-            rightIcon={
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#6B7280"
-                />
-              </TouchableOpacity>
-            }
-          />
+          <View style={styles.formContainer}>
+            <Input
+              label="New Password"
+              placeholder="Enter new password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#9CA3AF"
+                  />
+                </TouchableOpacity>
+              }
+            />
 
-          <Input
-            label="Confirm Password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry={!showPassword}
-            leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
-          />
+            <Input
+              label="Confirm Password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              leftIcon={<Ionicons name="shield-checkmark-outline" size={20} color="#9CA3AF" />}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={{ padding: 4 }}>
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#9CA3AF"
+                  />
+                </TouchableOpacity>
+              }
+            />
 
-          <Button
-            title="Reset Password"
-            onPress={handleReset}
-            style={styles.submitButton}
-            disabled={loading}
-          />
+            <Button
+              title={loading ? 'Resetting Password...' : 'Reset Password'}
+              onPress={handleReset}
+              style={styles.submitButton}
+              disabled={loading}
+            />
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -114,45 +129,78 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
+    justifyContent: "center",
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  backButtonTop: {
+      position: 'absolute',
+      top: 50,
+      left: 20,
+      zIndex: 10,
+      padding: 8,
+      backgroundColor: '#FFF',
+      borderRadius: 20,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
   },
   card: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingTop: 40,
+    paddingBottom: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 4,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    alignItems: 'center',
   },
   logoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    textAlign: 'center',
-    marginBottom: 8,
+    fontWeight: "bold",
+    color: "#FF6F00", // Saffron
+    textAlign: "center",
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: Colors.light.text,
-    textAlign: 'center',
+    color: "#4B5563",
+    textAlign: "center",
     marginBottom: 24,
+    lineHeight: 20,
+  },
+  formContainer: {
+    width: '100%',
   },
   submitButton: {
-    marginTop: 16,
+    width: "100%",
+    height: 54,
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#FF6F00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

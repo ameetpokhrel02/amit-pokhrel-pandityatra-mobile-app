@@ -4,7 +4,8 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { Colors } from '@/constants/Colors';
 
 interface PaymentWebViewProps {
-    url: string;
+    url?: string;
+    html?: string;
     onSuccess: (data?: any) => void;
     onFailure: (error?: any) => void;
     onCancel: () => void;
@@ -12,6 +13,7 @@ interface PaymentWebViewProps {
 
 export const PaymentWebView: React.FC<PaymentWebViewProps> = ({
     url,
+    html,
     onSuccess,
     onFailure,
     onCancel
@@ -20,11 +22,24 @@ export const PaymentWebView: React.FC<PaymentWebViewProps> = ({
         const { url: currentUrl } = navState;
 
         // Custom logic to handle redirect URLs from payment gateways
-        if (currentUrl.includes('payment/success') || currentUrl.includes('status=completed')) {
+        if (
+            currentUrl.includes('payment/success') || 
+            currentUrl.includes('status=completed') || 
+            currentUrl.includes('/payment/khalti/verify') || 
+            currentUrl.includes('/payment/esewa/verify') ||
+            currentUrl.includes('pidx=')
+        ) {
             onSuccess({ url: currentUrl });
-        } else if (currentUrl.includes('payment/failure') || currentUrl.includes('status=failed')) {
+        } else if (
+            currentUrl.includes('payment/failure') || 
+            currentUrl.includes('status=failed') || 
+            currentUrl.includes('/payment/failure')
+        ) {
             onFailure({ url: currentUrl });
-        } else if (currentUrl.includes('payment/cancel') || currentUrl.includes('status=user_cancelled')) {
+        } else if (
+            currentUrl.includes('payment/cancel') || 
+            currentUrl.includes('status=user_cancelled')
+        ) {
             onCancel();
         }
     };
@@ -32,7 +47,7 @@ export const PaymentWebView: React.FC<PaymentWebViewProps> = ({
     return (
         <View style={styles.container}>
             <WebView
-                source={{ uri: url }}
+                source={html ? { html, baseUrl: 'https://rc-epay.esewa.com.np' } : { uri: url! }}
                 onNavigationStateChange={handleNavigationStateChange}
                 startInLoadingState={true}
                 renderLoading={() => (

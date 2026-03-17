@@ -154,40 +154,37 @@ export default function EditProfileScreen() {
                         </View>
                     </View>
 
-                    {/* Extra space so content doesn't hide behind sticky footer */}
-                    <View style={{ height: 120 }} />
+                    {/* ===== SAVE BUTTON (Inside ScrollView) ===== */}
+                    <View style={styles.buttonRow}>
+                        <TouchableOpacity
+                            onPress={() => router.back()}
+                            style={[styles.cancelBtn, { borderColor: colors.primary }]}
+                            disabled={loading}
+                        >
+                            <Text style={[styles.cancelBtnText, { color: colors.primary }]}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleSave}
+                            style={[
+                                styles.saveBtn,
+                                { backgroundColor: loading ? '#ccc' : colors.primary }
+                            ]}
+                            disabled={loading}
+                            activeOpacity={0.8}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <>
+                                    <Ionicons name="checkmark-circle" size={22} color="#FFF" />
+                                    <Text style={styles.saveBtnText}>Save Changes</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-
-            {/* ===== STICKY SAVE BUTTON (Always Visible) ===== */}
-            <View style={[styles.stickyFooter, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={[styles.cancelBtn, { borderColor: colors.primary }]}
-                    disabled={loading}
-                >
-                    <Text style={[styles.cancelBtnText, { color: colors.primary }]}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={handleSave}
-                    style={[
-                        styles.saveBtn,
-                        { backgroundColor: loading ? '#ccc' : colors.primary }
-                    ]}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="#FFF" size="small" />
-                    ) : (
-                        <>
-                            <Ionicons name="checkmark-circle" size={22} color="#FFF" />
-                            <Text style={styles.saveBtnText}>Save Changes</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
         </View>
     );
 }
@@ -281,14 +278,12 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
 
-    /* ===== STICKY FOOTER ===== */
-    stickyFooter: {
+    /* ===== IN-FLOW BUTTONS ===== */
+    buttonRow: {
         flexDirection: 'row',
         gap: 12,
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        paddingBottom: 30,
-        borderTopWidth: 1,
+        marginTop: 30,
+        marginBottom: 20,
     },
     cancelBtn: {
         flex: 1,

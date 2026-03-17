@@ -33,7 +33,7 @@ export async function verifyKhaltiPayment(payload: { token: string; amount: numb
     return response.data;
 }
 
-export async function verifyEsewaPayment(payload: { refId: string; amt: number; oid: string }) {
+export async function verifyEsewaPayment(payload: { data: string; order_id?: string }) {
     const response = await apiClient.get('payments/esewa/verify/', { params: payload });
     return response.data;
 }

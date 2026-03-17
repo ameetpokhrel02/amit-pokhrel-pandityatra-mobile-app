@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, ActivityIndicator, Alert, Dimensions, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { generateKundali } from '@/services/kundali.service';
+import { Image } from 'expo-image';
+
+
+const { width } = Dimensions.get('window');
 
 export default function KundaliScreen() {
     const router = useRouter();
@@ -29,13 +33,10 @@ export default function KundaliScreen() {
             setLoading(true);
             setResult(null);
 
-            // For now we assume place lookup is handled elsewhere; latitude/longitude/timezone
-            // would normally come from a geocoding step. Here we send placeholder values that
-            // match the web flow expectations.
             const payload = {
                 dob: formData.dob,
                 time: formData.tob,
-                lat: 27.7172,  // Kathmandu as default
+                lat: 27.7172,
                 lon: 85.324,
                 timezone: 'Asia/Kathmandu',
             };
@@ -58,25 +59,49 @@ export default function KundaliScreen() {
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>AI Kundali</Text>
-                <View style={{ width: 24 }} />
+                <TouchableOpacity onPress={() => router.push('/(customer)/kundali-history' as any)}>
+                    <Ionicons name="time-outline" size={24} color={colors.text} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-                {/* 1. Hero Section */}
-                <View style={styles.heroSection}>
-                    <View
-                        style={[styles.heroIconContainer, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
-                    >
-                        <Ionicons name="planet-outline" size={64} color="#f97316" />
-                    </View>
-                    <Text style={[styles.heroTitle, { color: colors.text }]}>AI Kundali – Your Divine Birth Chart</Text>
-                    <Text style={[styles.heroSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Generate your precise Vedic Kundali using our advanced spiritual AI.</Text>
-                    <View>
-                        <TouchableOpacity style={styles.heroButton} onPress={handleGenerate} disabled={loading}>
-                            <Text style={styles.heroButtonText}>Generate Kundali</Text>
-                        </TouchableOpacity>
+                {/* ===== HERO BANNER SECTION ===== */}
+                <View style={styles.heroBanner}>
+                    <Image
+                        source={require('@/assets/images/kundalihero.webp')}
+                        style={styles.heroImage}
+                        contentFit="cover"
+                    />
+                    {/* Gradient overlay at bottom for text readability */}
+                    <View style={styles.heroOverlay}>
+                        <View style={styles.heroContent}>
+                            <View style={styles.heroBadge}>
+                                <Ionicons name="sparkles" size={14} color="#FFF" />
+                                <Text style={styles.heroBadgeText}>AI-Powered</Text>
+                            </View>
+                            <Text style={styles.heroTitle}>Your Divine Birth Chart</Text>
+                            <Text style={styles.heroSubtitle}>
+                                Generate precise Vedic Kundali using advanced spiritual AI
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.heroCTA}
+                                onPress={handleGenerate}
+                                disabled={loading}
+                                activeOpacity={0.8}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="planet" size={18} color="#FFF" />
+                                        <Text style={styles.heroCTAText}>Generate Kundali</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
+
 
                 {/* 2. What Is Offline Kundali? */}
                 <View style={styles.section}>
@@ -267,46 +292,75 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 40,
     },
-    heroSection: {
-        alignItems: 'center',
-        padding: 24,
+    heroBanner: {
+        width: width,
+        height: 220,
+        position: 'relative',
+        marginBottom: 20,
     },
-    heroIconContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        justifyContent: 'center',
+    heroImage: {
+        width: '100%',
+        height: '100%',
+    },
+    heroOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingTop: 40,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+        backgroundColor: 'rgba(0,0,0,0.35)',
+    },
+    heroContent: {
+        alignItems: 'flex-start',
+    },
+    heroBadge: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
-        elevation: 2,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        backgroundColor: 'rgba(249,115,22,0.9)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+        marginBottom: 8,
+    },
+    heroBadgeText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
     heroTitle: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 8,
+        color: '#FFF',
+        marginBottom: 4,
         fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
     },
     heroSubtitle: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 24,
-        lineHeight: 22,
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.9)',
+        marginBottom: 12,
+        lineHeight: 18,
     },
-    heroButton: {
-        backgroundColor: '#f97316', // Saffron
-        paddingHorizontal: 32,
-        paddingVertical: 12,
-        borderRadius: 25,
+    heroCTA: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f97316',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        gap: 8,
         elevation: 3,
+        shadowColor: '#f97316',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
     },
-    heroButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
+    heroCTAText: {
+        color: '#FFF',
+        fontWeight: '700',
+        fontSize: 14,
     },
     section: {
         padding: 20,

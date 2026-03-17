@@ -58,23 +58,17 @@ export default function SplashScreen() {
 
     return (
         <View style={styles.container}>
-            <ImageBackground
-                source={require('@/assets/images/spash 4.png')}
-                style={styles.background}
-                resizeMode="cover"
-            >
-                <View style={styles.overlay}>
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('@/assets/images/pandit-logo.png')}
-                            style={styles.logo}
-                            contentFit="contain"
-                        />
-                        <Text style={styles.title}>PanditYatra</Text>
-                        <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
-                    </View>
+            <View style={styles.overlay}>
+                <View style={styles.logoContainer}>
+                    <Image
+                        source={require('@/assets/images/pandit-logo.png')}
+                        style={styles.logo}
+                        contentFit="contain"
+                    />
+                    <Text style={styles.title}>PanditYatra</Text>
+                    <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
                 </View>
-            </ImageBackground>
+            </View>
         </View>
     );
 }

@@ -101,12 +101,7 @@ export default function OnboardingScreen() {
     };
 
     return (
-        <ImageBackground
-            source={require('@/assets/images/spash 4.png')}
-            style={styles.background}
-            resizeMode="cover"
-        >
-            <View style={styles.overlay} />
+        <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <FlatList
                     ref={ref}
@@ -162,7 +157,7 @@ export default function OnboardingScreen() {
                     </View>
                 </View>
             </SafeAreaView>
-        </ImageBackground>
+        </View>
     );
 }
 

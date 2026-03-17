@@ -5,12 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/store/ThemeContext';
 import { Booking } from '@/services/api';
-import { fetchBookingDetail } from '@/services/booking.service';
-import { initiatePayment, verifyKhaltiPayment } from '@/services/payment.service';
+import { getBooking } from '@/services/booking.service';
+import { initiatePayment, verifyKhaltiPayment, verifyEsewaPayment } from '@/services/payment.service';
 import { Button } from '@/components/ui/Button';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
-
-
 
 export default function CheckoutScreen() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -24,6 +22,7 @@ export default function CheckoutScreen() {
     const [selectedMethod, setSelectedMethod] = useState<'khalti' | 'stripe' | 'esewa'>('khalti');
     const [showWebView, setShowWebView] = useState(false);
     const [paymentUrl, setPaymentUrl] = useState('');
+    const [formHtml, setFormHtml] = useState('');
 
     useEffect(() => {
         if (bookingId) {
@@ -34,8 +33,8 @@ export default function CheckoutScreen() {
     const loadBooking = async () => {
         try {
             setLoading(true);
-            const data = await fetchBookingDetail(parseInt(bookingId));
-            setBooking(data);
+            const response = await getBooking(parseInt(bookingId));
+            setBooking(response.data);
         } catch (error) {
             console.error('Error loading booking:', error);
             Alert.alert('Error', 'Failed to load booking details.');
@@ -57,8 +56,36 @@ export default function CheckoutScreen() {
                 amount: booking.total_fee,
             });
 
-            if (paymentIntent.payment_url) {
-                setPaymentUrl(paymentIntent.payment_url);
+            const urlToOpen = paymentIntent.payment_url || paymentIntent.checkout_url;
+
+            if (urlToOpen) {
+                if (selectedMethod === 'esewa' && paymentIntent.form_data) {
+                    const formFields = Object.keys(paymentIntent.form_data)
+                        .map(key => `<input type="hidden" name="${key}" value="${paymentIntent.form_data[key].replace(/"/g, '&quot;')}" />`)
+                        .join('');
+                    
+                    const htmlContent = `
+                        <html>
+                            <head>
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            </head>
+                            <body onload="document.getElementById('esewaForm').submit();" style="display:flex; justify-content:center; align-items:center; height:100vh; background-color:#f9f9f9; font-family:sans-serif;">
+                                <form id="esewaForm" action="${urlToOpen}" method="POST">
+                                    ${formFields}
+                                </form>
+                                <div style="text-align:center;">
+                                    <h2 style="color:#60BB46;">Redirecting to eSewa...</h2>
+                                    <p>Please wait while we redirect you to the secure payment gateway.</p>
+                                </div>
+                            </body>
+                        </html>
+                    `;
+                    setFormHtml(htmlContent);
+                    setPaymentUrl('');
+                } else {
+                    setPaymentUrl(urlToOpen);
+                    setFormHtml('');
+                }
                 setShowWebView(true);
             } else {
                 Alert.alert('Error', `Failed to get ${selectedMethod} payment URL.`);
@@ -71,20 +98,22 @@ export default function CheckoutScreen() {
         }
     };
 
-    const handlePaymentSuccess = async (pidx?: string) => {
+    const handlePaymentSuccess = async (pidx?: string, esewaData?: string) => {
         try {
-            // Verification logic remains backend-driven
             if (pidx) {
                 await verifyKhaltiPayment({
                     token: pidx,
                     amount: booking?.total_fee || 0
                 });
+            } else if (esewaData) {
+                await verifyEsewaPayment({ data: esewaData });
             }
             
             Alert.alert('Success', 'Payment successful!', [
                 { text: 'OK', onPress: () => router.replace('/(customer)/bookings') }
             ]);
         } catch (e) {
+            console.error('Verification Error:', e);
             Alert.alert('Verification Failed', 'Payment verification failed. Please contact support.');
         }
     };
@@ -105,7 +134,7 @@ export default function CheckoutScreen() {
         );
     }
 
-    if (showWebView && paymentUrl) {
+    if (showWebView && (paymentUrl || formHtml)) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
                 <View style={[styles.header, { backgroundColor: colors.card }]}>
@@ -117,10 +146,12 @@ export default function CheckoutScreen() {
                 </View>
                 <PaymentWebView
                     url={paymentUrl}
+                    html={formHtml}
                     onSuccess={(data) => {
                         setShowWebView(false);
                         const pidx = data.url.split('pidx=')[1]?.split('&')[0];
-                        handlePaymentSuccess(pidx);
+                        const esewaData = data.url.split('data=')[1]?.split('&')[0];
+                        handlePaymentSuccess(pidx, esewaData);
                     }}
                     onFailure={() => {
                         setShowWebView(false);

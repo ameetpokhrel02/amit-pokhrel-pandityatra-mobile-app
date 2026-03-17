@@ -115,8 +115,6 @@ export default function OTPScreen() {
             router.replace("/auth/pandit-profile-setup" as any);
           }
         } else if (user.role === "admin") {
-          // Mobile app doesn't have intensive admin UI in this roadmap, 
-          // but we can route to an admin section if needed.
           router.replace("/admin/dashboard" as any);
         } else {
           router.replace("/(customer)" as any);
@@ -133,7 +131,6 @@ export default function OTPScreen() {
   const handleResend = async () => {
     if (timer > 0) return;
     try {
-      // Logic for resend OTP should go here (calling requestOTP service)
       setTimer(30);
       Alert.alert('Sent', 'A new OTP has been sent.');
     } catch (e) {
@@ -146,7 +143,11 @@ export default function OTPScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity style={styles.backButtonTop} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+
         <View style={styles.card}>
           <View style={styles.logoContainer}>
             <Image
@@ -171,7 +172,7 @@ export default function OTPScreen() {
                 }}
                 style={[
                   styles.otpInput,
-                  { borderColor: digit ? Colors.light.primary : "#E0E0E0" },
+                  { borderColor: digit ? "#FF6F00" : "#E5E7EB" },
                 ]}
                 keyboardType="number-pad"
                 maxLength={1}
@@ -179,7 +180,7 @@ export default function OTPScreen() {
                 onChangeText={(text) => handleOtpChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
                 selectTextOnFocus
-                cursorColor={Colors.light.primary}
+                cursorColor="#FF6F00"
               />
             ))}
           </View>
@@ -206,7 +207,7 @@ export default function OTPScreen() {
               <Text
                 style={[
                   styles.resendLink,
-                  { color: timer > 0 ? "#999" : Colors.light.primary },
+                  { color: timer > 0 ? "#9CA3AF" : "#FF6F00" },
                 ]}
               >
                 {timer > 0 ? `Resend in ${timer}s` : "Resend Now"}
@@ -222,74 +223,95 @@ export default function OTPScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 24,
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  backButtonTop: {
+      position: 'absolute',
+      top: 50,
+      left: 20,
+      zIndex: 10,
+      padding: 8,
+      backgroundColor: '#FFF',
+      borderRadius: 20,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
   },
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: '#FFF',
     borderRadius: 24,
-    padding: 30,
-    alignItems: "center",
+    padding: 24,
+    paddingTop: 40,
+    paddingBottom: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 4,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    alignItems: "center",
   },
   logoContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#FF6F00",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 35,
+    fontSize: 15,
+    color: "#4B5563",
+    marginBottom: 32,
     textAlign: "center",
     lineHeight: 22,
   },
   identifier: {
-    fontWeight: "bold",
-    color: Colors.light.primary,
+    fontWeight: "700",
+    color: "#111827",
   },
   otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 40,
+    marginBottom: 32,
   },
   otpInput: {
-    width: 45,
-    height: 55,
+    width: 46,
+    height: 54,
     borderWidth: 1.5,
     borderRadius: 12,
     textAlign: "center",
     fontSize: 22,
-    fontWeight: "bold",
-    backgroundColor: "#FAFAFA",
-    color: "#333",
+    fontWeight: "700",
+    backgroundColor: "#F9FAFB",
+    color: "#111827",
   },
   verifyButton: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: "#FF6F00",
     width: "100%",
-    height: 58,
-    borderRadius: 16,
+    height: 54,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
-    shadowColor: Colors.light.primary,
+    marginBottom: 20,
+    shadowColor: '#FF6F00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -297,15 +319,15 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     color: "#FFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   resendContainer: {
     padding: 10,
   },
   resendText: {
-    color: "#666",
-    fontSize: 14,
+    color: "#6B7280",
+    fontSize: 15,
   },
   resendLink: {
     fontWeight: "700",
