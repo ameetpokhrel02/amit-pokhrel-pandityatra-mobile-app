@@ -12,24 +12,24 @@ const { width, height } = Dimensions.get('window');
 const SLIDES = [
     {
         id: '1',
-        title: 'Authentic Vedic Rituals',
-        description: 'Experience sacred traditions with verified Pandits who bring purity and devotion to every ritual.',
+        title: 'Book Expert Pandits',
+        description: 'Connect with verified Vedic priests for all your sacred rituals and ceremonies with ease.',
         image: require('@/assets/images/splash 1.jpeg'),
-        icon: 'heart-outline',
+        icon: 'person-add-outline',
     },
     {
         id: '2',
-        title: 'Vibrant Spiritual Community',
-        description: 'Join a community of believers and expert priests. Shared faith, connected through excellence.',
+        title: 'Live Video Puja',
+        description: 'Experience divine blessings from the comfort of your home through high-quality live video sessions.',
         image: require('@/assets/images/splash 3.jpeg'),
-        icon: 'people-outline',
+        icon: 'videocam-outline',
     },
     {
         id: '3',
-        title: 'Sacred Ease of Use',
-        description: 'Booking a puja is now as peaceful as the prayer itself. Seamless, secure, and spiritual.',
-        image: require('@/assets/images/spash 4.png'),
-        icon: 'leaf-outline',
+        title: 'AI Kundali & Guide',
+        description: 'Unlock cosmic insights with our AI Kundali generator and personalized spiritual guidance.',
+        image: require('@/assets/images/spash 4.png'), // Keeping original if spash 4.png exists
+        icon: 'sparkles-outline',
     },
 ];
 
@@ -73,12 +73,10 @@ export default function OnboardingScreen() {
         }
     };
 
-    const Slide = ({ item, index }: { item: typeof SLIDES[0], index: number }) => {
+    const Slide = ({ item }: { item: typeof SLIDES[0] }) => {
         return (
             <View style={styles.slide}>
-                <View
-                    style={styles.imageContainer}
-                >
+                <View style={styles.imageContainer}>
                     <View style={styles.imageOverlay}>
                         <Image
                             source={item.image}
@@ -87,17 +85,14 @@ export default function OnboardingScreen() {
                             transition={500}
                         />
                     </View>
-                    {/* Decorative Mandala Icons */}
-                    <View style={[styles.mandalaIcon, { top: -30, left: -30, opacity: 0.5 }]}>
-                        <Ionicons name="sunny-outline" size={60} color="#D97706" />
-                    </View>
-                    <View style={[styles.mandalaIcon, { bottom: -30, right: -30, opacity: 0.5 }]}>
-                        <Ionicons name="sunny-outline" size={60} color="#D97706" />
+                    <View style={[styles.mandalaIcon, { top: -20, left: -20, opacity: 0.3 }]}>
+                        <Ionicons name="sunny-outline" size={80} color={Colors.light.primary} />
                     </View>
                 </View>
-                <View
-                    style={styles.textContainer}
-                >
+                <View style={styles.textContainer}>
+                    <View style={styles.iconCircle}>
+                        <Ionicons name={item.icon as any} size={30} color="#FFF" />
+                    </View>
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.description}>{item.description}</Text>
                 </View>
@@ -120,14 +115,13 @@ export default function OnboardingScreen() {
                     horizontal
                     data={SLIDES}
                     pagingEnabled
-                    renderItem={({ item, index }) => <Slide item={item} index={index} />}
+                    renderItem={({ item }) => <Slide item={item} />}
                     keyExtractor={(item) => item.id}
                     style={{ flex: 1 }}
                     bounces={false}
                 />
 
                 <View style={styles.footer}>
-                    {/* Pagination indicator */}
                     <View style={styles.indicatorContainer}>
                         {SLIDES.map((_, index) => (
                             <View
@@ -140,29 +134,28 @@ export default function OnboardingScreen() {
                         ))}
                     </View>
 
-                    {/* Buttons */}
                     <View style={styles.buttonContainer}>
                         {currentSlideIndex >= SLIDES.length - 1 ? (
                             <TouchableOpacity
-                                style={[styles.getStartedBtn, { backgroundColor: '#FF6F00' }]}
+                                style={styles.getStartedBtn}
                                 onPress={getStarted}
                                 activeOpacity={0.8}
                             >
-                                <Text style={styles.getStartedText}>Enter Sanctuary</Text>
+                                <Text style={styles.getStartedText}>Get Started</Text>
                                 <Ionicons name="arrow-forward" size={22} color="#FFF" />
                             </TouchableOpacity>
                         ) : (
                             <View style={styles.navButtons}>
-                                <TouchableOpacity onPress={skip} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                                <TouchableOpacity onPress={skip}>
                                     <Text style={styles.skipText}>Skip</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity 
-                                    style={[styles.nextBtn, { backgroundColor: '#FF6F00' }]} 
+                                    style={styles.nextBtn} 
                                     onPress={goToNextSlide} 
                                     activeOpacity={0.7}
                                 >
                                     <Text style={styles.nextText}>Next</Text>
-                                    <Ionicons name="chevron-forward" size={18} color="#FFF" style={{ marginLeft: 4 }} />
+                                    <Ionicons name="chevron-forward" size={18} color="#FFF" />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -184,16 +177,16 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
     },
     slide: {
         width,
         alignItems: 'center',
-        paddingTop: height * 0.08,
+        paddingTop: height * 0.05,
     },
     imageContainer: {
-        width: width * 0.8,
-        height: width * 0.8,
+        width: width * 0.75,
+        height: width * 0.75,
         position: 'relative',
         justifyContent: 'center',
         alignItems: 'center',
@@ -201,15 +194,16 @@ const styles = StyleSheet.create({
     imageOverlay: {
         width: '100%',
         height: '100%',
-        borderRadius: width * 0.4,
+        borderRadius: (width * 0.75) / 2,
         overflow: 'hidden',
-        borderWidth: 6,
+        borderWidth: 8,
         borderColor: '#FFF',
-        elevation: 10,
+        backgroundColor: '#FFF',
+        elevation: 15,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.2,
-        shadowRadius: 12,
+        shadowRadius: 15,
     },
     image: {
         width: '100%',
@@ -220,30 +214,42 @@ const styles = StyleSheet.create({
         zIndex: -1,
     },
     textContainer: {
-        paddingHorizontal: 40,
+        paddingHorizontal: 30,
         marginTop: 40,
         alignItems: 'center',
+    },
+    iconCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: Colors.light.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        elevation: 5,
+        shadowColor: Colors.light.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#FF6F00',
+        color: '#2C2C2C',
         textAlign: 'center',
-        lineHeight: 36,
+        marginBottom: 15,
     },
     description: {
         fontSize: 16,
-        color: '#3E2723',
+        color: '#666',
         textAlign: 'center',
-        marginTop: 15,
         lineHeight: 24,
-        paddingHorizontal: 10,
     },
     footer: {
-        height: height * 0.2,
+        height: height * 0.22,
         justifyContent: 'space-between',
         paddingHorizontal: 30,
-        paddingBottom: 20,
+        paddingBottom: 30,
     },
     indicatorContainer: {
         flexDirection: 'row',
@@ -251,19 +257,18 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     indicator: {
-        height: 6,
-        width: 6,
-        backgroundColor: '#E5E7EB',
-        marginHorizontal: 4,
-        borderRadius: 3,
+        height: 8,
+        width: 8,
+        backgroundColor: '#DDD',
+        marginHorizontal: 5,
+        borderRadius: 4,
     },
     activeIndicator: {
-        backgroundColor: '#FF6F00',
+        backgroundColor: Colors.light.primary,
         width: 24,
     },
     buttonContainer: {
         width: '100%',
-        marginBottom: 20,
     },
     navButtons: {
         flexDirection: 'row',
@@ -273,18 +278,16 @@ const styles = StyleSheet.create({
     skipText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#9CA3AF',
+        color: '#999',
     },
     nextBtn: {
-        backgroundColor: '#D97706',
+        backgroundColor: Colors.light.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 25,
-        paddingVertical: 12,
-        borderRadius: 12,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        paddingVertical: 14,
+        borderRadius: 15,
+        gap: 5,
     },
     nextText: {
         color: '#FFF',
@@ -292,17 +295,18 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     getStartedBtn: {
+        backgroundColor: Colors.light.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        borderRadius: 16,
-        gap: 10,
+        paddingVertical: 18,
+        borderRadius: 18,
+        gap: 12,
         elevation: 5,
-        shadowColor: '#D97706',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowColor: Colors.light.primary,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
     },
     getStartedText: {
         color: '#FFF',
@@ -310,4 +314,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
-

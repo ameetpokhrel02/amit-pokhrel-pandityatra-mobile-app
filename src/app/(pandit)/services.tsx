@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Modal, TextI
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
-import { fetchPanditMyServices, addPanditService, MyService } from '@/services/pandit.service';
+import { fetchPanditMyServices, addPanditService, updateService, deleteService, MyService } from '@/services/pandit.service';
 import { fetchServices } from '@/services/puja.service';
 import { Puja } from '@/services/api';
 
@@ -11,10 +11,11 @@ export default function ServicesScreen() {
     const [services, setServices] = useState<MyService[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [allPujas, setAllPujas] = useState<Puja[]>([]);
-    const [selectedPuja, setSelectedPuja] = useState<Puja | null>(null);
+    const [allPujas, setAllPujas] = useState<any[]>([]);
+    const [selectedPuja, setSelectedPuja] = useState<any | null>(null);
     const [customPrice, setCustomPrice] = useState('');
     const [duration, setDuration] = useState('');
+    const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -23,12 +24,12 @@ export default function ServicesScreen() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [myServices, availablePujas] = await Promise.all([
+            const [myServicesRes, availablePujasRes] = await Promise.all([
                 fetchPanditMyServices(),
                 fetchServices()
             ]);
-            setServices(myServices);
-            setAllPujas(availablePujas as any);
+            setServices(myServicesRes.data);
+            setAllPujas(availablePujasRes);
         } catch (error) {
             console.error(error);
             Alert.alert('Error', 'Failed to load services');
@@ -44,37 +45,87 @@ export default function ServicesScreen() {
         }
 
         try {
-            await addPanditService({
-                puja_id: selectedPuja.id,
-                custom_price: parseFloat(customPrice),
-                duration_minutes: parseInt(duration)
-            });
-            Alert.alert('Success', 'Service added successfully');
+            if (editingServiceId) {
+                await updateService(editingServiceId, {
+                    custom_price: parseFloat(customPrice),
+                    duration_minutes: parseInt(duration)
+                });
+                Alert.alert('Success', 'Service updated successfully');
+            } else {
+                await addPanditService({
+                    puja_id: selectedPuja.id,
+                    custom_price: parseFloat(customPrice),
+                    duration_minutes: parseInt(duration)
+                });
+                Alert.alert('Success', 'Service added successfully');
+            }
             setShowAddModal(false);
-            setSelectedPuja(null);
-            setCustomPrice('');
-            setDuration('');
+            resetForm();
             loadData();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to add service');
+            Alert.alert('Error', error.message || 'Failed to save service');
         }
+    };
+
+    const handleDeleteService = (id: number) => {
+        Alert.alert(
+            'Delete Service',
+            'Are you sure you want to delete this service?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteService(id);
+                            loadData();
+                        } catch (error: any) {
+                            Alert.alert('Error', error.message || 'Failed to delete');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const resetForm = () => {
+        setSelectedPuja(null);
+        setCustomPrice('');
+        setDuration('');
+        setEditingServiceId(null);
     };
 
     const renderServiceItem = ({ item }: { item: MyService }) => (
         <View style={styles.serviceCard}>
             <View style={styles.serviceInfo}>
                 <Text style={styles.serviceName}>{item.puja_details?.name}</Text>
-                <Text style={styles.servicePrice}>NPR {item.custom_price}</Text>
-                <Text style={styles.serviceDuration}>{item.duration_minutes} mins</Text>
+                <View style={styles.serviceMeta}>
+                    <Text style={styles.servicePrice}>NPR {item.custom_price}</Text>
+                    <Text style={styles.dot}> • </Text>
+                    <Text style={styles.serviceDuration}>{item.duration_minutes} mins</Text>
+                </View>
             </View>
-            <TouchableOpacity
-                style={styles.statusBadge}
-                onPress={() => Alert.alert('Status', item.is_active ? 'Active' : 'Inactive')}
-            >
-                <Text style={[styles.statusText, { color: item.is_active ? '#10B981' : '#EF4444' }]}>
-                    {item.is_active ? 'Active' : 'Inactive'}
-                </Text>
-            </TouchableOpacity>
+            <View style={styles.cardActions}>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => {
+                        setEditingServiceId(item.id);
+                        setSelectedPuja({ id: item.puja, name: item.puja_details.name } as any);
+                        setCustomPrice(item.custom_price.toString());
+                        setDuration(item.duration_minutes.toString());
+                        setShowAddModal(true);
+                    }}
+                >
+                    <Ionicons name="create-outline" size={20} color="#3B82F6" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => handleDeleteService(item.id)}
+                >
+                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
@@ -111,8 +162,8 @@ export default function ServicesScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add Service</Text>
-                            <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                            <Text style={styles.modalTitle}>{editingServiceId ? 'Edit Service' : 'Add Service'}</Text>
+                            <TouchableOpacity onPress={() => { setShowAddModal(false); resetForm(); }}>
                                 <Ionicons name="close" size={24} color="#374151" />
                             </TouchableOpacity>
                         </View>
@@ -160,7 +211,7 @@ export default function ServicesScreen() {
                             />
 
                             <Button
-                                title="Save Service"
+                                title={editingServiceId ? "Update Service" : "Save Service"}
                                 onPress={handleAddService}
                                 style={styles.saveButton}
                             />
@@ -229,17 +280,33 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#111827',
-        marginBottom: 4,
+        marginBottom: 2,
+    },
+    serviceMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    dot: {
+        fontSize: 16,
+        color: '#6B7280',
     },
     servicePrice: {
-        fontSize: 16,
+        fontSize: 15,
         color: Colors.light.primary,
         fontWeight: '600',
     },
     serviceDuration: {
         fontSize: 14,
         color: '#6B7280',
-        marginTop: 2,
+    },
+    cardActions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    actionBtn: {
+        padding: 8,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
     },
     statusBadge: {
         paddingHorizontal: 12,

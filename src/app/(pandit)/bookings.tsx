@@ -17,8 +17,8 @@ export default function BookingsScreen() {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const data = await fetchBookings();
-      setBookings(data);
+      const res = await fetchBookings();
+      setBookings(res.data.results || res.data || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
     } finally {

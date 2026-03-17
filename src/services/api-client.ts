@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
     console.log('[API] Detecting Base URL...');
-    
+
     // 1. Priority: Explicit environment variable (from .env file)
     if (process.env.EXPO_PUBLIC_API_URL) {
         let url = process.env.EXPO_PUBLIC_API_URL;
@@ -21,8 +21,9 @@ const getBaseUrl = () => {
     const PORT = '8000';
 
     // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
-    if (Constants.expoConfig?.hostUri) {
-        const host = Constants.expoConfig.hostUri.split(':')[0];
+    const expoConfig = Constants.expoConfig;
+    if (expoConfig?.hostUri) {
+        const host = expoConfig.hostUri.split(':')[0];
 
         // Fix for tunnel mode: tunnel URL usually doesn't forward the backend port (8000)
         if (host.includes('exp.direct')) {
@@ -53,7 +54,7 @@ export const API_BASE_URL = getBaseUrl();
 // Create primary Axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 15000,
+    timeout: 30000,
     headers: {
         'Accept': 'application/json',
     }
@@ -196,11 +197,11 @@ publicApi.interceptors.response.use(
         const status = error.response?.status;
         const details = error.response?.data || error.message;
         console.error(`[Public API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, JSON.stringify(details));
-        
+
         if (status === 400 && typeof details === 'string' && details.includes('Bad Request (400)')) {
             console.warn('[API Insight] This "Bad Request (400)" without a JSON body often indicates a Django ALLOWED_HOSTS mismatch. Check backend settings.py.');
         }
-        
+
         return Promise.reject(error);
     }
 );

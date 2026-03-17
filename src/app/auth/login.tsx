@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import GoogleSignIn from "@/components/ui/GoogleSignIn";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
 import { Image } from "expo-image";
@@ -22,130 +21,179 @@ import { Input } from "@/components/ui/Input";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
-import { useAuthStore } from "@/store/auth.store";
-import { API_BASE_URL } from "@/services/api-client";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_CLIENT_ID =
-  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-  (Constants.expoConfig?.extra as any)?.expoPublicGoogleClientId || "";
+const EXTRA = (Constants.expoConfig?.extra as any) || {};
+const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
+const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
+const IOS_CLIENT_ID = EXTRA.iosClientId || "";
+const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
 
-const ANDROID_CLIENT_ID =
-  (Constants.expoConfig?.extra as any)?.androidClientId || "";
+type LoginMode = "otp" | "password";
+type IdentifierMode = "phone" | "email";
+type RoleMode = "customer" | "pandit";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [loginView, setLoginView] = useState<"selection" | "main" | "phone" | "email">("selection");
-  const [intendedRole, setIntendedRole] = useState<"customer" | "pandit" | null>(null);
+
+  const [role, setRole] = useState<RoleMode>("customer");
+  const [loginMode, setLoginMode] = useState<LoginMode>("otp");
+  const [identifierMode, setIdentifierMode] = useState<IdentifierMode>("phone");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login: storeLogin, logout: storeLogout } = useAuthStore();
-  const [showPassword, setShowPassword] = useState(false);
-  const [formattedPhone, setFormattedPhone] = useState("");
+  const [step, setStep] = useState<"selectRole" | "selectMethod" | "form">("selectRole");
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: (Constants.expoConfig?.extra as any)?.expoPublicGoogleClientId,
-    androidClientId: (Constants.expoConfig?.extra as any)?.androidClientId,
-    iosClientId: (Constants.expoConfig?.extra as any)?.iosClientId,
-    webClientId: (Constants.expoConfig?.extra as any)?.webClientId,
-    responseType: AuthSession.ResponseType.IdToken,
-  });
+  const redirectUri = useMemo(
+    () =>
+      AuthSession.makeRedirectUri({
+        // Expo SDK 54 / expo-auth-session v7 types no longer expose useProxy here.
+      }),
+    []
+  );
+
+  // Fixes Expo Go + Google 400 invalid_request by using provider helper
+  const [googleRequest, googleResponse, googlePromptAsync] =
+    Google.useIdTokenAuthRequest(
+      {
+        // expo-auth-session v7 uses `clientId` (Expo / default),
+        // plus platform-specific client IDs.
+        clientId: GOOGLE_CLIENT_ID || undefined,
+        androidClientId: ANDROID_CLIENT_ID || undefined,
+        iosClientId: IOS_CLIENT_ID || undefined,
+        webClientId: WEB_CLIENT_ID || undefined,
+        redirectUri,
+        scopes: ["profile", "email"],
+      }
+    );
 
   useEffect(() => {
-    if (response?.type === "success") {
-      handleGoogleResponse(response);
-    }
-  }, [response]);
+    // Copy this exact URI into Google Cloud Console -> OAuth client -> Authorized redirect URIs
+    console.log("[GoogleAuth] redirectUri:", redirectUri);
+  }, [redirectUri]);
 
-  const handleGoogleResponse = async (res: any) => {
-    const idToken = res.params.id_token;
-    if (!idToken) return;
+  useEffect(() => {
+    const handleGoogle = async () => {
+      if (googleResponse?.type !== "success") return;
 
-    try {
-      setLoading(true);
-      const googleRes = await googleLogin(idToken);
-      const { access, refresh } = googleRes.data;
-      const profileRes = await getProfile();
-      const user = profileRes.data;
-
-      const userProfile = {
-        id: user.id.toString(),
-        name: user.full_name,
-        email: user.email,
-        phone: user.phone_number,
-        role: user.role,
-        profile_pic_url: user.profile_pic_url
-      };
-
-      await storeLogin(userProfile, { access, refresh });
-      navigateByRole(user);
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "Google Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const navigateByRole = (user: any) => {
-    if (user.role === "pandit") {
-      const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile;
-      router.replace((isProfileComplete ? "/(pandit)" : "/auth/pandit-profile-setup") as any);
-    } else if (user.role === "admin") {
-      router.replace("/admin/dashboard" as any);
-    } else {
-      router.replace("/(customer)" as any);
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      if (loginView === 'phone') {
-        if (!phone || phone.length < 10) {
-          Alert.alert("Invalid Phone", "Please enter a valid phone number.");
-          return;
-        }
-        await requestOTP({ phone_number: formattedPhone });
-        router.push({ pathname: "/auth/otp", params: { phone: formattedPhone } });
-      } else if (loginView === 'email') {
-        if (!email || !password) {
-          Alert.alert("Error", "Please enter both credentials");
-          return;
-        }
-        const loginRes = await loginPassword({ email, password });
-        const { access, refresh } = loginRes.data;
-        const profileRes = await getProfile();
-        const user = profileRes.data;
-
-        const userProfile = {
-          id: user.id.toString(),
-          name: user.full_name,
-          email: user.email,
-          phone: user.phone_number,
-          role: user.role,
-        };
-
-        await storeLogin(userProfile, { access, refresh });
-        navigateByRole(user);
+      const idToken =
+        (googleResponse.authentication as any)?.idToken ||
+        (googleResponse.params as any)?.id_token;
+      if (!idToken) {
+        Alert.alert("Google Sign-In", "No id_token returned from Google.");
+        return;
       }
-    } catch (err: any) {
-      Alert.alert("Login Error", err.message || "Authentication failed");
+
+      try {
+        setLoading(true);
+        await googleLogin({ id_token: idToken }); // POST /users/google-login/ + store tokens
+        const profileRes = await getProfile(); // GET /users/profile/
+        const profile: any = profileRes?.data ?? profileRes;
+        const roleValue = profile?.role ?? profile?.user?.role;
+
+        if (roleValue === "pandit") router.replace("/(pandit)" as any);
+        else router.replace("/(customer)" as any);
+      } catch (e: any) {
+        console.error(e);
+        Alert.alert("Google Sign-In failed", e?.message || "Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleGoogle();
+  }, [googleResponse, router]);
+
+  const handleSendOtp = async () => {
+    try {
+      setLoading(true);
+      if (identifierMode === "phone") {
+        if (!phone) {
+          Alert.alert("Error", "Please enter phone number");
+          return;
+        }
+        await requestOTP({ phone_number: phone });
+        router.push({ pathname: "/auth/otp", params: { phone } });
+      } else {
+        if (!email) {
+          Alert.alert("Error", "Please enter email");
+          return;
+        }
+        await requestOTP({ email });
+        router.push({ pathname: "/auth/otp", params: { email } });
+      }
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert("OTP Error", e?.message || "Failed to send OTP. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuestLogin = async () => {
-    await storeLogout();
-    router.replace("/(customer)");
+  const handlePasswordLogin = async () => {
+    try {
+      setLoading(true);
+      if (!password) {
+        Alert.alert("Error", "Please enter password");
+        return;
+      }
+      const identifier = identifierMode === "phone" ? phone : email;
+      if (!identifier) {
+        Alert.alert("Error", `Please enter ${identifierMode}`);
+        return;
+      }
+
+      const res = await loginPassword(
+        identifierMode === "phone"
+          ? { phone_number: identifier, password }
+          : { email: identifier, password }
+      );
+
+      // Tokens are stored by auth.service -> saveTokens().
+      void res;
+
+      const profileRes = await getProfile();
+      const profile: any = profileRes?.data ?? profileRes;
+      const roleValue = profile?.role ?? profile?.user?.role;
+
+      if (roleValue === "pandit") router.replace("/(pandit)" as any);
+      else router.replace("/(customer)" as any);
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert("Login failed", e?.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const selectRole = (role: "customer" | "pandit") => {
-    setIntendedRole(role);
-    setLoginView("main");
+  const handleGooglePress = async () => {
+    if (!GOOGLE_CLIENT_ID) {
+      Alert.alert(
+        "Google Sign-In not configured",
+        "Missing Google client id in app config."
+      );
+      return;
+    }
+    if (Platform.OS === "android" && !ANDROID_CLIENT_ID) {
+      Alert.alert(
+        "Google Sign-In not configured",
+        "Missing androidClientId in app.json extra."
+      );
+      return;
+    }
+    if (!googleRequest) {
+      Alert.alert("Google Sign-In", "Google request not ready. Try again.");
+      return;
+    }
+    await googlePromptAsync();
+  };
+
+  const handleGuest = () => {
+    // Guest mode: roadmap allows browsing without login.
+    // Guest is treated as customer experience.
+    router.replace("/(customer)" as any);
   };
 
   return (
@@ -153,7 +201,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <View style={styles.logoContainer}>
             <Image
@@ -163,52 +211,67 @@ export default function LoginScreen() {
             />
           </View>
 
-          {loginView === 'selection' && (
+          <Text style={styles.title}>PanditYatra</Text>
+          <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
+
+          {step === "selectRole" && (
             <>
-              <Text style={styles.title}>PanditYatra</Text>
-              <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
+              <View style={styles.roleRow}>
+                <Button
+                  title="Continue as Customer"
+                  variant={role === "customer" ? "primary" : "outline"}
+                  onPress={() => setRole("customer")}
+                  style={styles.roleBtn}
+                  leftIcon={<Ionicons name="person-outline" size={20} color={role === "customer" ? "#FFF" : Colors.light.primary} />}
+                />
+                <Button
+                  title="Continue as Pandit"
+                  variant={role === "pandit" ? "primary" : "outline"}
+                  onPress={() => setRole("pandit")}
+                  style={styles.roleBtn}
+                  leftIcon={<Ionicons name="school-outline" size={20} color={role === "pandit" ? "#FFF" : Colors.light.primary} />}
+                />
+              </View>
 
               <Button
-                title="Join as User"
-                variant="primary"
-                onPress={() => selectRole('customer')}
-                style={styles.mainButton}
-                leftIcon={<Ionicons name="person-outline" size={20} color="#FFF" />}
+                title="Next"
+                onPress={() => setStep("selectMethod")}
+                style={{ marginTop: 12 }}
               />
 
-              <Button
-                title="Join as Pandit"
-                variant="outline"
-                onPress={() => selectRole('pandit')}
-                style={styles.emailButton}
-                leftIcon={<Ionicons name="school-outline" size={20} color="#FF6F00" />}
-              />
-
-              <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
-                <Text style={styles.guestButtonText}>Explore as Guest <Ionicons name="arrow-forward" size={14} /></Text>
+              <TouchableOpacity style={styles.guestLink} onPress={handleGuest}>
+                <Text style={styles.guestText}>Explore as Guest →</Text>
               </TouchableOpacity>
             </>
           )}
 
-          {loginView === 'main' && (
+          {step === "selectMethod" && (
             <>
-              <Text style={styles.titleSmall}>{intendedRole === 'pandit' ? 'Pandit Login' : 'User Login'}</Text>
-              <Text style={styles.subtitleSmall}>Choose your preferred login method</Text>
+              <Text style={styles.sectionTitle}>
+                {role === "pandit" ? "Pandit Login" : "Customer Login"}
+              </Text>
 
               <Button
                 title="Continue with Phone"
-                variant="primary"
-                onPress={() => setLoginView('phone')}
-                style={styles.mainButton}
+                onPress={() => {
+                  setLoginMode("otp");
+                  setIdentifierMode("phone");
+                  setStep("form");
+                }}
+                style={styles.methodBtn}
                 leftIcon={<Ionicons name="call-outline" size={20} color="#FFF" />}
               />
 
               <Button
                 title="Continue with Email"
                 variant="outline"
-                onPress={() => setLoginView('email')}
-                style={styles.emailButton}
-                leftIcon={<Ionicons name="mail-outline" size={20} color="#FF6F00" />}
+                onPress={() => {
+                  setLoginMode("password");
+                  setIdentifierMode("email");
+                  setStep("form");
+                }}
+                style={styles.methodBtn}
+                leftIcon={<Ionicons name="mail-outline" size={20} color={Colors.light.primary} />}
               />
 
               <View style={styles.orRow}>
@@ -220,114 +283,146 @@ export default function LoginScreen() {
               <Button
                 title="Continue with Google"
                 variant="outline"
-                onPress={() => promptAsync()}
+                onPress={handleGooglePress}
                 style={styles.googleButton}
-                textStyle={{ color: '#FF6F00' }}
                 leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
-                disabled={!request}
+                disabled={!googleRequest || loading}
               />
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Don't have an account? </Text>
                 <Text
                   style={styles.link}
-                  onPress={() => router.push(intendedRole === 'pandit' ? "/auth/pandit-register" : "/auth/customer-register")}
+                  onPress={() =>
+                    router.push(
+                      role === "pandit" ? ("/auth/pandit-register" as any) : ("/auth/customer-register" as any)
+                    )
+                  }
                 >
                   Sign up
                 </Text>
               </View>
 
-              <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('selection')}>
-                <Text style={styles.backLink}>Change Role</Text>
+              <TouchableOpacity style={styles.backLink} onPress={() => setStep("selectRole")}>
+                <Text style={styles.backLinkText}>Change role</Text>
               </TouchableOpacity>
             </>
           )}
 
-          {loginView === 'phone' && (
-            <View style={{ width: '100%' }}>
-              <Text style={styles.titleSmall}>Phone Login</Text>
-              <Text style={styles.subtitleSmall}>Enter your number to receive an OTP.</Text>
-
-              <View style={styles.phoneInputContainer}>
-                <Text style={styles.inputLabel}>Phone Number</Text>
-                <CustomPhoneInput
-                  value={phone}
-                  onChangeText={setPhone}
-                  onFormattedChange={setFormattedPhone}
+          {step === "form" && (
+            <>
+              <View style={styles.segmentRow}>
+                <Button
+                  title="OTP"
+                  variant={loginMode === "otp" ? "primary" : "outline"}
+                  onPress={() => setLoginMode("otp")}
+                  style={styles.segmentButton}
+                />
+                <Button
+                  title="Password"
+                  variant={loginMode === "password" ? "primary" : "outline"}
+                  onPress={() => setLoginMode("password")}
+                  style={styles.segmentButton}
                 />
               </View>
 
+              <View style={styles.segmentRow}>
+                <Button
+                  title="Phone"
+                  variant={identifierMode === "phone" ? "primary" : "outline"}
+                  onPress={() => setIdentifierMode("phone")}
+                  style={styles.segmentButton}
+                />
+                <Button
+                  title="Email"
+                  variant={identifierMode === "email" ? "primary" : "outline"}
+                  onPress={() => setIdentifierMode("email")}
+                  style={styles.segmentButton}
+                />
+              </View>
+
+              {identifierMode === "phone" ? (
+                <Input
+                  label="Phone Number"
+                  placeholder="98XXXXXXXX"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              ) : (
+                <Input
+                  label="Email Address"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              )}
+
+              {loginMode === "password" && (
+                <Input
+                  label="Password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              )}
+
               <Button
-                title={loading ? "Sending..." : "Send OTP"}
-                variant="primary"
-                onPress={handleLogin}
-                isLoading={loading}
-                disabled={loading || phone.length < 10}
-                style={styles.submitButton}
-              />
-
-              <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('main')}>
-                <Text style={styles.backLink}>Other Options</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {loginView === 'email' && (
-            <View style={{ width: '100%' }}>
-              <Text style={styles.titleSmall}>Email Login</Text>
-              <Text style={styles.subtitleSmall}>Enter your credentials to continue.</Text>
-
-              <Input
-                label="Email Address"
-                placeholder="anita@email.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                leftIcon={<Ionicons name="mail-outline" size={20} color="#6B7280" />}
-              />
-
-              <Input
-                label="Password"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                style={{ marginTop: 12 }}
-                leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#6B7280" />}
-                rightIcon={
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color="#6B7280"
-                    />
-                  </TouchableOpacity>
+                title={
+                  loading
+                    ? "Please wait..."
+                    : loginMode === "otp"
+                    ? "Send OTP"
+                    : "Login"
                 }
+                onPress={loginMode === "otp" ? handleSendOtp : handlePasswordLogin}
+                style={styles.submitButton}
+                disabled={loading}
               />
 
-              <View style={styles.forgotPasswordContainer}>
-                <Text
-                  style={styles.forgotPasswordLink}
-                  onPress={() => router.push("/auth/forgot-password")}
-                >
-                  Forgot Password?
-                </Text>
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>OR</Text>
+                <View style={styles.orLine} />
               </View>
 
               <Button
-                title={loading ? "Logging in..." : "Login"}
-                variant="primary"
-                onPress={handleLogin}
-                isLoading={loading}
-                disabled={loading || !email || !password}
-                style={styles.submitButton}
+                title="Continue with Google"
+                variant="outline"
+                onPress={handleGooglePress}
+                style={styles.googleButton}
+                leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
+                disabled={!googleRequest || loading}
               />
 
-              <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('main')}>
-                <Text style={styles.backLink}>Other Options</Text>
+              {loading && (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator color={Colors.light.primary} />
+                  <Text style={styles.loadingText}>Working…</Text>
+                </View>
+              )}
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Don't have an account? </Text>
+                <Text
+                  style={styles.link}
+                  onPress={() =>
+                    router.push(
+                      role === "pandit" ? ("/auth/pandit-register" as any) : ("/auth/customer-register" as any)
+                    )
+                  }
+                >
+                  Sign up
+                </Text>
+              </View>
+
+              <TouchableOpacity style={styles.backLink} onPress={() => setStep("selectMethod")}>
+                <Text style={styles.backLinkText}>Back</Text>
               </TouchableOpacity>
-            </View>
+            </>
           )}
         </View>
       </ScrollView>
@@ -338,150 +433,131 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Pure white background to match card
+    backgroundColor: Colors.light.background,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     padding: 24,
-    backgroundColor: '#F5F5F5', // Screen background is slight grey
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    padding: 30,
+    backgroundColor: Colors.light.white,
+    borderRadius: 20,
+    padding: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowRadius: 8,
+    elevation: 5,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 5,
+    marginBottom: 16,
   },
   logo: {
-    width: 140,
-    height: 140,
+    width: 120,
+    height: 120,
   },
   title: {
-    fontSize: 40,
-    fontWeight: "bold",
-    color: '#FF6F00',
-    textAlign: "center",
-    marginBottom: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Playfair Display' : 'serif',
-  },
-  titleSmall: {
     fontSize: 28,
     fontWeight: "bold",
-    color: '#FF6F00',
+    color: Colors.light.primary,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#333333',
-    textAlign: "center",
-    marginBottom: 35,
-    fontWeight: '400',
-  },
-  subtitleSmall: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  mainButton: {
-    marginBottom: 16,
-    height: 58,
-    borderRadius: 14,
-    backgroundColor: '#FF6F00',
-  },
-  emailButton: {
-    marginBottom: 16,
-    height: 58,
-    borderRadius: 14,
-    borderColor: '#FF6F00',
-    borderWidth: 1.5,
-  },
-  googleButton: {
-    marginBottom: 24,
-    height: 58,
-    borderRadius: 14,
-    borderColor: '#E5E7EB',
-    borderWidth: 1.5,
-  },
-  phoneInputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
+    color: Colors.light.text,
+    textAlign: "center",
+    marginBottom: 18,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.light.text,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  roleRow: {
+    gap: 10,
+    marginTop: 12,
+  },
+  roleBtn: {
+    paddingVertical: 12,
+  },
+  methodBtn: {
+    marginTop: 10,
+  },
+  segmentRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  submitButton: {
+    marginTop: 10,
   },
   orRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 15,
+    marginTop: 22,
+    marginBottom: 12,
   },
   orLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#EEEEEE",
+    backgroundColor: "#E5E5EA",
   },
   orText: {
-    marginHorizontal: 12,
-    color: "#999999",
-    fontSize: 13,
+    marginHorizontal: 8,
+    color: "#9E9E9E",
+    fontSize: 12,
     fontWeight: "500",
+  },
+  googleButton: {
+    marginBottom: 8,
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#666",
+    fontSize: 12,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 24,
   },
   footerText: {
-    color: "#666666",
-    fontSize: 15,
+    color: "#757575",
   },
   link: {
-    color: '#FF6F00',
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  guestButton: {
-    marginTop: 35,
-    alignItems: 'center',
-  },
-  guestButtonText: {
-    color: '#6B7280',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  forgotPasswordContainer: {
-    alignItems: "flex-end",
-    marginBottom: 20,
-    marginTop: 4,
-  },
-  forgotPasswordLink: {
-    color: '#FF6F00',
+    color: Colors.light.primary,
     fontWeight: "600",
-    fontSize: 14,
   },
-  submitButton: {
-    height: 58,
-    borderRadius: 14,
-    backgroundColor: '#FF6F00',
+  guestLink: {
+    marginTop: 18,
+    alignItems: "center",
   },
-  backLinkContainer: {
-    marginTop: 24,
-    alignItems: 'center',
+  guestText: {
+    color: "#666",
+    fontWeight: "600",
   },
   backLink: {
-    color: '#999999',
-    fontSize: 15,
-    fontWeight: '500',
+    marginTop: 14,
+    alignItems: "center",
+  },
+  backLinkText: {
+    color: Colors.light.primary,
+    fontWeight: "600",
   },
 });
+

@@ -1,29 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { orderDetail, fetchOrderInvoice } from '@/services/samagri.service';
 
 export default function OrderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
-  const MOCK_ORDER = {
-    id: id,
-    date: '2026-03-10',
-    status: 'Shipped',
-    items: [
-      { id: '1', name: 'Premium Rudraksha Mala', price: 750, quantity: 1, image: 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' },
-      { id: '2', name: 'Puja Thali Set', price: 500, quantity: 1, image: 'https://images.unsplash.com/photo-1567000411752-646876c8c494?q=80&w=200' },
-    ],
-    summary: {
-      subtotal: 1250,
-      delivery: 50,
-      discount: 0,
-      total: 1300
-    },
-    address: '123 Spiritual Lane, Kathmandu, Nepal',
-    paymentMethod: 'eSewa'
-  };
+  const [loading, setLoading] = useState(true);
+  const [order, setOrder] = useState<any | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        if (!id) return;
+        const res = await orderDetail(Number(id));
+        setOrder(res.data);
+      } catch (e) {
+        console.error(e);
+        Alert.alert('Error', 'Failed to load order details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#f97316" />
+      </View>
+    );
+  }
+
+  if (!order) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#666' }}>Order not found</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -36,23 +55,23 @@ export default function OrderDetailScreen() {
 
       <View style={styles.statusSection}>
         <View style={styles.statusRow}>
-          <Text style={styles.orderIdText}>Order {MOCK_ORDER.id}</Text>
+          <Text style={styles.orderIdText}>Order {order.id}</Text>
           <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{MOCK_ORDER.status}</Text>
+            <Text style={styles.statusText}>{order.status || 'Pending'}</Text>
           </View>
         </View>
-        <Text style={styles.dateText}>Placed on {MOCK_ORDER.date}</Text>
+        <Text style={styles.dateText}>Placed on {order.created_at || order.date || ''}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Items</Text>
-        {MOCK_ORDER.items.map(item => (
-          <View key={item.id} style={styles.itemRow}>
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
+        {(order.items || order.order_items || []).map((item: any) => (
+          <View key={String(item.id)} style={styles.itemRow}>
+            <Image source={{ uri: item.image || item.item?.image || '' }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemName}>{item.name || item.item?.name}</Text>
               <Text style={styles.itemMeta}>Qty: {item.quantity}</Text>
-              <Text style={styles.itemPrice}>NPR {item.price}</Text>
+              <Text style={styles.itemPrice}>NPR {item.price || item.unit_price || 0}</Text>
             </View>
           </View>
         ))}
@@ -60,29 +79,29 @@ export default function OrderDetailScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Shipping Address</Text>
-        <Text style={styles.addressText}>{MOCK_ORDER.address}</Text>
+        <Text style={styles.addressText}>{order.address || order.shipping_address || '—'}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment Information</Text>
         <View style={styles.paymentRow}>
           <Ionicons name="card-outline" size={20} color="#666" />
-          <Text style={styles.paymentText}>{MOCK_ORDER.paymentMethod}</Text>
+          <Text style={styles.paymentText}>{order.payment_method || '—'}</Text>
         </View>
       </View>
 
       <View style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Subtotal</Text>
-          <Text style={styles.summaryValue}>NPR {MOCK_ORDER.summary.subtotal}</Text>
+          <Text style={styles.summaryValue}>NPR {order.subtotal || order.summary?.subtotal || 0}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Delivery Fee</Text>
-          <Text style={styles.summaryValue}>NPR {MOCK_ORDER.summary.delivery}</Text>
+          <Text style={styles.summaryValue}>NPR {order.delivery_fee || order.summary?.delivery || 0}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total Amount</Text>
-          <Text style={styles.totalValue}>NPR {MOCK_ORDER.summary.total}</Text>
+          <Text style={styles.totalValue}>NPR {order.total || order.summary?.total || 0}</Text>
         </View>
       </View>
 
@@ -90,7 +109,7 @@ export default function OrderDetailScreen() {
         style={styles.invoiceBtn}
         onPress={async () => {
           try {
-            const data = await import('@/services/samagri.service').then(m => m.fetchOrderInvoice(Number(id)));
+            await fetchOrderInvoice(Number(id));
             // In a real browser this would download, in RN we might need sharing/saving logic
             // For now, alerting success of fetch
             Alert.alert("Success", "Invoice document fetched. Ready for download.");

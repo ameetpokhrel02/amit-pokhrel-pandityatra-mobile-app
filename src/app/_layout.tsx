@@ -7,6 +7,9 @@ import { useAuthStore } from '@/store/auth.store';
 import '@/i18n'; // Initialize i18n
 import '../../global.css'; // Import NativeWind styles
 
+import { UserProvider } from '@/store/UserContext';
+import { ChatProvider } from '@/store/ChatContext';
+
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -25,23 +28,27 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-          {/* Auth / startup routing */}
-          <Stack.Screen name="index" />
-          <Stack.Screen name="auth" />
-          
-          {/* Public screens (About, Contact, etc.) */}
-          <Stack.Screen name="(public)" />
+      <UserProvider>
+        <ChatProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* Auth / startup routing */}
+            <Stack.Screen name="index" />
+            <Stack.Screen name="auth" />
+            
+            {/* Public screens (About, Contact, etc.) */}
+            <Stack.Screen name="(public)" />
 
-          {/* Customer app (tabs) */}
-          <Stack.Screen name="(customer)" />
+            {/* Customer app (tabs) */}
+            <Stack.Screen name="(customer)" />
 
-          {/* Pandit app (tabs) */}
-          <Stack.Screen name="(pandit)" />
+            {/* Pandit app (tabs) */}
+            <Stack.Screen name="(pandit)" />
 
-          {/* Admin dashboard */}
-          <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
-        </Stack>
+            {/* Admin dashboard */}
+            <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
+          </Stack>
+        </ChatProvider>
+      </UserProvider>
     </ThemeProvider>
   );
 }

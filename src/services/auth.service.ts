@@ -22,6 +22,7 @@ export const forgotPassword = (data: any) => publicApi.post('users/forgot-passwo
 export const verifyForgotOTP = (data: any) => publicApi.post('users/forgot-password/verify-otp/', data);
 export const resetPassword = (data: any) => publicApi.post('users/forgot-password/reset/', data);
 export const getProfile = () => api.get('users/profile/');
+export const fetchProfile = getProfile; // Alias for store compatibility
 export const updateProfile = (data: any) => api.patch('users/profile/', data);
 export const deleteProfile = () => api.delete('users/profile/');
 export const contactSupport = (data: any) => publicApi.post('users/contact/', data);

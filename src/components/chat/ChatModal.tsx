@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '@/store/ThemeContext';
 import { quickChat, getChatWebSocketUrl } from '@/services/chat.service';
 import { ChatMessage } from '@/types/chat';
@@ -68,9 +69,12 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         };
     }, [visible, mode, bookingId]);
 
-    const connectWebSocket = () => {
-        // Note: In a real app, you'd get the token from your AuthStore
-        const token = 'placeholder_token';
+    const connectWebSocket = async () => {
+        const token = await SecureStore.getItemAsync('access_token');
+        if (!token) {
+            console.error('No access token found for chat');
+            return;
+        }
         const url = getChatWebSocketUrl(bookingId!, token);
 
         ws.current = new WebSocket(url);

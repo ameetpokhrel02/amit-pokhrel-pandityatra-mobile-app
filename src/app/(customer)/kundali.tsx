@@ -57,7 +57,7 @@ export default function KundaliScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Offline Kundali</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>AI Kundali</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -69,8 +69,8 @@ export default function KundaliScreen() {
                     >
                         <Ionicons name="planet-outline" size={64} color="#f97316" />
                     </View>
-                    <Text style={[styles.heroTitle, { color: colors.text }]}>Offline Kundali – Your Birth Chart, Private & Secure</Text>
-                    <Text style={[styles.heroSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Generate your Kundali without internet. Your data stays on your device.</Text>
+                    <Text style={[styles.heroTitle, { color: colors.text }]}>AI Kundali – Your Divine Birth Chart</Text>
+                    <Text style={[styles.heroSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Generate your precise Vedic Kundali using our advanced spiritual AI.</Text>
                     <View>
                         <TouchableOpacity style={styles.heroButton} onPress={handleGenerate} disabled={loading}>
                             <Text style={styles.heroButtonText}>Generate Kundali</Text>
@@ -80,9 +80,9 @@ export default function KundaliScreen() {
 
                 {/* 2. What Is Offline Kundali? */}
                 <View style={styles.section}>
-                    <Text style={[styles.sectionHeader, { color: colors.text }]}>What Is Offline Kundali?</Text>
+                    <Text style={[styles.sectionHeader, { color: colors.text }]}>What Is AI Kundali?</Text>
                     <Text style={[styles.sectionText, { color: isDark ? '#AAA' : '#555' }]}>
-                        Offline Kundali generates your birth chart using Vedic astrology algorithms directly on your device. No internet required. No data sent to servers.
+                        AI Kundali generates your birth chart using Vedic astrology algorithms powered by our spiritual engine. Get precise insights into your life's path.
                     </Text>
                     <View style={styles.featureRow}>
                         <View style={[styles.featureItem, { backgroundColor: colors.card }]}>

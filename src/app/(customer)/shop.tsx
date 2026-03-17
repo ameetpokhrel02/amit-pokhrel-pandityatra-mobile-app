@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useCartStore } from '@/store/cart.store';
-import { getSamagriItems, getSamagriCategories, getWishlist } from '@/services/samagri.service';
+import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
 import { SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
 import { getProfile } from '@/services/auth.service';
+import { useAuthStore } from '@/store/auth.store';
 
 const { width } = Dimensions.get('window');
 
@@ -36,6 +37,7 @@ export default function ShopScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const { addToCart, totalItems, totalPrice } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const isDark = theme === 'dark';
 
   const [products, setProducts] = useState<SamagriItem[]>([]);
@@ -75,19 +77,31 @@ export default function ShopScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [itemsRes, categoriesRes, wishlistRes] = await Promise.all([
+
+      // Load public data (items + categories) always
+      const [itemsRes, categoriesRes] = await Promise.all([
         getSamagriItems(),
         getSamagriCategories(),
-        getWishlist().catch(() => ({ data: [] }))
       ]);
-      
-      const itemsData = itemsRes.data.results || itemsRes.data;
-      const categoriesData = categoriesRes.data.results || categoriesRes.data;
-      const wishlistData = wishlistRes.data.results || wishlistRes.data;
+
+      const itemsData = Array.isArray(itemsRes) ? itemsRes : (itemsRes as any)?.results || [];
+      const categoriesData = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes as any)?.results || [];
 
       setProducts(itemsData);
       setCategories([{ id: 'All', name: 'All' }, ...categoriesData]);
-      setWishlist(wishlistData.map((item: any) => item.id));
+
+      // Load wishlist ONLY if authenticated (requires token)
+      if (isAuthenticated) {
+        try {
+          const wishlistRes = await getWishlist();
+          const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
+          // WishlistSerializer returns { id, item: { id, name, ... }, created_at }
+          const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
+          setWishlist(ids);
+        } catch (e) {
+          console.log('Wishlist load skipped (auth issue)');
+        }
+      }
     } catch (error) {
       console.error('Error loading shop data:', error);
     } finally {
@@ -108,13 +122,24 @@ export default function ShopScreen() {
   };
 
   const handleToggleWishlist = async (itemId: number) => {
+    if (!isAuthenticated) {
+      Alert.alert('Login Required', 'Please log in to add items to your wishlist.');
+      return;
+    }
+    // Optimistic UI update
+    const wasInWishlist = wishlist.includes(itemId);
+    setWishlist(prev =>
+      wasInWishlist ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
     try {
-      await import('@/services/samagri.service').then(s => s.toggleWishlist({ item_id: itemId }));
-      setWishlist(prev => 
-        prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
-      );
+      await toggleWishlist(itemId);
     } catch (e) {
+      // Revert on error
+      setWishlist(prev =>
+        wasInWishlist ? [...prev, itemId] : prev.filter(id => id !== itemId)
+      );
       console.error('Failed to toggle wishlist:', e);
+      Alert.alert('Error', 'Could not update wishlist. Please try again.');
     }
   };
 
@@ -200,7 +225,12 @@ export default function ShopScreen() {
             style={[styles.iconBox, { backgroundColor: colors.card }]}
             onPress={() => router.push('/(customer)/wishlist' as any)}
           >
-            <Ionicons name="heart-outline" size={22} color={colors.text} />
+            <Ionicons name={wishlist.length > 0 ? "heart" : "heart-outline"} size={22} color={wishlist.length > 0 ? colors.primary : colors.text} />
+            {wishlist.length > 0 && (
+              <View style={[styles.cartBadge, { backgroundColor: '#DC2626' }]}>
+                <Text style={styles.cartBadgeText}>{wishlist.length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.iconBox, { backgroundColor: colors.card }]}

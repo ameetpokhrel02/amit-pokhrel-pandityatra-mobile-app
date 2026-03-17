@@ -101,16 +101,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   syncProfile: async () => {
     try {
-      const userData = await fetchProfile();
+      const response = await fetchProfile();
+      // fetchProfile returns an Axios response — unwrap .data
+      const userData = response?.data || response;
       if (userData) {
         // Map backend profile response to store User type
         const mappedUser: User = {
-          id: userData.id.toString(),
-          name: userData.full_name,
-          phone: userData.phone_number,
-          email: userData.email,
+          id: String(userData.id),
+          name: userData.full_name || userData.name || '',
+          phone: userData.phone_number || userData.phone || '',
+          email: userData.email || '',
           role: userData.role || 'customer',
-          profile_pic_url: userData.profile_pic_url,
+          profile_pic_url: userData.profile_image || userData.profile_pic_url,
         };
         await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
         await SecureStore.setItemAsync('role', mappedUser.role);

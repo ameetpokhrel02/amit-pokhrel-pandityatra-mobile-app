@@ -2,6 +2,8 @@
 import { api, publicApi } from './api-client';
 
 export const listBookings = (params?: any) => api.get('bookings/', { params });
+export const fetchBookings = listBookings;
+export const fetchMyBookings = listBookings;
 export const createBooking = (data: any) => api.post('bookings/', data);
 export const getBooking = (id: number) => api.get(`bookings/${id}/`);
 export const updateBooking = (id: number, data: any) => api.put(`bookings/${id}/`, data);

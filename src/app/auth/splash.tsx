@@ -5,59 +5,56 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/auth.store';
-import { fetchProfile } from '@/services/auth.service';
+import { Colors } from '@/constants/Colors';
 
 export default function SplashScreen() {
     const router = useRouter();
-    const { isAuthenticated, user: authUser, initialize } = useAuthStore();
+    const { initialize, isAuthenticated, user } = useAuthStore();
 
     useEffect(() => {
         const checkNavigation = async () => {
-            console.log('Splash: Starting navigation check...');
+            console.log('[Splash] Starting navigation check...');
             try {
-                // Minimum delay of 3 seconds for branding as requested
-                const timer = new Promise(resolve => setTimeout(resolve, 3000));
+                // Minimum delay of 2.5 seconds for branding
+                const timer = new Promise(resolve => setTimeout(resolve, 2500));
 
-                // Clear initialization result
+                // Initialize auth store (loads tokens/user from storage)
                 await initialize();
 
                 const onboardingSeen = await AsyncStorage.getItem('onboarding_seen');
                 const token = await SecureStore.getItemAsync('access_token');
 
-                console.log('Splash: Status - seen:', onboardingSeen, 'token:', !!token, 'auth:', isAuthenticated);
+                console.log('[Splash] Status:', { onboardingSeen, hasToken: !!token, isAuthenticated });
 
-                // Wait for the minimum 3s branding time
-                await timer;
+                await timer; // Wait for branding delay
 
+                // 1. Check Onboarding
                 if (onboardingSeen !== 'true') {
-                    console.log('Splash: Navigating to Onboarding');
                     router.replace('/auth/onboarding' as any);
                     return;
                 }
 
-                if (isAuthenticated && authUser) {
-                    console.log('Splash: Authenticated, role:', authUser.role);
-                    if (authUser.role === 'pandit') {
-                        // We check for profile completion here
-                        // For now assuming if authUser exists we can try to go to dashboard
+                // 2. Check Auth
+                if (token && isAuthenticated && user) {
+                    if (user.role === 'pandit') {
                         router.replace('/(pandit)' as any);
-                    } else if (authUser.role === 'admin') {
+                    } else if (user.role === 'admin') {
                         router.replace('/admin/dashboard' as any);
                     } else {
                         router.replace('/(customer)' as any);
                     }
                 } else {
-                    console.log('Splash: No auth session, going Login');
+                    // 3. Not logged in -> Go to Login
                     router.replace('/auth/login' as any);
                 }
             } catch (error) {
-                console.error('Splash navigation error:', error);
+                console.error('[Splash] Navigation error:', error);
                 router.replace('/auth/login' as any);
             }
         };
 
         checkNavigation();
-    }, []);
+    }, [initialize, isAuthenticated, user, router]);
 
     return (
         <View style={styles.container}>
@@ -73,12 +70,8 @@ export default function SplashScreen() {
                             style={styles.logo}
                             contentFit="contain"
                         />
-                        <Text style={styles.title}>
-                            PanditYatra
-                        </Text>
-                        <Text style={styles.subtitle}>
-                            Connecting Faith with Excellence
-                        </Text>
+                        <Text style={styles.title}>PanditYatra</Text>
+                        <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
                     </View>
                 </View>
             </ImageBackground>
@@ -89,7 +82,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FF6F00',
+        backgroundColor: Colors.light.primary,
     },
     background: {
         flex: 1,
@@ -98,7 +91,7 @@ const styles = StyleSheet.create({
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(255, 111, 0, 0.85)', // Saffron with slight transparency
+        backgroundColor: 'rgba(255, 111, 0, 0.85)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -106,20 +99,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logo: {
-        width: 200,
-        height: 200,
+        width: 180,
+        height: 180,
         marginBottom: 20,
     },
     title: {
         fontSize: 42,
         fontWeight: 'bold',
-        color: '#FFD700', // Gold
+        color: '#FFD700',
         textAlign: 'center',
         letterSpacing: 1,
     },
     subtitle: {
         fontSize: 18,
-        color: '#FFFFFF', // White for better contrast on saffron
+        color: '#FFFFFF',
         marginTop: 10,
         textAlign: 'center',
         fontWeight: '500',

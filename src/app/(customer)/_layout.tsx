@@ -92,20 +92,20 @@ function LayoutContent() {
         }}
       />
       <Tabs.Screen
+        name="bookings"
+        options={{
+          title: 'Bookings',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="shop"
         options={{
           title: 'Shop',
           tabBarIcon: ({ color, focused }) => (
             <ShopIcon color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="chat/index"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color, focused }) => (
-            <AIChatIcon color={color} focused={focused} />
           ),
         }}
       />
@@ -120,7 +120,7 @@ function LayoutContent() {
       />
       {/* Hidden Screens */}
       {[
-        'bookings', 'bookings/[id]', 'booking', 'chat/ai-guide',
+        'bookings/[id]', 'booking', 'chat/ai-guide', 'chat/index',
         'bookings/samagri-recommendations', 'cart', 'shop/[id]',
         'kundali', 'edit-profile', 'checkout', 'panchang',
         'services/index', 'chat/[id]', 'pandit/[id]', 'payments',
@@ -128,14 +128,15 @@ function LayoutContent() {
         'services/[id]', 'shop/ai-recommend', 'reviews/pending',
         'reviews/history', 'reviews/platform-feedback', 'bookings/review',
         'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',
-        'booking-confirmation', 'invoice', 'help', 'wishlist', 'preferences',
+        'booking-confirmation', 'invoice', 'help', 'help-contact', 'wishlist', 'preferences',
         'ai-assistant'
       ].map(screen => (
         <Tabs.Screen
           key={screen}
           name={screen}
           options={{
-            href: null,
+            href: undefined as any,
+            tabBarButton: () => null,
             tabBarItemStyle: { display: 'none' }
           }}
         />

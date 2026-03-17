@@ -47,6 +47,8 @@ export async function fetchBookingSamagri(bookingId: number) {
     return response.data;
 }
 
+export const fetchBookingSamagriRecommendations = fetchBookingSamagri;
+
 /**
  * Trigger AI recommendations for a booking
  */

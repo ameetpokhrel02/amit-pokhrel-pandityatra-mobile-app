@@ -8,6 +8,8 @@ import { PanditService } from '@/services/api';
 import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
 import { fetchNotifications, markNotificationAsRead, Notification } from '@/services/notification.service';
 import { joinVideoRoom } from '@/services/video.service';
+import { listBookings } from '@/services/booking.service';
+import dayjs from 'dayjs';
 
 export default function PanditDashboardScreen() {
   const router = useRouter();
@@ -23,11 +25,13 @@ export default function PanditDashboardScreen() {
     rating: '0.0'
   });
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const profileData = await fetchProfile();
+      const profileRes = await fetchProfile();
+      const profileData = profileRes.data;
       setProfile(profileData);
 
       // If user has a pandit profile
@@ -41,11 +45,14 @@ export default function PanditDashboardScreen() {
         });
       }
 
-      const servicesData = await fetchPanditMyServices();
-      setMyServices(servicesData);
+      const servicesRes = await fetchPanditMyServices();
+      setMyServices(servicesRes.data);
 
       const notificationsData = await fetchNotifications();
       setNotifications(notificationsData);
+
+      const bookingsRes = await listBookings({ status: 'ACCEPTED', limit: 3 });
+      setRecentBookings(bookingsRes.data.results || bookingsRes.data || []);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -159,12 +166,22 @@ export default function PanditDashboardScreen() {
         </View>
 
         <View style={styles.verticalList}>
-          <UpcomingPujaCard
-            customerName="Anita Sharma"
-            pujaType="Satyanarayan Puja"
-            date="15 Jan, 10:00 AM"
-            status="Confirmed"
-          />
+          {recentBookings.length > 0 ? (
+            recentBookings.map((booking) => (
+              <UpcomingPujaCard
+                key={booking.id}
+                customerName={booking.user_full_name || 'Customer'}
+                pujaType={booking.service_name || 'Puja'}
+                date={dayjs(booking.booking_date).format('DD MMM, hh:mm A')}
+                status={booking.status}
+                onPress={() => router.push({ pathname: '/(pandit)/bookings', params: { id: booking.id } } as any)}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No upcoming bookings found.</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -254,9 +271,15 @@ function StatCard({ label, value, icon, color }: { label: string, value: string,
   );
 }
 
-function UpcomingPujaCard({ customerName, pujaType, date, status }: { customerName: string, pujaType: string, date: string, status: string }) {
+function UpcomingPujaCard({ customerName, pujaType, date, status, onPress }: { 
+  customerName: string, 
+  pujaType: string, 
+  date: string, 
+  status: string,
+  onPress?: () => void
+}) {
   return (
-    <View style={styles.upcomingCard}>
+    <TouchableOpacity style={styles.upcomingCard} onPress={onPress}>
       <View style={styles.upcomingContent}>
         <Text style={styles.upcomingTitle}>{pujaType}</Text>
         <Text style={styles.upcomingCustomer}>for {customerName}</Text>
@@ -266,11 +289,11 @@ function UpcomingPujaCard({ customerName, pujaType, date, status }: { customerNa
         <View style={[styles.statusBadge, { backgroundColor: status === 'Confirmed' ? '#DCFCE7' : '#FEF3C7' }]}>
           <Text style={[styles.statusText, { color: status === 'Confirmed' ? '#166534' : '#92400E' }]}>{status}</Text>
         </View>
-        <TouchableOpacity style={styles.viewButton}>
+        <TouchableOpacity style={styles.viewButton} onPress={onPress}>
           <Text style={styles.viewButtonText}>Details</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

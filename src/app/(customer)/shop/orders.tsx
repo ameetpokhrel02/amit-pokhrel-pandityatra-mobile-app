@@ -1,27 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { myOrders } from '@/services/samagri.service';
 
 interface ShopOrder {
-  id: string;
-  date: string;
-  total: number;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
-  itemCount: number;
-  previewImage: string;
+  id: number | string;
+  date?: string;
+  total?: number;
+  status?: string;
+  itemCount?: number;
+  previewImage?: string;
 }
-
-const MOCK_ORDERS: ShopOrder[] = [
-  { id: 'ORD-7721', date: '2026-03-10', total: 1250, status: 'Shipped', itemCount: 3, previewImage: 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' },
-  { id: 'ORD-6612', date: '2026-03-05', total: 500, status: 'Delivered', itemCount: 1, previewImage: 'https://images.unsplash.com/photo-1567000411752-646876c8c494?q=80&w=200' },
-];
 
 export default function ShopOrdersScreen() {
   const router = useRouter();
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState<ShopOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const getStatusColor = (status: ShopOrder['status']) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
       case 'Pending': return '#F59E0B';
       case 'Shipped': return '#3B82F6';
@@ -31,20 +28,39 @@ export default function ShopOrdersScreen() {
     }
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await myOrders();
+        const data = res.data?.results || res.data || [];
+        setOrders(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   const renderItem = ({ item }: { item: ShopOrder }) => (
     <TouchableOpacity 
       style={styles.orderCard}
-      onPress={() => router.push(`/(customer)/shop/order/${item.id}`)}
+      onPress={() => router.push(`/(customer)/shop/order/${item.id}` as any)}
     >
-      <Image source={{ uri: item.previewImage }} style={styles.previewImage} />
+      <Image
+        source={{ uri: item.previewImage || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' }}
+        style={styles.previewImage}
+      />
       <View style={styles.orderInfo}>
         <View style={styles.orderHeader}>
-          <Text style={styles.orderId}>{item.id}</Text>
-          <Text style={styles.orderDate}>{item.date}</Text>
+          <Text style={styles.orderId}>ORD-{item.id}</Text>
+          <Text style={styles.orderDate}>{item.date || ''}</Text>
         </View>
-        <Text style={styles.orderMeta}>{item.itemCount} items • NPR {item.total}</Text>
+        <Text style={styles.orderMeta}>{item.itemCount || 0} items • NPR {item.total || 0}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status || 'Pending'}</Text>
         </View>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#ccc" />
@@ -60,24 +76,30 @@ export default function ShopOrdersScreen() {
         <Text style={styles.title}>My Shop Orders</Text>
       </View>
 
-      <FlatList
-        data={orders}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="bag-outline" size={60} color="#ccc" />
-            <Text style={styles.emptyText}>You haven't placed any orders yet</Text>
-            <TouchableOpacity 
-              style={styles.shopBtn}
-              onPress={() => router.push('/(customer)/shop')}
-            >
-              <Text style={styles.shopBtnText}>Start Shopping</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#f97316" />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          renderItem={renderItem}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="bag-outline" size={60} color="#ccc" />
+              <Text style={styles.emptyText}>You haven't placed any orders yet</Text>
+              <TouchableOpacity 
+                style={styles.shopBtn}
+                onPress={() => router.push('/(customer)/shop' as any)}
+              >
+                <Text style={styles.shopBtnText}>Start Shopping</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

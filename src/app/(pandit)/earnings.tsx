@@ -31,12 +31,12 @@ export default function EarningsScreen() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [statsData, walletData] = await Promise.all([
+            const [statsRes, walletRes] = await Promise.all([
                 fetchPanditDashboardStats(),
                 fetchWalletBalance()
             ]);
-            setStats(statsData);
-            setWallet(walletData);
+            setStats(statsRes.data);
+            setWallet(walletRes.data);
         } catch (error) {
             console.error('Error loading earnings data:', error);
         } finally {

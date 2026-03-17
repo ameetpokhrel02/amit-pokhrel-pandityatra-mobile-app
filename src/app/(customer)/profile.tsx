@@ -14,12 +14,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { getProfile } from '@/services/auth.service';
 import { listBookings } from '@/services/booking.service';
 import { getImageUrl } from '@/utils/image';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, setMode, colors } = useTheme();
   const { user, updateUser, logout } = useUser();
   const { t, i18n } = useTranslation();
+  const { isAuthenticated } = useAuthStore();
   const isDark = theme === 'dark';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -27,6 +29,11 @@ export default function ProfileScreen() {
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   useEffect(() => {
+    // Only fetch profile data if the user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     const loadData = async () => {
       try {
         setLoading(true);
@@ -34,8 +41,9 @@ export default function ProfileScreen() {
           getProfile(),
           listBookings()
         ]);
-        const profileData = profileResponse.data;
-        const bookingsData = bookingsResponse.data;
+        const profileData = profileResponse?.data || profileResponse;
+        const bookingsRaw = bookingsResponse?.data || bookingsResponse;
+        const bookingsData = Array.isArray(bookingsRaw) ? bookingsRaw : (bookingsRaw?.results || []);
 
         updateUser({
           name: profileData.full_name,
@@ -54,7 +62,7 @@ export default function ProfileScreen() {
       }
     };
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   const toggleTheme = () => {
     setMode(isDark ? 'light' : 'dark');
@@ -107,145 +115,167 @@ export default function ProfileScreen() {
   );
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('profile.title')}</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>{t('profile.title')}</Text>
+        </View>
 
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <View style={styles.imageContainer}>
-          {user?.photoUri ? (
-            <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
-          ) : (
-            <View style={[styles.placeholderImage, { backgroundColor: colors.primary }]}>
-              <Text style={styles.placeholderText}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={handleEditPress} style={styles.imageContainer}>
+            {user?.photoUri ? (
+              <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
+            ) : (
+              <View style={[styles.placeholderImage, { backgroundColor: colors.primary }]}>
+                <Text style={styles.placeholderText}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
+              </View>
+            )}
+            <View style={[styles.editIconBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
+              <Ionicons name="camera" size={16} color="#FFF" />
             </View>
-          )}
-        </View>
+          </TouchableOpacity>
 
-        <View style={styles.nameContainer}>
-          <View style={styles.nameRow}>
+          <TouchableOpacity onPress={handleEditPress} style={styles.nameContainer}>
             <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'User'}</Text>
-            <TouchableOpacity onPress={handleEditPress} style={styles.editButton}>
-              <Ionicons name="pencil" size={18} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.userEmail, { color: colors.text, opacity: 0.7 }]}>{user?.email || 'email@example.com'}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.roleText, { color: colors.primary }]}>{user?.role?.toUpperCase() || 'USER'}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Settings & Preferences */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>App Settings</Text>
-        
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Ionicons name={isDark ? "moon" : "sunny"} size={24} color={colors.text} />
-            <Text style={[styles.label, { color: colors.text }]}>{t('profile.darkMode')}</Text>
-          </View>
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-            trackColor={{ false: '#767577', true: colors.primary }}
-            thumbColor={isDark ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="language" size={24} color={colors.text} />
-            <Text style={[styles.label, { color: colors.text }]}>{t('profile.language')}</Text>
-          </View>
-          <TouchableOpacity onPress={toggleLanguage} style={styles.langButton}>
-            <Text style={[styles.langText, { color: colors.primary }]}>
-              {i18n.language === 'en' ? 'English' : 'नेपाली'}
-            </Text>
+            <Text style={[styles.userEmail, { color: colors.text, opacity: 0.7 }]}>{user?.email || user?.phone || 'Add contact info'}</Text>
+            <View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
+              <Text style={[styles.roleText, { color: colors.primary }]}>CUSTOMER</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        
-        {renderSettingItem("sparkles-outline", "AI Personalization", () => router.push('/(customer)/preferences' as any))}
-        
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        
-        {renderSettingItem("notifications-outline", "Notifications", () => { })}
-      </View>
+        {/* Personal Section */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Personal</Text>
+          {renderSettingItem("person-outline", "Edit Profile", handleEditPress)}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("planet-outline", "My Kundali", () => router.push('/(customer)/floating-kundali' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("heart-outline", "My Wishlist", () => router.push('/(customer)/wishlist' as any))}
+        </View>
 
-      {/* Reviews & Feedback Section */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Feedback & Activity</Text>
-        
-        {renderSettingItem(
-          "star-outline", 
-          "Rate Recent Services", 
-          () => router.push('/(customer)/reviews/pending' as any),
-          pendingReviewCount > 0 ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{pendingReviewCount}</Text>
+        {/* Activity & Feedback */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Feedback & Activity</Text>
+          {renderSettingItem(
+            "star-outline", 
+            "Rate Pandits I Booked", 
+            () => router.push('/(customer)/reviews/pending' as any),
+            pendingReviewCount > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingReviewCount}</Text>
+              </View>
+            ) : null
+          )}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem(
+            "megaphone-outline", 
+            "Rate the App (PanditYatra)", 
+            () => Alert.alert("Rate App", "Redirecting to App Store...")
+          )}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem(
+            "chatbubble-ellipses-outline", 
+            "My Reviews History", 
+            () => router.push('/(customer)/reviews/history' as any)
+          )}
+        </View>
+
+        {/* Settings */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Settings</Text>
+          
+          {renderSettingItem("notifications-outline", "Notifications", () => router.push('/(customer)/notifications' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="language" size={24} color={colors.text} />
+              <Text style={[styles.label, { color: colors.text }]}>Language</Text>
             </View>
-          ) : null
-        )}
-        
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        
-        {renderSettingItem(
-          "chatbubble-ellipses-outline", 
-          "My Past Reviews", 
-          () => router.push('/(customer)/reviews/history' as any)
-        )}
-        
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <TouchableOpacity onPress={toggleLanguage} style={styles.langButton}>
+              <Text style={[styles.langText, { color: colors.primary }]}>
+                {i18n.language === 'en' ? 'English' : 'नेपाली'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        {renderSettingItem("heart-outline", "My Wishlist", () => router.push('/(customer)/wishlist' as any))}
-      </View>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="cash-outline" size={24} color={colors.text} />
+              <Text style={[styles.label, { color: colors.text }]}>Currency Preference</Text>
+            </View>
+            <Text style={{ color: colors.text, opacity: 0.5 }}>NPR (Default)</Text>
+          </View>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-      {/* Support Section */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
-        {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(customer)/help' as any))}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("document-text-outline", "Terms of Service", () => { })}
-      </View>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name={isDark ? "moon" : "sunny"} size={24} color={colors.text} />
+              <Text style={[styles.label, { color: colors.text }]}>Dark Mode</Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#767577', true: colors.primary }}
+              thumbColor={isDark ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+        </View>
 
-      {/* Account Section */}
-      <View style={[styles.section, { backgroundColor: isDark ? colors.card : '#FFF' }]}>
-        <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Account Actions</Text>
-        {renderSettingItem(
-          "trash-outline", 
-          "Delete Account", 
-          () => setShowDeleteModal(true),
-          <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
-        )}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem(
-          "log-out-outline", 
-          "Logout", 
-          () => setShowLogoutModal(true),
-          <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
-        )}
-      </View>
+        {/* Support Section */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
+          {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(customer)/help' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("document-text-outline", "Terms of Service", () => { })}
+        </View>
 
-      <LogoutModal
-        visible={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
-      />
+        {/* Account Section */}
+        <View style={[styles.section, { backgroundColor: isDark ? colors.card : '#FFF' }]}>
+          <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Account Actions</Text>
+          {renderSettingItem(
+            "trash-outline", 
+            "Delete Account", 
+            () => setShowDeleteModal(true),
+            <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
+          )}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem(
+            "log-out-outline", 
+            "Logout", 
+            () => setShowLogoutModal(true),
+            <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
+          )}
+        </View>
 
-      <DeleteAccountModal
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteAccount}
-      />
-    </ScrollView>
+        <View style={{ height: 100 }} />
+
+        <LogoutModal
+          visible={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={handleLogout}
+        />
+
+        <DeleteAccountModal
+          visible={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      </ScrollView>
+
+      {/* Floating AI Guide Button */}
+      <TouchableOpacity 
+        style={[styles.floatingAiButton, { backgroundColor: colors.primary }]}
+        onPress={() => router.push('/(customer)/ai-assistant' as any)}
+      >
+        <Ionicons name="chatbubble-ellipses" size={28} color="#FFF" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -390,5 +420,21 @@ const styles = StyleSheet.create({
   logoutContainer: {
     marginTop: 10,
     marginBottom: 40,
+  },
+  floatingAiButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 100,
   },
 });

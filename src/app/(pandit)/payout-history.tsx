@@ -22,8 +22,8 @@ export default function PayoutHistoryScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const wallet = await fetchWalletBalance();
-      setTransactions(wallet.recent_transactions || []);
+      const walletRes = await fetchWalletBalance();
+      setTransactions(walletRes.data.recent_transactions || []);
     } catch (error) {
       console.error('Error loading payout history:', error);
     } finally {

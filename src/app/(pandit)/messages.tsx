@@ -1,76 +1,104 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-
-interface ChatRoom {
-  id: string;
-  userName: string;
-  lastMessage: string;
-  time: string;
-  unreadCount: number;
-  userAvatar: string;
-}
-
-const MOCK_CHATS: ChatRoom[] = [
-  { id: '1', userName: 'Ameet Pokhrel', lastMessage: 'Namaste Pandit ji, what should I prepare for tomorrow?', time: '10:30 AM', unreadCount: 2, userAvatar: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' },
-  { id: '2', userName: 'Sita Sharma', lastMessage: 'Thank you for the wonderful puja yesterday.', time: 'Yesterday', unreadCount: 0, userAvatar: 'https://cdn-icons-png.flaticon.com/512/3135/3135789.png' },
-];
+import { fetchChatRooms } from '@/services/chat.service';
+import { ChatRoom } from '@/types/chat';
+import { useTheme } from '@/store/ThemeContext';
+import { getImageUrl } from '@/utils/image';
 
 export default function PanditMessagesScreen() {
   const router = useRouter();
-  const [chats, setChats] = useState(MOCK_CHATS);
+  const { colors, theme } = useTheme();
+  const isDark = theme === 'dark';
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderItem = ({ item }: { item: ChatRoom }) => (
-    <TouchableOpacity 
-      style={styles.chatCard}
-      onPress={() => router.push(`/(customer)/chat/${item.id}` as any)} // Reuse shared chat room
-    >
-      <Image source={{ uri: item.userAvatar }} style={styles.avatar} />
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.userName}>{item.userName}</Text>
-          <Text style={styles.time}>{item.time}</Text>
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchChatRooms();
+        setRooms(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const renderItem = ({ item }: { item: ChatRoom }) => {
+    const otherParticipant = item.participants.find(p => p.role === 'customer');
+    const name = otherParticipant?.name || 'Customer';
+    const avatar = otherParticipant?.avatar ? getImageUrl(otherParticipant.avatar) : undefined;
+    const lastText = item.lastMessage?.text || 'Start a conversation';
+    const lastTime = item.lastMessage?.timestamp
+      ? new Date(item.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    return (
+      <TouchableOpacity
+        style={[styles.chatCard, { backgroundColor: colors.card }]}
+        onPress={() => router.push(`/(customer)/chat/${item.id}` as any)}
+      >
+        <Image
+          source={{ uri: avatar || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}
+          style={styles.avatar}
+        />
+        <View style={styles.chatInfo}>
+          <View style={styles.chatHeader}>
+            <Text style={[styles.userName, { color: colors.text }]}>{name}</Text>
+            <Text style={[styles.time, { color: isDark ? '#AAA' : '#999' }]}>{lastTime}</Text>
+          </View>
+          <View style={styles.messageRow}>
+            <Text style={[styles.lastMessage, { color: isDark ? '#AAA' : '#666' }]} numberOfLines={1}>
+              {lastText}
+            </Text>
+            {item.unreadCount > 0 && (
+              <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.unreadText}>{item.unreadCount}</Text>
+              </View>
+            )}
+          </View>
         </View>
-        <View style={styles.messageRow}>
-          <Text style={styles.lastMessage} numberOfLines={1}>{item.lastMessage}</Text>
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unreadCount}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
         <TouchableOpacity style={styles.searchBtn}>
           <Ionicons name="search" size={24} color="#f97316" />
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={chats}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={60} color="#ccc" />
-            <Text style={styles.emptyText}>No messages yet</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={rooms}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="chatbubbles-outline" size={60} color={isDark ? '#666' : '#ccc'} />
+              <Text style={[styles.emptyText, { color: isDark ? '#AAA' : '#999' }]}>No messages yet</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff7ed' },
+  container: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -78,9 +106,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#fff'
   },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#3E2723' },
+  title: { fontSize: 24, fontWeight: 'bold' },
   searchBtn: { padding: 5 },
   listContent: { padding: 15 },
   chatCard: { 

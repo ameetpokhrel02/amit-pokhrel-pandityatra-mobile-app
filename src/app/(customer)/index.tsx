@@ -96,8 +96,8 @@ export default function CustomerHomeScreen() {
       ]);
       setServices(servicesData.slice(0, 6));
       setPandits(panditsRes.data.results || panditsRes.data.slice(0, 6));
-      setSamagriItems(samagriItemsRes.data.results || samagriItemsRes.data);
-      setSamagriCategories(samagriCategoriesRes.data.results || samagriCategoriesRes.data);
+      setSamagriItems(samagriItemsRes);
+      setSamagriCategories(samagriCategoriesRes);
 
       // 2. Fetch authenticated data only if logged in and user object exists
       if (isAuthenticated && user) {
@@ -417,6 +417,16 @@ export default function CustomerHomeScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Floating AI Guide Button - Roadmap requirement */}
+      <TouchableOpacity 
+        style={styles.floatingAiBtn}
+        onPress={() => router.push('/(customer)/chat/ai-guide' as any)}
+        activeOpacity={0.9}
+      >
+        <Ionicons name="sparkles" size={24} color="#FFF" />
+        <Text style={styles.floatingAiText}>AI Guide</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -1090,5 +1100,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 28,
     color: '#444',
+  },
+  floatingAiBtn: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#FF6F00',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 30,
+    gap: 8,
+    elevation: 8,
+    shadowColor: '#FF6F00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  floatingAiText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

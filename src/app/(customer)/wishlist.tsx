@@ -25,7 +25,10 @@ export default function WishlistScreen() {
     try {
       setLoading(true);
       const data = await fetchWishlist();
-      setWishlistItems(data);
+      // Backend returns WishlistSerializer: { id, item: { id, name, ... }, created_at }
+      // Extract the nested samagri item from each wishlist entry
+      const items = (data || []).map((w: any) => w.item || w).filter(Boolean);
+      setWishlistItems(items);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     } finally {
