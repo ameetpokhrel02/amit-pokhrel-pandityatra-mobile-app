@@ -13,7 +13,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pandityatraapp"
+      "bundleIdentifier": "com.anonymous.pandityatraapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -65,11 +68,14 @@
     },
     "extra": {
       "expoPublicGoogleClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",
-      "androidClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",
+      "androidClientId": "741720641739-kat0ucp7uqnud1kfnuehrjhaid017hes.apps.googleusercontent.com",
       "webClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",
-      "router": {},
+      "iosClientId": "741720641739-r771p005vit95lmbmnvjocdqggcfvk2f.apps.googleusercontent.com",
       "eas": {
-        "projectId": "09230ecd-edac-4390-a27a-0afd616923c7"
+        "projectId": "09230ecd-edac-4390-a27a-0afd616923c7",
+        "plugins": [
+          "@react-native-google-signin/google-signin"
+        ]
       }
     }
   }

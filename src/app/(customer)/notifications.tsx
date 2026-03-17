@@ -11,7 +11,7 @@ dayjs.extend(relativeTime);
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, isLoading, fetchNotifications, markAsRead, markAllRead } = useNotificationStore();
+  const { notifications, isLoading, fetchNotifications, markAsRead, markAllRead, deleteNotification } = useNotificationStore();
 
   React.useEffect(() => {
     fetchNotifications();
@@ -36,27 +36,40 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    await deleteNotification(id);
+  };
+
   const renderItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity 
-      style={[styles.notificationCard, !item.is_read && styles.unreadCard]}
-      onPress={() => handleNotifPress(item)}
-    >
-      <View style={styles.iconCircle}>
-        <Ionicons 
-          name={item.type === 'BOOKING' ? 'calendar' : item.type === 'ORDER' ? 'cart' : 'notifications'} 
-          size={20} 
-          color="#f97316" 
-        />
-      </View>
-      <View style={styles.textContainer}>
-        <View style={styles.titleRow}>
-          <Text style={styles.notifTitle}>{item.title}</Text>
-          <Text style={styles.notifTime}>{getTimeAgo(item.created_at)}</Text>
+    <View style={styles.cardContainer}>
+      <TouchableOpacity 
+        style={[styles.notificationCard, !item.is_read && styles.unreadCard]}
+        onPress={() => handleNotifPress(item)}
+      >
+        <View style={styles.iconCircle}>
+          <Ionicons 
+            name={item.type === 'BOOKING' ? 'calendar' : item.type === 'ORDER' ? 'cart' : 'notifications'} 
+            size={20} 
+            color="#f97316" 
+          />
         </View>
-        <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
-      </View>
-      {!item.is_read && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
+        <View style={styles.textContainer}>
+          <View style={styles.titleRow}>
+            <Text style={styles.notifTitle}>{item.title}</Text>
+            <Text style={styles.notifTime}>{getTimeAgo(item.created_at)}</Text>
+          </View>
+          <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
+        </View>
+        {!item.is_read && <View style={styles.unreadDot} />}
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.deleteBtn}
+        onPress={() => handleDelete(item.id)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#999" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -112,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', 
     padding: 15, 
     borderRadius: 12, 
-    marginBottom: 10,
+    flex: 1,
     alignItems: 'center',
     position: 'relative'
   },
@@ -127,7 +140,9 @@ const styles = StyleSheet.create({
   notifTitle: { fontSize: 16, fontWeight: 'bold', color: '#3E2723' },
   notifTime: { fontSize: 12, color: '#999' },
   notifMessage: { fontSize: 14, color: '#666', lineHeight: 20 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#f97316', marginLeft: 10 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#f97316', marginHorizontal: 10 },
+  cardContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  deleteBtn: { padding: 10, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 10, color: '#999', fontSize: 16 },
 });

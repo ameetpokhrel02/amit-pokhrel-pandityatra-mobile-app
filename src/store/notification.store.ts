@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead, Notification } from '@/services/notification.service';
+import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '@/services/notification.service';
 
 interface NotificationState {
   notifications: Notification[];
@@ -10,6 +10,7 @@ interface NotificationState {
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
   setUnreadCount: (count: number) => void;
 }
 
@@ -54,6 +55,21 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       set({ notifications: updatedNotifications, unreadCount: 0 });
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
+    }
+  },
+
+  deleteNotification: async (id) => {
+    try {
+      await deleteNotification(id);
+      const { notifications, unreadCount } = get();
+      const notification = notifications.find(n => n.id === id);
+      const newUnreadCount = notification && !notification.is_read ? Math.max(0, unreadCount - 1) : unreadCount;
+      set({ 
+        notifications: notifications.filter(n => n.id !== id),
+        unreadCount: newUnreadCount
+      });
+    } catch (error) {
+      console.error(`Failed to delete notification ${id}:`, error);
     }
   },
 

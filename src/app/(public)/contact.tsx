@@ -7,13 +7,18 @@ export default function ContactScreen() {
   const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.email || !form.message) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    Alert.alert('Success', 'Your message has been sent. We will get back to you shortly.');
-    setForm({ name: '', email: '', message: '' });
+    try {
+      const res = await import('@/services/auth.service').then(m => m.contactUs(form));
+      Alert.alert('Success', 'Your message has been sent. We will get back to you shortly.');
+      setForm({ name: '', email: '', message: '' });
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to send message');
+    }
   };
 
   return (

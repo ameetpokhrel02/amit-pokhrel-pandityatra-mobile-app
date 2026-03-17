@@ -19,21 +19,21 @@ export interface PaymentIntentResponse {
 }
 
 export async function initiatePayment(payload: CreatePaymentPayload): Promise<PaymentIntentResponse> {
-    const response = await apiClient.post('/payments/create/', payload);
+    const response = await apiClient.post('payments/create/', payload);
     return response.data;
 }
 
 export async function checkPaymentStatus(id: number): Promise<Payment> {
-    const response = await apiClient.get(`/payments/check-status/${id}/`);
+    const response = await apiClient.get(`payments/check-status/${id}/`);
     return response.data;
 }
 
 export async function verifyKhaltiPayment(payload: { token: string; amount: number }) {
-    const response = await apiClient.post('/payments/khalti/verify/', payload);
+    const response = await apiClient.post('payments/khalti/verify/', payload);
     return response.data;
 }
 
 export async function verifyEsewaPayment(payload: { refId: string; amt: number; oid: string }) {
-    const response = await apiClient.get('/payments/esewa/verify/', { params: payload });
+    const response = await apiClient.get('payments/esewa/verify/', { params: payload });
     return response.data;
 }

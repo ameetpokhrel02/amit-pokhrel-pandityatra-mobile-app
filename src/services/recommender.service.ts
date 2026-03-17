@@ -1,17 +1,80 @@
 import apiClient from './api-client';
-import { SamagriItem } from './api';
 
-export async function fetchBookingSamagri(bookingId: number): Promise<SamagriItem[]> {
-    const response = await apiClient.get(`/recommender/bookings/${bookingId}/samagri/`);
+export interface RecommendationParams {
+    puja_id?: number;
+    limit?: number;
+    min_confidence?: number;
+    days?: number;
+}
+
+/**
+ * Fetch recommendations for a specific puja
+ */
+export async function fetchRecommendationsByPuja(params: RecommendationParams) {
+    const response = await apiClient.get('recommender/recommendations/by_puja/', { params });
     return response.data;
 }
 
-export async function fetchBookingSamagriRecommendations(bookingId: number): Promise<SamagriItem[]> {
-    const response = await apiClient.post(`/recommender/bookings/${bookingId}/samagri/recommendations/`);
+/**
+ * Fetch personalized recommendations for the current user
+ */
+export async function fetchPersonalizedRecommendations(params: RecommendationParams) {
+    const response = await apiClient.get('recommender/recommendations/personalized/', { params });
     return response.data;
 }
 
-export async function fetchPujaSamagriRecommendations(pujaId: number): Promise<any> {
-    const response = await apiClient.post('/samagri/ai_recommend/', { puja_id: pujaId });
+/**
+ * Fetch seasonal/trending recommendations
+ */
+export async function fetchSeasonalRecommendations(params: RecommendationParams) {
+    const response = await apiClient.get('recommender/recommendations/seasonal/', { params });
+    return response.data;
+}
+
+/**
+ * Fetch recommendation stats (for admin/analytics)
+ */
+export async function fetchRecommendationStats(params: RecommendationParams) {
+    const response = await apiClient.get('recommender/recommendations/stats/', { params });
+    return response.data;
+}
+
+/**
+ * Get samagri recommendations for a specific booking
+ */
+export async function fetchBookingSamagri(bookingId: number) {
+    const response = await apiClient.get(`recommender/bookings/${bookingId}/samagri/`);
+    return response.data;
+}
+
+/**
+ * Trigger AI recommendations for a booking
+ */
+export async function triggerBookingRecommendations(bookingId: number) {
+    const response = await apiClient.post(`recommender/bookings/${bookingId}/samagri/recommendations/`);
+    return response.data;
+}
+
+/**
+ * Auto-add recommended items to a booking's samagri list
+ */
+export async function autoAddSamagri(bookingId: number) {
+    const response = await apiClient.post(`recommender/bookings/${bookingId}/samagri/auto-add/`);
+    return response.data;
+}
+
+/**
+ * Manually add an item to a booking's samagri list via recommender logic
+ */
+export async function addSamagriItem(bookingId: number, itemId: number) {
+    const response = await apiClient.post(`recommender/bookings/${bookingId}/samagri/add-item/`, { item_id: itemId });
+    return response.data;
+}
+
+/**
+ * Get user preference insights
+ */
+export async function fetchUserInsights() {
+    const response = await apiClient.get('recommender/user/preferences/insights/');
     return response.data;
 }

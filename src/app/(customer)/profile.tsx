@@ -11,8 +11,8 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-import { fetchProfile } from '@/services/auth.service';
-import { fetchMyBookings } from '@/services/booking.service';
+import { getProfile } from '@/services/auth.service';
+import { listBookings } from '@/services/booking.service';
 import { getImageUrl } from '@/utils/image';
 
 export default function ProfileScreen() {
@@ -30,10 +30,12 @@ export default function ProfileScreen() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [profileData, bookingsData] = await Promise.all([
-          fetchProfile(),
-          fetchMyBookings()
+        const [profileResponse, bookingsResponse] = await Promise.all([
+          getProfile(),
+          listBookings()
         ]);
+        const profileData = profileResponse.data;
+        const bookingsData = bookingsResponse.data;
 
         updateUser({
           name: profileData.full_name,
@@ -43,7 +45,7 @@ export default function ProfileScreen() {
           photoUri: getImageUrl(profileData.profile_image),
         } as any);
 
-        const pending = bookingsData.filter(b => b.status === 'COMPLETED' && !b.is_reviewed);
+        const pending = bookingsData.filter((b: any) => b.status === 'COMPLETED' && !b.is_reviewed);
         setPendingReviewCount(pending.length);
       } catch (error) {
         console.error('Error loading profile data:', error);
@@ -76,8 +78,18 @@ export default function ProfileScreen() {
 
   const handleDeleteAccount = async () => {
     setShowDeleteModal(false);
-    // In a real app, call delete account service here
-    Alert.alert("Success", "Account deletion request submitted.");
+    try {
+      setLoading(true);
+      await import('@/services/auth.service').then(m => m.deleteProfile());
+      await logout();
+      Alert.alert("Success", "Your account has been deleted.");
+      router.replace('/auth/welcome');
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      Alert.alert("Error", error.message || "Failed to delete account");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderSettingItem = (icon: any, label: string, onPress?: () => void, rightElement?: React.ReactNode) => (
@@ -126,8 +138,10 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Settings Section */}
+      {/* Settings & Preferences */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <Text style={[styles.sectionTitle, { color: colors.primary }]}>App Settings</Text>
+        
         <View style={styles.row}>
           <View style={styles.rowLeft}>
             <Ionicons name={isDark ? "moon" : "sunny"} size={24} color={colors.text} />
@@ -154,11 +168,19 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        
+        {renderSettingItem("sparkles-outline", "AI Personalization", () => router.push('/(customer)/preferences' as any))}
+        
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        
+        {renderSettingItem("notifications-outline", "Notifications", () => { })}
       </View>
 
       {/* Reviews & Feedback Section */}
-      <View style={[styles.section, { backgroundColor: colors.card, marginTop: 10 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Reviews & Feedback</Text>
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Feedback & Activity</Text>
         
         {renderSettingItem(
           "star-outline", 
@@ -180,40 +202,35 @@ export default function ProfileScreen() {
         )}
         
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        
-        {renderSettingItem(
-          "heart-outline", 
-          "Rate PanditYatra", 
-          () => router.push('/(customer)/reviews/platform-feedback' as any)
-        )}
+
+        {renderSettingItem("heart-outline", "My Wishlist", () => router.push('/(customer)/wishlist' as any))}
       </View>
 
-      {/* More Settings */}
+      {/* Support Section */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
-        {renderSettingItem("notifications-outline", "Notifications", () => { })}
+        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
+        {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(customer)/help' as any))}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         {renderSettingItem("document-text-outline", "Terms of Service", () => { })}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        {renderSettingItem("help-circle-outline", "Help & Support", () => { })}
       </View>
 
-      {/* Account Section - Based on User Screenshot */}
-      <Text style={[styles.sectionHeaderTitle, { color: colors.text + '80' }]}>Account</Text>
-      <View style={[styles.section, { backgroundColor: isDark ? colors.card : '#F3F4F6', paddingTop: 8, paddingBottom: 8 }]}>
+      {/* Account Section */}
+      <View style={[styles.section, { backgroundColor: isDark ? colors.card : '#FFF' }]}>
+        <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Account Actions</Text>
         {renderSettingItem(
           "trash-outline", 
-          "Delete account", 
+          "Delete Account", 
           () => setShowDeleteModal(true),
-          <Ionicons name="chevron-forward" size={20} color={colors.text + '40'} />
+          <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
         )}
-        <View style={[styles.divider, { backgroundColor: colors.border, marginVertical: 8 }]} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         {renderSettingItem(
           "log-out-outline", 
           "Logout", 
           () => setShowLogoutModal(true),
-          <Ionicons name="chevron-forward" size={20} color={colors.text + '40'} />
+          <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={{ opacity: 0.5 }} />
         )}
       </View>
 

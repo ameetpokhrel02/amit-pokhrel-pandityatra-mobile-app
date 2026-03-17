@@ -1,18 +1,18 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
 
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
     console.log('[API] Detecting Base URL...');
-    console.log('[API] hostUri:', Constants.expoConfig?.hostUri);
-    console.log('[API] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
-
+    
     // 1. Priority: Explicit environment variable (from .env file)
     if (process.env.EXPO_PUBLIC_API_URL) {
-        const url = process.env.EXPO_PUBLIC_API_URL;
+        let url = process.env.EXPO_PUBLIC_API_URL;
+        if (!url.endsWith('/')) {
+            url += '/';
+        }
         console.log('[API] Using environment variable URL:', url);
         return url;
     }
@@ -27,45 +27,49 @@ const getBaseUrl = () => {
         // Fix for tunnel mode: tunnel URL usually doesn't forward the backend port (8000)
         if (host.includes('exp.direct')) {
             console.log('[API] ⚠️ TUNNEL MODE DETECTED. Using fallback LOCAL_IP:', LOCAL_IP);
-            console.log('[API] Note: If your phone is not on the same Wi-Fi as your computer, this connection will fail.');
-            console.log('[API] Consider using a tunnel for your backend (e.g. ngrok) and updating .env');
-            return `http://${LOCAL_IP}:${PORT}/api`;
+            return `http://${LOCAL_IP}:${PORT}/api/`;
         }
 
         // Handle Android Emulator case
         if (host === 'localhost' || host === '127.0.0.1') {
-            const url = `http://10.0.2.2:${PORT}/api`;
+            const url = `http://10.0.2.2:${PORT}/api/`;
             console.log('[API] 📱 Emulator detected, using:', url);
             return url;
         }
 
-        const url = `http://${host}:${PORT}/api`;
+        const url = `http://${host}:${PORT}/api/`;
         console.log('[API] 🌐 Using dynamic host URL:', url);
         return url;
     }
 
     // 3. Last fallback
-    const url = `http://${LOCAL_IP}:${PORT}/api`;
+    const url = `http://${LOCAL_IP}:${PORT}/api/`;
     console.log('[API] 📍 Using last fallback URL:', url);
     return url;
 };
 
 export const API_BASE_URL = getBaseUrl();
 
-console.log('Current API Base URL:', API_BASE_URL); // Debug logging
-
-// Create Axios instance
+// Create primary Axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 15000, // 15 seconds timeout
+    timeout: 15000,
+    headers: {
+        'Accept': 'application/json',
+    }
 });
 
+// Create Public API instance
+export const publicApi = axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 15000,
+    headers: {
+        'Accept': 'application/json',
+    }
+});
 
 /**
  * Centralized helper to save authentication tokens
- * @param access The access token string
- * @param refresh The refresh token string
- * @param userData Optional user data to update the store
  */
 export const saveTokens = async (access: string, refresh: string, userData?: any) => {
     try {
@@ -84,18 +88,20 @@ export const saveTokens = async (access: string, refresh: string, userData?: any
     }
 };
 
-// ... imports and interceptors ...
+// --- LOGGING INTERCEPTORS ---
 
-// Public API instance (no auth headers, no refresh logic)
-export const publicApi = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    timeout: 15000, // 15 seconds timeout
-});
+apiClient.interceptors.request.use(config => {
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config.params ? `Params: ${JSON.stringify(config.params)}` : '', config.data ? `Data: ${JSON.stringify(config.data)}` : '');
+    return config;
+}, error => Promise.reject(error));
 
-// Request Interceptor: Attach Token
+publicApi.interceptors.request.use(config => {
+    console.log(`[Public API Request] ${config.method?.toUpperCase()} ${config.url}`, config.params ? `Params: ${JSON.stringify(config.params)}` : '', config.data ? `Data: ${JSON.stringify(config.data)}` : '');
+    return config;
+}, error => Promise.reject(error));
+
+// --- AUTH & HEADER INTERCEPTORS ---
+
 apiClient.interceptors.request.use(
     async (config) => {
         const token = await SecureStore.getItemAsync('access_token');
@@ -103,17 +109,11 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // Robust FormData detection for React Native
         const isFormData = config.data instanceof FormData ||
             (config.data && typeof config.data === 'object' && config.data.append);
 
         if (isFormData) {
-            // Let the engine/browser set the boundary for multipart/form-data
             config.headers['Content-Type'] = 'multipart/form-data';
-
-            // In some environments (like older Axios/RN), we might need to delete it 
-            // to allow the polyfill to set the boundary correctly
-            // delete config.headers['Content-Type']; 
         }
 
         return config;
@@ -121,7 +121,8 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle Token Refresh
+// --- REFRESH TOKEN LOGIC ---
+
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -141,7 +142,6 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Check for 401 Unauthorized and ensure we haven't already tried to refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
@@ -160,18 +160,16 @@ apiClient.interceptors.response.use(
             const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
             if (!refreshToken) {
-                // No refresh token, force logout using store
                 useAuthStore.getState().logout();
                 return Promise.reject(error);
             }
 
             try {
-                const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
+                const response = await axios.post(`${API_BASE_URL}token/refresh/`, {
                     refresh: refreshToken,
                 });
 
                 const { access } = response.data;
-
                 await SecureStore.setItemAsync('access_token', access);
 
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
@@ -187,13 +185,25 @@ apiClient.interceptors.response.use(
             }
         }
 
+        console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status} | Details:`, JSON.stringify(error.response?.data || error.message));
         return Promise.reject(error);
     }
 );
 
-// handleLogout is now handled by useAuthStore.getState().logout()
-
-
+publicApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error.response?.status;
+        const details = error.response?.data || error.message;
+        console.error(`[Public API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, JSON.stringify(details));
+        
+        if (status === 400 && typeof details === 'string' && details.includes('Bad Request (400)')) {
+            console.warn('[API Insight] This "Bad Request (400)" without a JSON body often indicates a Django ALLOWED_HOSTS mismatch. Check backend settings.py.');
+        }
+        
+        return Promise.reject(error);
+    }
+);
 
 export { apiClient as api };
 export default apiClient;

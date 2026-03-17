@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity }
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchMyBookings } from '@/services/booking.service';
+import { listBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
 import { useChat } from '@/store/ChatContext';
 
@@ -30,9 +30,9 @@ export default function BookingsScreen() {
 
     const load = async () => {
       try {
-        const data = await fetchMyBookings();
+        const response = await listBookings();
         if (isMounted) {
-          setBookings(data);
+          setBookings(response.data);
         }
       } catch (e) {
         if (isMounted) {

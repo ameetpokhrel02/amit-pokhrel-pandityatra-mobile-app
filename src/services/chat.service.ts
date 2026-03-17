@@ -86,9 +86,9 @@ export async function quickChat(message: string): Promise<string> {
 }
 
 // WebSocket URL helper
-export function getChatWebSocketUrl(bookingId: number, token: string): string {
+export function getChatWebSocketUrl(roomId: string | number, token: string): string {
   // Replace http with ws for the base URL
   const baseUrl = apiClient.defaults.baseURL?.replace('http', 'ws') || 'ws://localhost:8000/api';
-  return `${baseUrl}/ws/puja/${bookingId}/?token=${token}`;
+  return `${baseUrl}/ws/chat/${roomId}/?token=${token}`;
 }
 

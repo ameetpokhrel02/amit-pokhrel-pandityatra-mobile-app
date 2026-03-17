@@ -7,10 +7,13 @@ import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchPandit } from '@/services/pandit.service';
-import { createBooking, BookingPayload } from '@/services/booking.service';
+import { getPanditSummary } from '@/services/pandit.service';
+import { createBooking, availableSlots } from '@/services/booking.service';
 import { initiatePayment, PaymentIntentResponse } from '@/services/payment.service';
-import { Booking, PanditService, Pandit } from '@/services/api';
+import { Booking, PanditService, Pandit, SamagriItem } from '@/services/api';
+import { fetchPujaSamagriRecommendations } from '@/services/recommender.service';
+import { getSamagriRequirements } from '@/services/samagri.service';
+import { Image } from 'expo-image';
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
 
@@ -31,11 +34,18 @@ export default function BookingScreen() {
   const [selectedTime, setSelectedTime] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [recommendations, setRecommendations] = useState<SamagriItem[]>([]);
+  const [requirements, setRequirements] = useState<any[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingReqs, setLoadingReqs] = useState(false);
 
   useEffect(() => {
     const loadPandit = async () => {
       if (typeof panditId === 'string') {
-        const data = await fetchPandit(Number(panditId));
+        const response = await getPanditSummary(Number(panditId));
+        const data = response.data;
         setPandit(data || null);
 
         // Pre-select service if serviceId is provided
@@ -65,9 +75,59 @@ export default function BookingScreen() {
     }
 
     if (currentStep < STEPS.length - 1) {
+      if (currentStep === 0 && selectedService) {
+        // Fetch requirement mappings and initial slots
+        loadRequirements(selectedService.puja_details.id);
+        loadSlots(dayjs(selectedDate).format('YYYY-MM-DD'));
+      }
+      if (currentStep === 2 && selectedService) {
+        loadRecommendations(selectedService.puja_details.id);
+      }
       setCurrentStep(currentStep + 1);
     } else {
       handleBooking();
+    }
+  };
+
+  const loadRecommendations = async (pujaId: number) => {
+    try {
+      setLoadingRecs(true);
+      const response = await fetchPujaSamagriRecommendations(pujaId);
+      const data = response.data;
+      setRecommendations(data.recommendations || data || []);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setLoadingRecs(false);
+    }
+  };
+
+  const loadRequirements = async (pujaId: number) => {
+    try {
+      setLoadingReqs(true);
+      const response = await getSamagriRequirements({ puja_id: pujaId });
+      setRequirements(response.data.results || response.data);
+    } catch (error) {
+      console.error('Error fetching requirements:', error);
+    } finally {
+      setLoadingReqs(false);
+    }
+  };
+
+  const loadSlots = async (dateStr: string) => {
+    if (!panditId) return;
+    try {
+      setLoadingSlots(true);
+      const response = await availableSlots(Number(panditId), dateStr, selectedService?.puja_details?.id);
+      const slots = response.data;
+      setAvailableSlots(slots);
+      if (slots.length > 0 && !slots.includes(selectedTime)) {
+        setSelectedTime(slots[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -95,7 +155,8 @@ export default function BookingScreen() {
         notes,
       };
 
-      const booking = await createBooking(bookingPayload);
+      const response = await createBooking(bookingPayload);
+      const booking = response.data;
 
       // Save just the booking ID to state so we can pass it to the success screen
       setPaymentInfo({ payment_url: '', pidx: '', bookingId: booking.id } as any);
@@ -218,7 +279,11 @@ export default function BookingScreen() {
                 <DateTimePicker
                   mode="single"
                   date={selectedDate}
-                  onChange={(params) => setSelectedDate(dayjs(params.date))}
+                  onChange={(params) => {
+                    const newDate = dayjs(params.date);
+                    setSelectedDate(newDate);
+                    loadSlots(newDate.format('YYYY-MM-DD'));
+                  }}
                   minDate={dayjs().startOf('day')}
                   // @ts-ignore
                   selectedItemColor={colors.primary}
@@ -234,32 +299,40 @@ export default function BookingScreen() {
               </View>
 
               <Text style={[styles.subLabel, { color: colors.text }]}>Time Slot</Text>
-              <View style={styles.timeGrid}>
-                {['Morning (6-9 AM)', 'Day (10-2 PM)', 'Evening (4-7 PM)'].map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[
-                      styles.timeCard,
-                      { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' },
-                      selectedTime === time && { backgroundColor: colors.primary, borderColor: colors.primary }
-                    ]}
-                    onPress={() => setSelectedTime(time)}
-                  >
-                    <Ionicons
-                      name={time.includes('Morning') ? 'sunny-outline' : time.includes('Evening') ? 'moon-outline' : 'time-outline'}
-                      size={20}
-                      color={selectedTime === time ? '#FFF' : colors.text}
-                    />
-                    <Text style={[
-                      styles.timeText,
-                      { color: colors.text },
-                      selectedTime === time && { color: '#FFF', fontWeight: '600' }
-                    ]}>
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {loadingSlots ? (
+                <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
+              ) : availableSlots.length > 0 ? (
+                <View style={styles.timeGrid}>
+                  {availableSlots.map((time) => (
+                    <TouchableOpacity
+                      key={time}
+                      style={[
+                        styles.timeCard,
+                        { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' },
+                        selectedTime === time && { backgroundColor: colors.primary, borderColor: colors.primary }
+                      ]}
+                      onPress={() => setSelectedTime(time)}
+                    >
+                      <Ionicons
+                        name={time.includes('Morning') ? 'sunny-outline' : time.includes('Evening') ? 'moon-outline' : 'time-outline'}
+                        size={20}
+                        color={selectedTime === time ? '#FFF' : colors.text}
+                      />
+                      <Text style={[
+                        styles.timeText,
+                        { color: colors.text },
+                        selectedTime === time && { color: '#FFF', fontWeight: '600' }
+                      ]}>
+                        {time}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={[styles.timeCard, { backgroundColor: colors.card, borderColor: '#FED7D7' }]}>
+                  <Text style={{ color: '#C53030' }}>No slots available for this date.</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -325,6 +398,63 @@ export default function BookingScreen() {
                   <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Total Amount</Text>
                   <Text style={[styles.totalPrice, { color: colors.primary }]}>NPR {selectedService?.custom_price}</Text>
                 </View>
+              </View>
+
+              {/* Samagri Requirements */}
+              {requirements.length > 0 && (
+                <View style={styles.recsSection}>
+                  <View style={styles.recsHeader}>
+                    <View style={[styles.aiBadge, { backgroundColor: '#3B82F620' }]}>
+                      <Ionicons name="list" size={14} color="#3B82F6" />
+                      <Text style={[styles.aiBadgeText, { color: '#3B82F6' }]}>Required Samagri</Text>
+                    </View>
+                  </View>
+                  <View style={[styles.summaryCard, { backgroundColor: colors.card, padding: 15 }]}>
+                    {requirements.map((req, idx) => (
+                      <View key={idx} style={[styles.summaryRow, idx === requirements.length -1 && { borderBottomWidth: 0 }]}>
+                        <Text style={[styles.summaryLabel, { color: colors.text }]}>{req.samagri_item_details?.name || 'Item'}</Text>
+                        <Text style={[styles.summaryValue, { color: colors.text }]}>{req.quantity} {req.unit || 'pcs'}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* AI Recommendations */}
+              <View style={styles.recsSection}>
+                <View style={styles.recsHeader}>
+                  <View style={[styles.aiBadge, { backgroundColor: colors.primary + '20' }]}>
+                    <Ionicons name="sparkles" size={14} color={colors.primary} />
+                    <Text style={[styles.aiBadgeText, { color: colors.primary }]}>AI Recommended Samagri</Text>
+                  </View>
+                </View>
+
+                {loadingRecs ? (
+                  <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
+                ) : recommendations.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recsList}>
+                    {recommendations.map((item) => (
+                      <TouchableOpacity 
+                        key={item.id} 
+                        style={[styles.recCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                        onPress={() => router.push(`/(customer)/shop?search=${item.name}` as any)}
+                      >
+                        <Image source={{ uri: item.image }} style={styles.recImage} contentFit="cover" />
+                        <Text style={[styles.recName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                        <Text style={[styles.recPrice, { color: colors.primary }]}>NPR {item.price}</Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity 
+                      style={[styles.recCard, styles.viewAllCard, { borderColor: colors.primary + '40' }]}
+                      onPress={() => router.push('/(customer)/shop' as any)}
+                    >
+                      <Ionicons name="arrow-forward-circle" size={32} color={colors.primary} />
+                      <Text style={[styles.viewAllText, { color: colors.primary }]}>Shop All</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                ) : (
+                  <Text style={[styles.noRecsText, { color: colors.text + '50' }]}>No specific recommendations for this Puja.</Text>
+                )}
               </View>
 
               <View style={[styles.paymentNote, { backgroundColor: isDark ? '#1A2E3B' : '#E3F2FD' }]}>
@@ -619,5 +749,71 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  recsSection: {
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  recsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 6,
+  },
+  aiBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  recsList: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  recCard: {
+    width: 120,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 12,
+  },
+  recImage: {
+    width: '100%',
+    height: 80,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  recName: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  recPrice: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  viewAllCard: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderStyle: 'dashed',
+  },
+  viewAllText: {
+    marginTop: 8,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  noRecsText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });

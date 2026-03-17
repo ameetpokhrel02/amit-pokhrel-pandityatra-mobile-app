@@ -4,10 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useCartStore } from '@/store/cart.store';
-import { fetchSamagriItems, fetchSamagriCategories } from '@/services/shop.service';
+import { getSamagriItems, getSamagriCategories, getWishlist } from '@/services/samagri.service';
 import { SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchProfile } from '@/services/auth.service';
+import { getProfile } from '@/services/auth.service';
 
 const { width } = Dimensions.get('window');
 
@@ -75,11 +75,15 @@ export default function ShopScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [itemsData, categoriesData, wishlistData] = await Promise.all([
-        fetchSamagriItems(),
-        fetchSamagriCategories(),
-        import('@/services/shop.service').then(s => s.fetchWishlist()).catch(() => [])
+      const [itemsRes, categoriesRes, wishlistRes] = await Promise.all([
+        getSamagriItems(),
+        getSamagriCategories(),
+        getWishlist().catch(() => ({ data: [] }))
       ]);
+      
+      const itemsData = itemsRes.data.results || itemsRes.data;
+      const categoriesData = categoriesRes.data.results || categoriesRes.data;
+      const wishlistData = wishlistRes.data.results || wishlistRes.data;
 
       setProducts(itemsData);
       setCategories([{ id: 'All', name: 'All' }, ...categoriesData]);
@@ -93,7 +97,8 @@ export default function ShopScreen() {
 
   const getUserInfo = async () => {
     try {
-      const profile = await fetchProfile();
+      const response = await getProfile();
+      const profile = response.data;
       if (profile?.full_name) {
         setUserName(profile.full_name.split(' ')[0]);
       }
@@ -104,7 +109,7 @@ export default function ShopScreen() {
 
   const handleToggleWishlist = async (itemId: number) => {
     try {
-      await import('@/services/shop.service').then(s => s.toggleWishlist(itemId));
+      await import('@/services/samagri.service').then(s => s.toggleWishlist({ item_id: itemId }));
       setWishlist(prev => 
         prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
       );
@@ -190,6 +195,12 @@ export default function ShopScreen() {
         <View style={styles.headerIcons}>
           <TouchableOpacity style={[styles.iconBox, { backgroundColor: colors.card }]}>
             <Ionicons name="search-outline" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.iconBox, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/(customer)/wishlist' as any)}
+          >
+            <Ionicons name="heart-outline" size={22} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.iconBox, { backgroundColor: colors.card }]}

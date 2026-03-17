@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
@@ -88,7 +88,16 @@ export default function OrderDetailScreen() {
 
       <TouchableOpacity 
         style={styles.invoiceBtn}
-        onPress={() => router.push(`/(customer)/invoice?orderId=${MOCK_ORDER.id}` as any)}
+        onPress={async () => {
+          try {
+            const data = await import('@/services/samagri.service').then(m => m.fetchOrderInvoice(Number(id)));
+            // In a real browser this would download, in RN we might need sharing/saving logic
+            // For now, alerting success of fetch
+            Alert.alert("Success", "Invoice document fetched. Ready for download.");
+          } catch (e) {
+            Alert.alert("Error", "Failed to fetch invoice.");
+          }
+        }}
       >
         <Ionicons name="download-outline" size={20} color="#fff" />
         <Text style={styles.invoiceBtnText}>Download Invoice</Text>

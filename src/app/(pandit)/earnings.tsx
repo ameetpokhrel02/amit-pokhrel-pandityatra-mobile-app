@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
@@ -10,6 +11,7 @@ import dayjs from 'dayjs';
 export default function EarningsScreen() {
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
+    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -171,6 +173,9 @@ export default function EarningsScreen() {
                 {/* Transaction History Placeholder */}
                 <View style={styles.historyHeader}>
                     <Text style={[styles.historyTitle, { color: colors.text }]}>Recent Transactions</Text>
+                    <TouchableOpacity onPress={() => router.push('/(pandit)/payout-history' as any)}>
+                        <Text style={{ color: colors.primary, fontWeight: '600' }}>See All</Text>
+                    </TouchableOpacity>
                 </View>
                 
                 {wallet?.recent_transactions?.length > 0 ? (

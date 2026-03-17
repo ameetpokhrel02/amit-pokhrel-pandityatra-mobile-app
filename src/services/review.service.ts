@@ -44,3 +44,12 @@ export async function submitSiteReview(payload: { rating: number; comment: strin
   const response = await apiClient.post('reviews/site-reviews/', payload);
   return response.data;
 }
+
+/**
+ * Fetch public reviews for a specific pandit
+ */
+export async function fetchPanditReviews(panditId: number): Promise<Review[]> {
+  const response = await apiClient.get(`reviews/pandit-reviews/`, { params: { pandit_id: panditId } });
+  const data = response.data.results || response.data;
+  return data;
+}

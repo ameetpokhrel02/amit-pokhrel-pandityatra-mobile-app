@@ -101,20 +101,20 @@ function LayoutContent() {
         }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="chat/index"
         options={{
           title: 'Chat',
           tabBarIcon: ({ color, focused }) => (
             <AIChatIcon color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
         }}
       />
@@ -128,7 +128,8 @@ function LayoutContent() {
         'services/[id]', 'shop/ai-recommend', 'reviews/pending',
         'reviews/history', 'reviews/platform-feedback', 'bookings/review',
         'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',
-        'booking-confirmation', 'invoice'
+        'booking-confirmation', 'invoice', 'help', 'wishlist', 'preferences',
+        'ai-assistant'
       ].map(screen => (
         <Tabs.Screen
           key={screen}

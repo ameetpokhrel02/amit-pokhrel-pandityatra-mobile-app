@@ -14,7 +14,7 @@ import {
 // import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Colors } from "@/constants/Colors";
-import { verifyOtpAndGetToken, fetchProfile, verifyPasswordResetOtp } from "@/services/auth.service";
+import { loginOTP, getProfile, verifyForgotOTP } from "@/services/auth.service";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function OTPScreen() {
@@ -73,21 +73,22 @@ export default function OTPScreen() {
       const phoneStr = Array.isArray(phone) ? phone[0] : phone;
 
       if (mode === 'reset-password') {
-        const res = await verifyPasswordResetOtp({ email: emailStr, otp: otpString });
+        const res = await verifyForgotOTP({ email: emailStr, otp: otpString });
         router.push({
           pathname: "/auth/reset-password",
-          params: { token: res.token, email: emailStr },
+          params: { token: res.data.token, email: emailStr },
         });
       } else {
         // Verify OTP (Login or Register)
-        const res = await verifyOtpAndGetToken({
-          email: emailStr,
-          phone_number: phoneStr,
-          otp_code: otpString
-        });
+        const verifyPayload: any = { otp_code: otpString };
+        if (phoneStr) verifyPayload.phone_number = phoneStr;
+        if (emailStr) verifyPayload.email = emailStr;
+
+        const verifyRes = await loginOTP(verifyPayload);
 
         // Load profile
-        const user = await fetchProfile();
+        const profileRes = await getProfile();
+        const user = profileRes.data;
 
         await AsyncStorage.setItem('user', JSON.stringify({
           name: user.full_name,

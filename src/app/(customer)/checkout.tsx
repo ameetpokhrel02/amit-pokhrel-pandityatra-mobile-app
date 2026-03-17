@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
-import { checkoutSamagri } from '@/services/shop.service';
+import { checkoutSamagri } from '@/services/samagri.service';
 import { Button } from '@/components/ui/Button';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
 

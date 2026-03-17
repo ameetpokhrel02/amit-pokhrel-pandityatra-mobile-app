@@ -1,139 +1,28 @@
-import apiClient, { publicApi, saveTokens } from './api-client';
+// auth.service.ts
+import { api, publicApi, saveTokens } from './api-client';
 
-export interface RegisterPayload {
-  full_name: string;
-  phone_number: string;
-  email?: string;
-  password?: string;
-  role?: 'user' | 'pandit';
-}
-
-// Helper to standardize error messages (internal to auth for now, or move to utils)
-function handleApiError(error: any) {
-  if (error.response) {
-    const data = error.response.data;
-    if (data.detail) return new Error(data.detail);
-    if (data.message) return new Error(data.message);
-    if (typeof data === 'object') {
-      const fieldErrors = Object.entries(data)
-        .map(([field, errors]: [string, any]) => {
-          const errorList = Array.isArray(errors) ? errors : [errors];
-          return `${field}: ${errorList.join(', ')}`;
-        })
-        .join('; ');
-      return new Error(fieldErrors);
-    }
-  }
-  return error;
-}
-
-export async function registerUser(payload: RegisterPayload) {
-  try {
-    const response = await publicApi.post('/users/register/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function requestLoginOtp(payload: { phone_number?: string; email?: string }) {
-  try {
-    const response = await publicApi.post('/users/request-otp/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
-  try {
-    const response = await publicApi.post('/users/login-otp/', payload);
-    const { access, refresh } = response.data;
-    if (access && refresh) {
-      await saveTokens(access, refresh);
-    }
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
-  try {
-    const response = await publicApi.post('/users/login-password/', payload);
-    const { access, refresh } = response.data;
-    if (access && refresh) {
-      await saveTokens(access, refresh);
-    }
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function googleLogin(idToken: string) {
-  try {
-    const response = await publicApi.post('/users/google-login/', { id_token: idToken });
-    const { access, refresh } = response.data;
-    // Backend returns 'access' or 'token' sometimes based on logs/code, 
-    // but standard JWT is access/refresh
-    const accessToken = access || response.data.token;
-    if (accessToken && refresh) {
-      await saveTokens(accessToken, refresh);
-    }
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function fetchProfile() {
-  const response = await apiClient.get('/users/profile/');
-  return response.data;
-}
-
-export async function requestPasswordResetOtp(payload: { email: string }) {
-  try {
-    const response = await publicApi.post('/users/forgot-password/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function verifyPasswordResetOtp(payload: { email: string; otp: string }) {
-  try {
-    const response = await publicApi.post('/users/forgot-password/verify-otp/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function resetPasswordWithToken(payload: { token: string; new_password: string }) {
-  try {
-    const response = await publicApi.post('/users/forgot-password/reset/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function updateUserProfile(data: any) {
-  const response = await apiClient.patch('/users/profile/', data);
-  return response.data;
-}
-
-export async function contactUs(payload: { name: string; email: string; message: string }) {
-  try {
-    const response = await publicApi.post('/users/contact/', payload);
-    return response.data;
-  } catch (error: any) {
-    throw handleApiError(error);
-  }
-}
-
-export async function fetchSiteContent() {
-  const response = await publicApi.get('/users/site-content/');
-  return response.data;
-}
+export const registerUser = (data: any) => publicApi.post('users/register/', data);
+export const requestOTP = (data: any) => publicApi.post('users/request-otp/', data);
+export const loginOTP = async (data: any) => {
+  const res = await publicApi.post('users/login-otp/', data);
+  await saveTokens(res.data.access, res.data.refresh, res.data.user);
+  return res;
+};
+export const loginPassword = async (data: any) => {
+  const res = await publicApi.post('users/login-password/', data);
+  await saveTokens(res.data.access, res.data.refresh, res.data.user);
+  return res;
+};
+export const googleLogin = async (data: any) => {
+  const res = await publicApi.post('users/google-login/', data);
+  await saveTokens(res.data.access, res.data.refresh, res.data.user);
+  return res;
+};
+export const forgotPassword = (data: any) => publicApi.post('users/forgot-password/', data);
+export const verifyForgotOTP = (data: any) => publicApi.post('users/forgot-password/verify-otp/', data);
+export const resetPassword = (data: any) => publicApi.post('users/forgot-password/reset/', data);
+export const getProfile = () => api.get('users/profile/');
+export const updateProfile = (data: any) => api.patch('users/profile/', data);
+export const deleteProfile = () => api.delete('users/profile/');
+export const contactSupport = (data: any) => publicApi.post('users/contact/', data);
+export const siteContent = () => publicApi.get('users/site-content/');

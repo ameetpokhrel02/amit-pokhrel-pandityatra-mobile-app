@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useCartStore } from '@/store/cart.store';
-import { fetchSamagriItems } from '@/services/shop.service';
+import { fetchSamagriItems } from '@/services/samagri.service';
 import { SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
 

@@ -10,10 +10,10 @@ import { useTheme } from '@/store/ThemeContext';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { useTranslation } from 'react-i18next';
 import { fetchServices } from '@/services/puja.service';
-import { fetchPandits } from '@/services/pandit.service';
-import { fetchMyBookings } from '@/services/booking.service';
+import { listPandits } from '@/services/pandit.service';
+import { listBookings } from '@/services/booking.service';
 import { fetchBookingSamagriRecommendations } from '@/services/recommender.service';
-import { fetchSamagriItems, fetchSamagriCategories } from '@/services/shop.service';
+import { getSamagriItems, getSamagriCategories } from '@/services/samagri.service';
 import { useNotificationStore } from '@/store/notification.store';
 import { Service, Pandit, Booking, SamagriItem, SamagriCategory } from '@/services/api';
 import { getImageUrl } from '@/utils/image';
@@ -88,16 +88,16 @@ export default function CustomerHomeScreen() {
       setLoading(true);
 
       // 1. Fetch Guest-accessible data
-      const [servicesData, panditsData, samagriItemsData, samagriCategoriesData] = await Promise.all([
+      const [servicesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
         fetchServices(),
-        fetchPandits(),
-        fetchSamagriItems(),
-        fetchSamagriCategories(),
+        listPandits(),
+        getSamagriItems(),
+        getSamagriCategories(),
       ]);
       setServices(servicesData.slice(0, 6));
-      setPandits(panditsData.slice(0, 6));
-      setSamagriItems(samagriItemsData);
-      setSamagriCategories(samagriCategoriesData);
+      setPandits(panditsRes.data.results || panditsRes.data.slice(0, 6));
+      setSamagriItems(samagriItemsRes.data.results || samagriItemsRes.data);
+      setSamagriCategories(samagriCategoriesRes.data.results || samagriCategoriesRes.data);
 
       // 2. Fetch authenticated data only if logged in and user object exists
       if (isAuthenticated && user) {
@@ -108,7 +108,8 @@ export default function CustomerHomeScreen() {
           // Fetch notifications for unread count via store
           fetchStoreNotifications();
 
-          const bookingsData = await fetchMyBookings({ status: 'PENDING' });
+          const bookingsRes = await listBookings({ status: 'PENDING' });
+          const bookingsData = bookingsRes.data;
           setBookings(bookingsData);
 
           if (bookingsData.length > 0) {

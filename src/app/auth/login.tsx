@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
+import GoogleSignIn from "@/components/ui/GoogleSignIn";
 import {
   View,
   Text,
@@ -20,7 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { requestLoginOtp, googleLogin, fetchProfile, passwordLogin } from "@/services/auth.service";
+import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { API_BASE_URL } from "@/services/api-client";
 
@@ -35,7 +36,8 @@ const ANDROID_CLIENT_ID =
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [loginView, setLoginView] = useState<"main" | "phone" | "email">("main");
+  const [loginView, setLoginView] = useState<"selection" | "main" | "phone" | "email">("selection");
+  const [intendedRole, setIntendedRole] = useState<"customer" | "pandit" | null>(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -45,83 +47,58 @@ export default function LoginScreen() {
   const [formattedPhone, setFormattedPhone] = useState("");
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    androidClientId: GOOGLE_CLIENT_ID, // Using the provided Web ID as a fallback or if it's dual-purpose
-    iosClientId: GOOGLE_CLIENT_ID,
-    webClientId: GOOGLE_CLIENT_ID,
+    clientId: (Constants.expoConfig?.extra as any)?.expoPublicGoogleClientId,
+    androidClientId: (Constants.expoConfig?.extra as any)?.androidClientId,
+    iosClientId: (Constants.expoConfig?.extra as any)?.iosClientId,
+    webClientId: (Constants.expoConfig?.extra as any)?.webClientId,
     responseType: AuthSession.ResponseType.IdToken,
   });
 
   useEffect(() => {
-    if (request) {
-      console.log("[Google Auth] Request URL:", request.url);
-      console.log("[Google Auth] Redirect URI:", request.redirectUri);
-      console.log("[Google Auth] Client ID used:", request.clientId);
-    }
-  }, [request]);
-
-  useEffect(() => {
-    if (response) {
-      console.log("[Google Auth] Response received:", response.type);
-      if (response.type === "error") {
-        console.error("[Google Auth] Error details:", response.error);
-      }
+    if (response?.type === "success") {
+      handleGoogleResponse(response);
     }
   }, [response]);
 
-  useEffect(() => {
-    // DEBUG: Check what URL we are hitting
-    console.log("Current API Base URL:", API_BASE_URL);
-  }, []);
+  const handleGoogleResponse = async (res: any) => {
+    const idToken = res.params.id_token;
+    if (!idToken) return;
 
-  useEffect(() => {
-    const handleGoogleResponse = async () => {
-      if (response?.type === "success") {
-        const idToken = (response.params as any).id_token as string | undefined;
-        if (!idToken) {
-          Alert.alert("Google Sign-In", "No id_token returned from Google.");
-          return;
-        }
+    try {
+      setLoading(true);
+      const googleRes = await googleLogin(idToken);
+      const { access, refresh } = googleRes.data;
+      const profileRes = await getProfile();
+      const user = profileRes.data;
 
-        try {
-          const { access, refresh } = await googleLogin(idToken);
-          const user = await fetchProfile();
+      const userProfile = {
+        id: user.id.toString(),
+        name: user.full_name,
+        email: user.email,
+        phone: user.phone_number,
+        role: user.role,
+        profile_pic_url: user.profile_pic_url
+      };
 
-          const userProfile = {
-            id: user.id || "",
-            name: user.full_name,
-            email: user.email,
-            phone: user.phone_number,
-            role: user.role,
-            profile_pic_url: user.profile_pic_url
-          };
+      await storeLogin(userProfile, { access, refresh });
+      navigateByRole(user);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Google Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          await storeLogin(userProfile, { access, refresh });
-
-          if (user.role === "pandit") {
-            const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
-            if (isProfileComplete) {
-              router.replace("/(pandit)" as any);
-            } else {
-              router.replace("/auth/pandit-profile-setup" as any);
-            }
-          } else if (user.role === "admin") {
-            router.replace("/admin/dashboard" as any);
-          } else {
-            router.replace("/(customer)" as any);
-          }
-        } catch (err: any) {
-          console.error(err);
-          Alert.alert(
-            "Google Sign-In failed",
-            err?.message || "Unable to login with Google. Please try again."
-          );
-        }
-      }
-    };
-
-    handleGoogleResponse();
-  }, [response, router]);
+  const navigateByRole = (user: any) => {
+    if (user.role === "pandit") {
+      const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile;
+      router.replace((isProfileComplete ? "/(pandit)" : "/auth/pandit-profile-setup") as any);
+    } else if (user.role === "admin") {
+      router.replace("/admin/dashboard" as any);
+    } else {
+      router.replace("/(customer)" as any);
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -129,83 +106,46 @@ export default function LoginScreen() {
       if (loginView === 'phone') {
         if (!phone || phone.length < 10) {
           Alert.alert("Invalid Phone", "Please enter a valid phone number.");
-          setLoading(false);
           return;
         }
-
-        await requestLoginOtp({
-          phone_number: formattedPhone
-        });
-
-        router.push({
-          pathname: "/auth/otp",
-          params: { phone: formattedPhone },
-        });
+        await requestOTP({ phone_number: formattedPhone });
+        router.push({ pathname: "/auth/otp", params: { phone: formattedPhone } });
       } else if (loginView === 'email') {
         if (!email || !password) {
           Alert.alert("Error", "Please enter both credentials");
-          setLoading(false);
           return;
         }
-
-        const { access, refresh } = await passwordLogin({ email, password });
-        const user = await fetchProfile();
+        const loginRes = await loginPassword({ email, password });
+        const { access, refresh } = loginRes.data;
+        const profileRes = await getProfile();
+        const user = profileRes.data;
 
         const userProfile = {
-          id: user.id || "",
+          id: user.id.toString(),
           name: user.full_name,
           email: user.email,
           phone: user.phone_number,
           role: user.role,
-          profile_pic_url: user.profile_pic_url
         };
 
         await storeLogin(userProfile, { access, refresh });
-
-        if (user.role === "pandit") {
-          const isProfileComplete = user.is_pandit_profile_complete || user.pandit_profile || user.expertise || user.experience_years;
-          if (isProfileComplete) {
-            router.replace("/(pandit)" as any);
-          } else {
-            router.replace("/auth/pandit-profile-setup" as any);
-          }
-        } else if (user.role === "admin") {
-          router.replace("/admin/dashboard" as any);
-        } else {
-          router.replace("/(customer)" as any);
-        }
+        navigateByRole(user);
       }
     } catch (err: any) {
-      console.error("Login error:", err);
-      Alert.alert(
-        "Login Error", 
-        `${err.message || "Authentication failed"}\n\nTarget: ${API_BASE_URL}\n\nCheck if your backend is running on this IP and port 8000.`
-      );
+      Alert.alert("Login Error", err.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGuestLogin = async () => {
-    await storeLogout(); // Ensure session is fully cleared before navigating
-    router.replace("/(customer)" as any);
+    await storeLogout();
+    router.replace("/(customer)");
   };
 
-  const handleGoogleLoginPress = () => {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "GOOGLE_CLIENT_ID_NOT_SET") {
-      Alert.alert(
-        "Google Sign-In not configured",
-        "Set EXPO_PUBLIC_GOOGLE_CLIENT_ID in your app config to enable Google login."
-      );
-      return;
-    }
-
-    if (!request) {
-      Alert.alert("Google Sign-In", "Google auth request is not ready yet. Please try again.");
-      return;
-    }
-
-    promptAsync();
+  const selectRole = (role: "customer" | "pandit") => {
+    setIntendedRole(role);
+    setLoginView("main");
   };
 
   return (
@@ -213,7 +153,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <View style={styles.logoContainer}>
             <Image
@@ -223,10 +163,37 @@ export default function LoginScreen() {
             />
           </View>
 
-          {loginView === 'main' && (
+          {loginView === 'selection' && (
             <>
               <Text style={styles.title}>PanditYatra</Text>
               <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
+
+              <Button
+                title="Join as User"
+                variant="primary"
+                onPress={() => selectRole('customer')}
+                style={styles.mainButton}
+                leftIcon={<Ionicons name="person-outline" size={20} color="#FFF" />}
+              />
+
+              <Button
+                title="Join as Pandit"
+                variant="outline"
+                onPress={() => selectRole('pandit')}
+                style={styles.emailButton}
+                leftIcon={<Ionicons name="school-outline" size={20} color="#FF6F00" />}
+              />
+
+              <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
+                <Text style={styles.guestButtonText}>Explore as Guest <Ionicons name="arrow-forward" size={14} /></Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {loginView === 'main' && (
+            <>
+              <Text style={styles.titleSmall}>{intendedRole === 'pandit' ? 'Pandit Login' : 'User Login'}</Text>
+              <Text style={styles.subtitleSmall}>Choose your preferred login method</Text>
 
               <Button
                 title="Continue with Phone"
@@ -253,32 +220,33 @@ export default function LoginScreen() {
               <Button
                 title="Continue with Google"
                 variant="outline"
-                onPress={handleGoogleLoginPress}
+                onPress={() => promptAsync()}
                 style={styles.googleButton}
                 textStyle={{ color: '#FF6F00' }}
                 leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
+                disabled={!request}
               />
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Don't have an account? </Text>
                 <Text
                   style={styles.link}
-                  onPress={() => router.push("/auth/customer-register" as any)}
+                  onPress={() => router.push(intendedRole === 'pandit' ? "/auth/pandit-register" : "/auth/customer-register")}
                 >
                   Sign up
                 </Text>
               </View>
 
-              <TouchableOpacity style={styles.guestButton} onPress={handleGuestLogin}>
-                <Text style={styles.guestButtonText}>Explore as Guest <Ionicons name="arrow-forward" size={14} /></Text>
+              <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('selection')}>
+                <Text style={styles.backLink}>Change Role</Text>
               </TouchableOpacity>
             </>
           )}
 
           {loginView === 'phone' && (
-            <>
-              <Text style={styles.titleSmall}>Login</Text>
-              <Text style={styles.subtitleSmall}>We will send you an OTP to verify.</Text>
+            <View style={{ width: '100%' }}>
+              <Text style={styles.titleSmall}>Phone Login</Text>
+              <Text style={styles.subtitleSmall}>Enter your number to receive an OTP.</Text>
 
               <View style={styles.phoneInputContainer}>
                 <Text style={styles.inputLabel}>Phone Number</Text>
@@ -299,14 +267,14 @@ export default function LoginScreen() {
               />
 
               <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('main')}>
-                <Text style={styles.backLink}>Back to Options</Text>
+                <Text style={styles.backLink}>Other Options</Text>
               </TouchableOpacity>
-            </>
+            </View>
           )}
 
           {loginView === 'email' && (
-            <>
-              <Text style={styles.titleSmall}>Login</Text>
+            <View style={{ width: '100%' }}>
+              <Text style={styles.titleSmall}>Email Login</Text>
               <Text style={styles.subtitleSmall}>Enter your credentials to continue.</Text>
 
               <Input
@@ -341,7 +309,7 @@ export default function LoginScreen() {
               <View style={styles.forgotPasswordContainer}>
                 <Text
                   style={styles.forgotPasswordLink}
-                  onPress={() => router.push("/auth/forgot-password" as any)}
+                  onPress={() => router.push("/auth/forgot-password")}
                 >
                   Forgot Password?
                 </Text>
@@ -357,9 +325,9 @@ export default function LoginScreen() {
               />
 
               <TouchableOpacity style={styles.backLinkContainer} onPress={() => setLoginView('main')}>
-                <Text style={styles.backLink}>Back to Options</Text>
+                <Text style={styles.backLink}>Other Options</Text>
               </TouchableOpacity>
-            </>
+            </View>
           )}
         </View>
       </ScrollView>

@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/store/auth.store';
 import { fetchProfile } from '@/services/auth.service';
 
 export default function SplashScreen() {
     const router = useRouter();
+    const { isAuthenticated, user: authUser, initialize } = useAuthStore();
 
     useEffect(() => {
         const checkNavigation = async () => {
@@ -15,13 +18,13 @@ export default function SplashScreen() {
                 // Minimum delay of 3 seconds for branding as requested
                 const timer = new Promise(resolve => setTimeout(resolve, 3000));
 
-                // Parallelly check storage
-                const [onboardingSeen, token] = await Promise.all([
-                    AsyncStorage.getItem('onboarding_seen'),
-                    AsyncStorage.getItem('access_token')
-                ]);
+                // Clear initialization result
+                await initialize();
 
-                console.log('Splash: Status - seen:', onboardingSeen, 'token:', !!token);
+                const onboardingSeen = await AsyncStorage.getItem('onboarding_seen');
+                const token = await SecureStore.getItemAsync('access_token');
+
+                console.log('Splash: Status - seen:', onboardingSeen, 'token:', !!token, 'auth:', isAuthenticated);
 
                 // Wait for the minimum 3s branding time
                 await timer;
@@ -32,30 +35,19 @@ export default function SplashScreen() {
                     return;
                 }
 
-                if (token) {
-                    try {
-                        console.log('Splash: Verifying token...');
-                        const user = await fetchProfile();
-                        console.log('Splash: Token valid, role:', user.role);
-
-                        if (user.role === 'pandit') {
-                            if (user.is_pandit_profile_complete) {
-                                router.replace('/(pandit)' as any);
-                            } else {
-                                router.replace('/auth/pandit-profile-setup' as any);
-                            }
-                        } else if (user.role === 'admin') {
-                            router.replace('/admin/dashboard' as any);
-                        } else {
-                            router.replace('/(customer)' as any);
-                        }
-                    } catch (e) {
-                        console.log('Splash: Token invalid, clearing and going Login');
-                        await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user', 'role']);
-                        router.replace('/auth/login' as any);
+                if (isAuthenticated && authUser) {
+                    console.log('Splash: Authenticated, role:', authUser.role);
+                    if (authUser.role === 'pandit') {
+                        // We check for profile completion here
+                        // For now assuming if authUser exists we can try to go to dashboard
+                        router.replace('/(pandit)' as any);
+                    } else if (authUser.role === 'admin') {
+                        router.replace('/admin/dashboard' as any);
+                    } else {
+                        router.replace('/(customer)' as any);
                     }
                 } else {
-                    console.log('Splash: No token, going Login');
+                    console.log('Splash: No auth session, going Login');
                     router.replace('/auth/login' as any);
                 }
             } catch (error) {

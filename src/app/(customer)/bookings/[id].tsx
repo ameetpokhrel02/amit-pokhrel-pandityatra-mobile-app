@@ -4,9 +4,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { Booking } from '@/services/api';
-import { fetchBookingDetail, updateBookingStatus, cancelBooking } from '@/services/booking.service';
+import { getBooking, updateBookingStatus, cancelBooking, getBookingInvoice } from '@/services/booking.service';
 import { Button } from '@/components/ui/Button';
 import dayjs from 'dayjs';
+import { usePujaRealtime } from '@/hooks/usePujaRealtime';
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,8 +28,8 @@ export default function BookingDetailScreen() {
   const load = async () => {
     try {
       setLoading(true);
-      const data = await fetchBookingDetail(Number(id));
-      setBooking(data);
+      const response = await getBooking(Number(id));
+      setBooking(response.data);
     } catch (error) {
       console.error('Error loading booking:', error);
       Alert.alert('Error', 'Failed to load booking details.');
@@ -36,6 +37,14 @@ export default function BookingDetailScreen() {
       setLoading(false);
     }
   };
+
+  // Real-time updates
+  const { isConnected } = usePujaRealtime(Number(id), (data) => {
+    if (data.type === 'booking_update' || data.status) {
+       // Refresh data when an update is received
+       load();
+    }
+  });
 
   const handleCancel = async () => {
     Alert.alert(
@@ -95,7 +104,9 @@ export default function BookingDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Booking Details</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.wsIndicator}>
+           <View style={[styles.wsDot, { backgroundColor: isConnected ? '#16A34A' : '#9CA3AF' }]} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -200,6 +211,23 @@ export default function BookingDetailScreen() {
               <Text style={[styles.cancelButtonText, { color: colors.deepRed || '#DC2626' }]}>Cancel Booking</Text>
             </TouchableOpacity>
           )}
+
+          {booking.status === 'COMPLETED' && (
+            <TouchableOpacity 
+               style={[styles.invoiceButton, { borderColor: colors.primary }]} 
+               onPress={async () => {
+                 try {
+                   await import('@/services/booking.service').then(m => m.getBookingInvoice(booking.id));
+                   Alert.alert("Success", "Invoice fetched successfully.");
+                 } catch (e) {
+                   Alert.alert("Error", "Failed to fetch invoice.");
+                 }
+               }}
+            >
+               <Ionicons name="download-outline" size={20} color={colors.primary} />
+               <Text style={[styles.invoiceButtonText, { color: colors.primary }]}>Download Invoice</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -269,4 +297,18 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   cancelButtonText: { fontWeight: 'bold', fontSize: 16 },
+  invoiceButton: { 
+    width: '100%', 
+    paddingVertical: 14, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    alignItems: 'center',
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10
+  },
+  invoiceButtonText: { fontWeight: 'bold', fontSize: 16 },
+  wsIndicator: { width: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  wsDot: { width: 8, height: 8, borderRadius: 4 },
 });

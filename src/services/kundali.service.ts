@@ -7,11 +7,11 @@ export async function generateKundali(payload: {
     lon: number;
     timezone: string
 }) {
-    const response = await apiClient.post('/kundali/generate/', payload);
+    const response = await apiClient.post('kundali/generate/', payload);
     return response.data;
 }
 
 export async function getSavedKundalis() {
-    const response = await apiClient.get('/kundali/list/');
+    const response = await apiClient.get('kundali/list/');
     return response.data;
 }

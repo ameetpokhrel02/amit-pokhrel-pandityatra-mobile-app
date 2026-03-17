@@ -1,75 +1,15 @@
-import apiClient, { publicApi } from './api-client';
-import { Booking, PanditService, PanditReview, Puja, Service, Category } from './api';
+// bookings.service.ts
+import { api, publicApi } from './api-client';
 
-export type ServiceCategory = Category;
-
-
-export interface BookingPayload {
-    service?: number; // PanditService ID
-    pandit?: number;
-    booking_date?: string;
-    booking_time?: string;
-    location?: string;
-    notes?: string;
-    special_instructions?: string;
-    [key: string]: any;
-}
-
-export interface CalendarEvent {
-    id: number;
-    title: string;
-    start: string;
-    end: string;
-    booking_id?: number;
-    status: string;
-}
-
-export async function createBooking(payload: BookingPayload): Promise<Booking> {
-    const response = await apiClient.post('/bookings/', payload);
-    return response.data;
-}
-
-export async function fetchMyBookings(params?: { status?: string }): Promise<Booking[]> {
-    const response = await apiClient.get('/bookings/', { params });
-    return response.data;
-}
-
-export async function fetchBookingDetail(id: number): Promise<Booking> {
-    const response = await apiClient.get(`/bookings/${id}/`);
-    return response.data;
-}
-
-export async function fetchPanditCalendar(): Promise<CalendarEvent[]> {
-    const response = await apiClient.get('/pandits/me/calendar/');
-    return response.data;
-}
-
-export async function fetchBookings(): Promise<Booking[]> {
-    const response = await apiClient.get('/bookings/');
-    return response.data;
-}
-
-export async function updateBookingStatus(id: number, status: string) {
-    const response = await apiClient.patch(`/bookings/${id}/update_status/`, { status });
-    return response.data;
-}
-
-export async function cancelBooking(id: number, reason?: string) {
-    const response = await apiClient.post(`/bookings/${id}/cancel/`, { reason });
-    return response.data;
-}
-
-export async function updateBooking(id: number, data: Partial<BookingPayload>) {
-    const response = await apiClient.put(`/bookings/${id}/`, data);
-    return response.data;
-}
-
-export async function deleteBooking(id: number) {
-    const response = await apiClient.delete(`/bookings/${id}/`);
-    return response.data;
-}
-
-
-
-// Services functions moved to puja.service.ts
-
+export const listBookings = (params?: any) => api.get('bookings/', { params });
+export const createBooking = (data: any) => api.post('bookings/', data);
+export const getBooking = (id: number) => api.get(`bookings/${id}/`);
+export const updateBooking = (id: number, data: any) => api.put(`bookings/${id}/`, data);
+export const patchBooking = (id: number, data: any) => api.patch(`bookings/${id}/`, data);
+export const deleteBooking = (id: number) => api.delete(`bookings/${id}/`);
+export const cancelBooking = (id: number) => api.patch(`bookings/${id}/cancel/`, {});
+export const updateBookingStatus = (id: number, data: any) => api.patch(`bookings/${id}/update_status/`, data);
+export const myBookings = () => api.get('bookings/my_bookings/');
+export const availableSlots = (pandit_id: number, date: string, service_id: number) => 
+    api.get('bookings/available_slots/', { params: { pandit_id, date, service_id } });
+export const getBookingInvoice = (id: number) => api.get(`bookings/${id}/invoice/`);

@@ -10,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { useUser } from '@/store/UserContext';
 import { useTheme } from '@/store/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
-import { updateUserProfile } from '@/services/auth.service';
+import { updateProfile } from '@/services/auth.service';
 
 export default function EditProfileScreen() {
     const router = useRouter();
@@ -69,10 +69,10 @@ export default function EditProfileScreen() {
                     type: type,
                 });
 
-                await updateUserProfile(formData);
+                await updateProfile(formData);
             } else {
                 // Use regular JSON for simple profile updates
-                await updateUserProfile({
+                await updateProfile({
                     full_name: fullName,
                     phone_number: formattedPhone,
                 });

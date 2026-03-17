@@ -51,7 +51,8 @@ export const usePanditStore = create<PanditState>((set, get) => ({
         params.is_available = true;
       }
 
-      const rawData = await PanditService.fetchPanditsWithFilters(params);
+      const response = await PanditService.listPandits(params);
+      const rawData = response.data.results || response.data;
 
       // Map backend types to frontend types
       const mappedData: Pandit[] = rawData.map((p: any) => ({

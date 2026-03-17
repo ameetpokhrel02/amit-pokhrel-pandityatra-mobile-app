@@ -112,13 +112,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role: userData.role || 'customer',
           profile_pic_url: userData.profile_pic_url,
         };
-        
         await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
         await SecureStore.setItemAsync('role', mappedUser.role);
         set({ user: mappedUser, role: mappedUser.role });
       }
-    } catch (error) {
-      console.error('Error during profile sync:', error);
+    } catch (error: any) {
+      if (error.response) {
+        console.error('Profile sync failed:', {
+          status: error.response.status,
+          data: error.response.data,
+        });
+        // If the token is invalid (401) or the request is bad (400), clear session
+        if (error.response.status === 401 || error.response.status === 400) {
+          console.log('Force logging out due to invalid session');
+          get().logout();
+        }
+      } else {
+        console.error('Error during profile sync:', error);
+      }
     }
   },
 }));

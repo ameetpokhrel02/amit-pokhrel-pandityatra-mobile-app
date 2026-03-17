@@ -1,0 +1,6715 @@
+openapi: 3.0.3
+info:
+  title: PanditYatra API
+  version: 1.0.0
+  description: AI-Powered Pandit Booking, Puja, Samagri, Chat, Video & Kundali platform
+    API.
+paths:
+  /api/admin/activity-logs/:
+    get:
+      operationId: admin_activity_logs_retrieve
+      description: |-
+        Returns the Activity Logs for the Admin Dashboard.
+        Supports filtering by user ID, pandit ID, action_type, and date.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin/dashboard/:
+    get:
+      operationId: admin_dashboard_retrieve
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin/error-logs/:
+    get:
+      operationId: admin_error_logs_retrieve
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: admin_error_logs_create
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin/refund-cancel/{booking_id}/:
+    post:
+      operationId: admin_refund_cancel_create
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/ai/chat/:
+    post:
+      operationId: ai_chat_create
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ai/guide/:
+    get:
+      operationId: ai_guide_retrieve
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/ai/puja-samagri/:
+    post:
+      operationId: ai_puja_samagri_create
+      tags:
+      - ai
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/:
+    get:
+      operationId: bookings_list
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingList'
+          description: ''
+    post:
+      operationId: bookings_create
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      tags:
+      - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreate'
+          description: ''
+  /api/bookings/{id}/:
+    get:
+      operationId: bookings_retrieve
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+    put:
+      operationId: bookings_update
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+    patch:
+      operationId: bookings_partial_update
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: ''
+    delete:
+      operationId: bookings_destroy
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/bookings/{id}/admin_cancel/:
+    post:
+      operationId: bookings_admin_cancel_create
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{id}/cancel/:
+    patch:
+      operationId: bookings_cancel_partial_update
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{id}/invoice/:
+    get:
+      operationId: bookings_invoice_retrieve
+      description: GET /api/bookings/{id}/invoice/ — Download PDF invoice for a booking
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/{id}/update_status/:
+    patch:
+      operationId: bookings_update_status_partial_update
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Booking.
+        required: true
+      tags:
+      - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookingRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/available_slots/:
+    get:
+      operationId: bookings_available_slots_retrieve
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/bookings/my_bookings/:
+    get:
+      operationId: bookings_my_bookings_retrieve
+      description: |-
+        Customers → create & view own bookings
+        Pandits   → manage bookings assigned to them
+        Admin     → full control (view, cancel, refund)
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
+  /api/chat/:
+    post:
+      operationId: chat_create
+      description: Consolidated Quick Chat API using Groq AI.
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/history/:
+    get:
+      operationId: chat_history_list
+      description: |-
+        Get guide mode chat history for authenticated user.
+        Endpoint: GET /api/chat/history/
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+          description: ''
+  /api/chat/messages/{id}/mark-read/:
+    put:
+      operationId: chat_messages_mark_read_update
+      description: Mark a specific message as read
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+    patch:
+      operationId: chat_messages_mark_read_partial_update
+      description: Mark a specific message as read
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMessageRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+  /api/chat/quick-chat/:
+    post:
+      operationId: chat_quick_chat_create
+      description: Consolidated Quick Chat API using Groq AI.
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/rooms/:
+    get:
+      operationId: chat_rooms_list
+      description: List all chat rooms for the current user
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatRoom'
+          description: ''
+  /api/chat/rooms/{id}/:
+    get:
+      operationId: chat_rooms_retrieve
+      description: Get or update a specific chat room
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+          description: ''
+    put:
+      operationId: chat_rooms_update
+      description: Get or update a specific chat room
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChatRoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChatRoomRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+          description: ''
+    patch:
+      operationId: chat_rooms_partial_update
+      description: Get or update a specific chat room
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChatRoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedChatRoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedChatRoomRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+          description: ''
+  /api/chat/rooms/{room_id}/messages/:
+    get:
+      operationId: chat_rooms_messages_list
+      description: List all messages in a chat room or send a new message
+      parameters:
+      - in: path
+        name: room_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+          description: ''
+    post:
+      operationId: chat_rooms_messages_create
+      description: List all messages in a chat room or send a new message
+      parameters:
+      - in: path
+        name: room_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+  /api/chat/rooms/initiate/:
+    post:
+      operationId: chat_rooms_initiate_create
+      description: Initiate or get a pre-booking chat room with a pandit.
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/kundali/generate/:
+    post:
+      operationId: kundali_generate_create
+      tags:
+      - kundali
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/kundali/list/:
+    get:
+      operationId: kundali_list_retrieve
+      tags:
+      - kundali
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/kundali/public-stats/:
+    get:
+      operationId: kundali_public_stats_retrieve
+      description: Public landing stats for Kundali section.
+      tags:
+      - kundali
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+    post:
+      operationId: notifications_create
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    put:
+      operationId: notifications_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    patch:
+      operationId: notifications_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    delete:
+      operationId: notifications_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/panchang/data/:
+    get:
+      operationId: panchang_data_retrieve
+      tags:
+      - panchang
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/:
+    get:
+      operationId: pandits_list
+      description: Admins can update/delete any pandit. Public can read/list.
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pandit'
+          description: ''
+    post:
+      operationId: pandits_create
+      description: Admins can update/delete any pandit. Public can read/list.
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pandit'
+          description: ''
+  /api/pandits/{id}/:
+    get:
+      operationId: pandits_retrieve
+      description: Admins can update/delete any pandit. Public can read/list.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit.
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditDetail'
+          description: ''
+    put:
+      operationId: pandits_update
+      description: Admins can update/delete any pandit. Public can read/list.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit.
+        required: true
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PanditRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pandit'
+          description: ''
+    patch:
+      operationId: pandits_partial_update
+      description: Admins can update/delete any pandit. Public can read/list.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit.
+        required: true
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pandit'
+          description: ''
+    delete:
+      operationId: pandits_destroy
+      description: Admins can update/delete any pandit. Public can read/list.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit.
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/pandits/{id}/profile/:
+    get:
+      operationId: pandits_profile_retrieve
+      description: Admins can update/delete any pandit. Public can read/list.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit.
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditDetail'
+          description: ''
+  /api/pandits/admin/all/:
+    get:
+      operationId: pandits_admin_all_retrieve
+      description: List all pandits with details for admin dashboard
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/earnings/{pandit_id}/:
+    get:
+      operationId: pandits_admin_earnings_retrieve
+      description: List earning stats for all pandits
+      parameters:
+      - in: path
+        name: pandit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/pending/:
+    get:
+      operationId: pandits_admin_pending_retrieve
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/reject/{pandit_id}/:
+    post:
+      operationId: pandits_admin_reject_create
+      parameters:
+      - in: path
+        name: pandit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/verify/{pandit_id}/:
+    post:
+      operationId: pandits_admin_verify_create
+      parameters:
+      - in: path
+        name: pandit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/withdrawals/:
+    get:
+      operationId: pandits_admin_withdrawals_retrieve
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/admin/withdrawals/{withdrawal_id}/approve/:
+    post:
+      operationId: pandits_admin_withdrawals_approve_create
+      parameters:
+      - in: path
+        name: withdrawal_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/dashboard/stats/:
+    get:
+      operationId: pandits_dashboard_stats_retrieve
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/dashboard/toggle-availability/:
+    post:
+      operationId: pandits_dashboard_toggle_availability_create
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/me/calendar/:
+    get:
+      operationId: pandits_me_calendar_retrieve
+      description: 'Return all events: Bookings and Availability Blocks'
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: pandits_me_calendar_create
+      description: Create a new Availability Block (Mark as Unavailable)
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/me/calendar/blocks/{block_id}/:
+    delete:
+      operationId: pandits_me_calendar_blocks_destroy
+      parameters:
+      - in: path
+        name: block_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/pandits/my-services/:
+    get:
+      operationId: pandits_my_services_list
+      description: CRUD for services offered by the logged-in Pandit.
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PanditService'
+          description: ''
+    post:
+      operationId: pandits_my_services_create
+      description: CRUD for services offered by the logged-in Pandit.
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+          description: ''
+  /api/pandits/my-services/{id}/:
+    get:
+      operationId: pandits_my_services_retrieve
+      description: CRUD for services offered by the logged-in Pandit.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit service.
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+          description: ''
+    put:
+      operationId: pandits_my_services_update
+      description: CRUD for services offered by the logged-in Pandit.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit service.
+        required: true
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PanditServiceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+          description: ''
+    patch:
+      operationId: pandits_my_services_partial_update
+      description: CRUD for services offered by the logged-in Pandit.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit service.
+        required: true
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPanditServiceRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+          description: ''
+    delete:
+      operationId: pandits_my_services_destroy
+      description: CRUD for services offered by the logged-in Pandit.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this pandit service.
+        required: true
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/pandits/register/:
+    post:
+      operationId: pandits_register_create
+      tags:
+      - pandits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditRegistrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PanditRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PanditRegistrationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditRegistration'
+          description: ''
+  /api/pandits/services/catalog/:
+    get:
+      operationId: pandits_services_catalog_list
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Puja'
+          description: ''
+  /api/pandits/wallet/:
+    get:
+      operationId: pandits_wallet_retrieve
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/withdrawal/request/:
+    post:
+      operationId: pandits_withdrawal_request_create
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/pandits/withdrawals/:
+    get:
+      operationId: pandits_withdrawals_retrieve
+      tags:
+      - pandits
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/{payment_id}/refund/:
+    post:
+      operationId: payments_refund_create
+      description: Process refund for a specific payment
+      parameters:
+      - in: path
+        name: payment_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/admin/:
+    get:
+      operationId: payments_admin_retrieve
+      description: List all payments for Admin Ledger
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/admin/payouts/:
+    get:
+      operationId: payments_admin_payouts_retrieve
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/admin/withdrawals/:
+    get:
+      operationId: payments_admin_withdrawals_retrieve
+      description: List of all withdrawal requests for Admin
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/admin/withdrawals/{id}/approve/:
+    post:
+      operationId: payments_admin_withdrawals_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/check-status/{booking_id}/:
+    get:
+      operationId: payments_check_status_retrieve
+      description: Get payment status for a booking
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/create/:
+    post:
+      operationId: payments_create_create
+      description: Create payment intent for Stripe or initiate Khalti payment
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/esewa/verify/:
+    get:
+      operationId: payments_esewa_verify_retrieve
+      description: Handle redirect from eSewa
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/exchange-rate/:
+    get:
+      operationId: payments_exchange_rate_retrieve
+      description: Get current NPR to USD exchange rate
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/initiate/:
+    post:
+      operationId: payments_initiate_create
+      description: Create payment intent for Stripe or initiate Khalti payment
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/payments/khalti/verify/:
+    get:
+      operationId: payments_khalti_verify_retrieve
+      description: Handle redirect from Khalti
+      tags:
+      - payments
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommender/bookings/{booking_id}/samagri/:
+    get:
+      operationId: recommender_bookings_samagri_retrieve
+      description: Get all samagri items in a booking
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommender/bookings/{booking_id}/samagri/add-item/:
+    post:
+      operationId: recommender_bookings_samagri_add_item_create
+      description: Add a recommended samagri item to booking
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommender/bookings/{booking_id}/samagri/auto-add/:
+    post:
+      operationId: recommender_bookings_samagri_auto_add_create
+      description: Auto-add high-confidence recommendations to booking
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommender/bookings/{booking_id}/samagri/recommendations/:
+    post:
+      operationId: recommender_bookings_samagri_recommendations_create
+      description: Get recommendations for a booking
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/recommender/logs/:
+    get:
+      operationId: recommender_logs_list
+      description: |-
+        ViewSet for recommendation logs (read-only).
+
+        Endpoints:
+        - GET /api/logs/ - List recommendation logs
+        - GET /api/logs/{id}/ - Get log details
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecommendationLog'
+          description: ''
+  /api/recommender/logs/{id}/:
+    get:
+      operationId: recommender_logs_retrieve
+      description: |-
+        ViewSet for recommendation logs (read-only).
+
+        Endpoints:
+        - GET /api/logs/ - List recommendation logs
+        - GET /api/logs/{id}/ - Get log details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this recommendation log.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationLog'
+          description: ''
+  /api/recommender/recommendations/:
+    get:
+      operationId: recommender_recommendations_list
+      description: |-
+        ViewSet for managing samagri recommendations.
+
+        Endpoints:
+        - GET /api/recommendations/ - List all recommendations
+        - GET /api/recommendations/{id}/ - Get recommendation details
+        - POST /api/recommendations/ - Create recommendation (admin only)
+        - GET /api/recommendations/by_puja/{puja_id}/ - Get recommendations for a puja
+        - GET /api/recommendations/stats/{puja_id}/ - Get recommendation stats
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+    post:
+      operationId: recommender_recommendations_create
+      description: Only admins can create recommendations
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+  /api/recommender/recommendations/{id}/:
+    get:
+      operationId: recommender_recommendations_retrieve
+      description: |-
+        ViewSet for managing samagri recommendations.
+
+        Endpoints:
+        - GET /api/recommendations/ - List all recommendations
+        - GET /api/recommendations/{id}/ - Get recommendation details
+        - POST /api/recommendations/ - Create recommendation (admin only)
+        - GET /api/recommendations/by_puja/{puja_id}/ - Get recommendations for a puja
+        - GET /api/recommendations/stats/{puja_id}/ - Get recommendation stats
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri recommendation.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendationDetailed'
+          description: ''
+    put:
+      operationId: recommender_recommendations_update
+      description: |-
+        ViewSet for managing samagri recommendations.
+
+        Endpoints:
+        - GET /api/recommendations/ - List all recommendations
+        - GET /api/recommendations/{id}/ - Get recommendation details
+        - POST /api/recommendations/ - Create recommendation (admin only)
+        - GET /api/recommendations/by_puja/{puja_id}/ - Get recommendations for a puja
+        - GET /api/recommendations/stats/{puja_id}/ - Get recommendation stats
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri recommendation.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriRecommendationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+    patch:
+      operationId: recommender_recommendations_partial_update
+      description: |-
+        ViewSet for managing samagri recommendations.
+
+        Endpoints:
+        - GET /api/recommendations/ - List all recommendations
+        - GET /api/recommendations/{id}/ - Get recommendation details
+        - POST /api/recommendations/ - Create recommendation (admin only)
+        - GET /api/recommendations/by_puja/{puja_id}/ - Get recommendations for a puja
+        - GET /api/recommendations/stats/{puja_id}/ - Get recommendation stats
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri recommendation.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriRecommendationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriRecommendationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriRecommendationRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+    delete:
+      operationId: recommender_recommendations_destroy
+      description: |-
+        ViewSet for managing samagri recommendations.
+
+        Endpoints:
+        - GET /api/recommendations/ - List all recommendations
+        - GET /api/recommendations/{id}/ - Get recommendation details
+        - POST /api/recommendations/ - Create recommendation (admin only)
+        - GET /api/recommendations/by_puja/{puja_id}/ - Get recommendations for a puja
+        - GET /api/recommendations/stats/{puja_id}/ - Get recommendation stats
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri recommendation.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/recommender/recommendations/by_puja/:
+    get:
+      operationId: recommender_recommendations_by_puja_retrieve
+      description: |-
+        Get recommendations for a specific puja.
+        Query params: puja_id, limit=10, min_confidence=0.3
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+  /api/recommender/recommendations/personalized/:
+    get:
+      operationId: recommender_recommendations_personalized_retrieve
+      description: |-
+        Get personalized recommendations for the user.
+        Query params: puja_id, limit=10
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+  /api/recommender/recommendations/seasonal/:
+    get:
+      operationId: recommender_recommendations_seasonal_retrieve
+      description: |-
+        Get seasonal recommendations.
+        Query params: puja_id, limit=10
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+  /api/recommender/recommendations/stats/:
+    get:
+      operationId: recommender_recommendations_stats_retrieve
+      description: |-
+        Get recommendation statistics for a puja.
+        Query params: puja_id, days=30
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriRecommendation'
+          description: ''
+  /api/recommender/templates/:
+    get:
+      operationId: recommender_templates_list
+      description: |-
+        ViewSet for puja templates (pre-configured samagri bundles).
+
+        Endpoints:
+        - GET /api/templates/ - List all templates
+        - GET /api/templates/{id}/ - Get template details
+        - POST /api/templates/ - Create template (admin only)
+        - PUT /api/templates/{id}/ - Update template (admin only)
+        - DELETE /api/templates/{id}/ - Delete template (admin only)
+        - GET /api/templates/featured/ - Get featured templates
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+    post:
+      operationId: recommender_templates_create
+      description: Only admins can create templates
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+  /api/recommender/templates/{id}/:
+    get:
+      operationId: recommender_templates_retrieve
+      description: |-
+        ViewSet for puja templates (pre-configured samagri bundles).
+
+        Endpoints:
+        - GET /api/templates/ - List all templates
+        - GET /api/templates/{id}/ - Get template details
+        - POST /api/templates/ - Create template (admin only)
+        - PUT /api/templates/{id}/ - Update template (admin only)
+        - DELETE /api/templates/{id}/ - Delete template (admin only)
+        - GET /api/templates/featured/ - Get featured templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja template.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+    put:
+      operationId: recommender_templates_update
+      description: Only admins can update templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja template.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PujaTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+    patch:
+      operationId: recommender_templates_partial_update
+      description: |-
+        ViewSet for puja templates (pre-configured samagri bundles).
+
+        Endpoints:
+        - GET /api/templates/ - List all templates
+        - GET /api/templates/{id}/ - Get template details
+        - POST /api/templates/ - Create template (admin only)
+        - PUT /api/templates/{id}/ - Update template (admin only)
+        - DELETE /api/templates/{id}/ - Delete template (admin only)
+        - GET /api/templates/featured/ - Get featured templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja template.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaTemplateRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+    delete:
+      operationId: recommender_templates_destroy
+      description: Only admins can delete templates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja template.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/recommender/templates/featured/:
+    get:
+      operationId: recommender_templates_featured_retrieve
+      description: Get featured templates
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaTemplate'
+          description: ''
+  /api/recommender/user/preferences/:
+    get:
+      operationId: recommender_user_preferences_list
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+    post:
+      operationId: recommender_user_preferences_create
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+  /api/recommender/user/preferences/{id}/:
+    get:
+      operationId: recommender_user_preferences_retrieve
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user samagri preference.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+    put:
+      operationId: recommender_user_preferences_update
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user samagri preference.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserSamagriPreferenceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+    patch:
+      operationId: recommender_user_preferences_partial_update
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user samagri preference.
+        required: true
+      tags:
+      - recommender
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserSamagriPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserSamagriPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserSamagriPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+    delete:
+      operationId: recommender_user_preferences_destroy
+      description: |-
+        ViewSet for user samagri preferences.
+
+        Endpoints:
+        - GET /api/user/preferences/ - Get user's preferences
+        - POST /api/user/preferences/ - Create preference
+        - PUT /api/user/preferences/{id}/ - Update preference
+        - DELETE /api/user/preferences/{id}/ - Delete preference
+        - GET /api/user/preferences/insights/ - Get user insights
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user samagri preference.
+        required: true
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/recommender/user/preferences/insights/:
+    get:
+      operationId: recommender_user_preferences_insights_retrieve
+      description: Get user's preference insights
+      tags:
+      - recommender
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSamagriPreference'
+          description: ''
+  /api/reviews/admin-reviews/:
+    get:
+      operationId: reviews_admin_reviews_retrieve
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: reviews_admin_reviews_partial_update
+      description: Toggle approve/verify status of a review
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: reviews_admin_reviews_destroy
+      description: Delete a review
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reviews/create/:
+    post:
+      operationId: reviews_create_create
+      tags:
+      - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/reviews/my-reviews/:
+    get:
+      operationId: reviews_my_reviews_list
+      description: List reviews given by the current user
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+  /api/reviews/pandit-reviews/:
+    get:
+      operationId: reviews_pandit_reviews_list
+      description: Get recent pandit reviews with customer info — public endpoint
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+  /api/reviews/pandit/my-reviews/:
+    get:
+      operationId: reviews_pandit_my_reviews_list
+      description: List reviews received by current authenticated pandit.
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+  /api/reviews/site-reviews/:
+    get:
+      operationId: reviews_site_reviews_retrieve
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reviews_site_reviews_create
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/ai_recommend/:
+    post:
+      operationId: samagri_ai_recommend_create
+      description: |-
+        Enhanced AI-based samagri recommendation with location context and confidence scoring.
+        Expects: {
+            "puja_id": int,
+            "user_notes": str (optional),
+            "location": str (optional),
+            "customer_timezone": str (optional),
+            "customer_location": str (optional),
+            "budget_preference": str (optional)
+        }
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/categories/:
+    get:
+      operationId: samagri_categories_list
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SamagriCategory'
+          description: ''
+    post:
+      operationId: samagri_categories_create
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriCategory'
+          description: ''
+  /api/samagri/categories/{id}/:
+    get:
+      operationId: samagri_categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri category.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriCategory'
+          description: ''
+    put:
+      operationId: samagri_categories_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri category.
+        required: true
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriCategory'
+          description: ''
+    patch:
+      operationId: samagri_categories_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri category.
+        required: true
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriCategoryRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriCategory'
+          description: ''
+    delete:
+      operationId: samagri_categories_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri category.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/samagri/checkout/{id}/detail/:
+    get:
+      operationId: samagri_checkout_detail_retrieve
+      description: GET /api/samagri/checkout/{id}/detail/ — Single order detail
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/checkout/{id}/invoice/:
+    get:
+      operationId: samagri_checkout_invoice_retrieve
+      description: GET /api/samagri/checkout/{id}/invoice/ — Download PDF invoice
+        for a shop order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/checkout/initiate/:
+    post:
+      operationId: samagri_checkout_initiate_create
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/checkout/my-orders/:
+    get:
+      operationId: samagri_checkout_my_orders_retrieve
+      description: GET /api/samagri/checkout/my-orders/ — List current user's shop
+        orders
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/items/:
+    get:
+      operationId: samagri_items_list
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SamagriItem'
+          description: ''
+    post:
+      operationId: samagri_items_create
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriItem'
+          description: ''
+  /api/samagri/items/{id}/:
+    get:
+      operationId: samagri_items_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri item.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriItem'
+          description: ''
+    put:
+      operationId: samagri_items_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri item.
+        required: true
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SamagriItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriItem'
+          description: ''
+    patch:
+      operationId: samagri_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri item.
+        required: true
+      tags:
+      - samagri
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSamagriItemRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriItem'
+          description: ''
+    delete:
+      operationId: samagri_items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this samagri item.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/samagri/requirements/:
+    get:
+      operationId: samagri_requirements_list
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PujaSamagriRequirement'
+          description: ''
+    post:
+      operationId: samagri_requirements_create
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaSamagriRequirement'
+          description: ''
+  /api/samagri/requirements/{id}/:
+    get:
+      operationId: samagri_requirements_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja samagri requirement.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaSamagriRequirement'
+          description: ''
+    put:
+      operationId: samagri_requirements_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja samagri requirement.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaSamagriRequirement'
+          description: ''
+    patch:
+      operationId: samagri_requirements_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja samagri requirement.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PujaSamagriRequirement'
+          description: ''
+    delete:
+      operationId: samagri_requirements_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this puja samagri requirement.
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/samagri/wishlist/:
+    get:
+      operationId: samagri_wishlist_retrieve
+      description: GET /api/wishlist/ - Get user's wishlist items
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/wishlist/add/:
+    post:
+      operationId: samagri_wishlist_add_create
+      description: POST /api/wishlist/add/ - Add item to wishlist
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/wishlist/check/{item_id}/:
+    get:
+      operationId: samagri_wishlist_check_retrieve
+      description: GET /api/wishlist/check/{item_id}/ - Check if item is in favorites
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/samagri/wishlist/remove/{item_id}/:
+    delete:
+      operationId: samagri_wishlist_remove_destroy
+      description: DELETE /api/wishlist/remove/{item_id}/ - Remove item from wishlist
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/samagri/wishlist/toggle/:
+    post:
+      operationId: samagri_wishlist_toggle_create
+      description: POST /api/wishlist/toggle/ - Toggle item in wishlist (add if not
+        exists, remove if exists)
+      tags:
+      - samagri
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/services/:
+    get:
+      operationId: services_list
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Puja'
+          description: ''
+    post:
+      operationId: services_create
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Puja'
+          description: ''
+  /api/services/{id}/:
+    get:
+      operationId: services_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Puja'
+          description: ''
+    put:
+      operationId: services_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PujaRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Puja'
+          description: ''
+    patch:
+      operationId: services_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPujaRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Puja'
+          description: ''
+    delete:
+      operationId: services_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/services/categories/:
+    get:
+      operationId: services_categories_list
+      tags:
+      - services
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PujaCategory'
+          description: ''
+  /api/token/:
+    post:
+      operationId: token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/users/admin/admins/:
+    get:
+      operationId: users_admin_admins_retrieve
+      description: List all admin/superadmin users. Only superadmin can access.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/admins/{user_id}/:
+    patch:
+      operationId: users_admin_admins_partial_update
+      description: Update an admin user (toggle status, change role). Only superadmin.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/admins/{user_id}/delete/:
+    delete:
+      operationId: users_admin_admins_delete_destroy
+      description: Delete an admin user. Only superadmin can delete.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/admins/create/:
+    post:
+      operationId: users_admin_admins_create_create
+      description: Create a new admin user. Only superadmin can create admins.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/change-password/:
+    post:
+      operationId: users_admin_change_password_create
+      description: Change own password. Requires current_password and new_password.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/settings/:
+    get:
+      operationId: users_admin_settings_retrieve
+      description: |-
+        GET: Retrieve current platform settings (commission, etc.)
+        POST: Update settings
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: users_admin_settings_create
+      description: |-
+        GET: Retrieve current platform settings (commission, etc.)
+        POST: Update settings
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/site-content/:
+    get:
+      operationId: users_admin_site_content_retrieve
+      description: 'Admin endpoint — GET: list all content with metadata, PUT: update
+        one or more entries.'
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: users_admin_site_content_update
+      description: 'Admin endpoint — GET: list all content with metadata, PUT: update
+        one or more entries.'
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/stats/:
+    get:
+      operationId: users_admin_stats_retrieve
+      description: |-
+        Returns statistics for the Admin Dashboard.
+        Only accessible by Admin (superuser) users.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/users/:
+    get:
+      operationId: users_admin_users_retrieve
+      description: Return list of all users (role='user' usually, or all non-admins).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/admin/users/{user_id}/:
+    delete:
+      operationId: users_admin_users_destroy
+      description: Delete a user permanently.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin/users/{user_id}/toggle-status/:
+    post:
+      operationId: users_admin_users_toggle_status_create
+      description: Block/Unblock a user.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/contact/:
+    post:
+      operationId: users_contact_create
+      description: Handles Contact Form submissions and saves them to the database.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/users/forgot-password/:
+    post:
+      operationId: users_forgot_password_create
+      description: Handles forgot password request - sends OTP to phone or email.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequestRequest'
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordRequest'
+          description: ''
+  /api/users/forgot-password/reset/:
+    post:
+      operationId: users_forgot_password_reset_create
+      description: Resets password after OTP verification.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPassword'
+          description: ''
+  /api/users/forgot-password/verify-otp/:
+    post:
+      operationId: users_forgot_password_verify_otp_create
+      description: Verifies OTP for forgot password flow.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordOTPVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordOTPVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordOTPVerifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordOTPVerify'
+          description: ''
+  /api/users/google-login/:
+    post:
+      operationId: users_google_login_create
+      description: |-
+        Handles Google OAuth2 Login.
+        Verifies the id_token and returns JWT tokens.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/users/login-otp/:
+    post:
+      operationId: users_login_otp_create
+      description: Verifies the OTP (Phone or Email) and returns JWT Access and Refresh
+        Tokens.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneToken'
+          description: ''
+  /api/users/login-password/:
+    post:
+      operationId: users_login_password_create
+      description: Handles password-based login and returns JWT tokens.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordLogin'
+          description: ''
+  /api/users/profile/:
+    get:
+      operationId: users_profile_retrieve
+      description: |-
+        Returns the current authenticated user's profile data.
+        Requires a valid JWT Access Token in the Authorization header.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: users_profile_update
+      description: Allows full update of user profile fields exposed by serializer.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: users_profile_partial_update
+      description: Allows updating mutable fields like full_name or email.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: users_profile_destroy
+      description: Delete the currently authenticated user's account.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/register/:
+    post:
+      operationId: users_register_create
+      description: Handles User Registration (creates the user account) and sends
+        OTP.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/users/request-otp/:
+    post:
+      operationId: users_request_otp_create
+      description: Handles OTP request for login (for existing users via Phone or
+        Email).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/users/site-content/:
+    get:
+      operationId: users_site_content_retrieve
+      description: Public endpoint — returns all site content key-value pairs.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/video/create-token/:
+    post:
+      operationId: video_create_token_create
+      description: Create a Daily.co meeting token for the user
+      tags:
+      - video
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/video/generate-link/{booking_id}/:
+    post:
+      operationId: video_generate_link_create
+      description: Manually trigger video room creation if it failed previously
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - video
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/video/room/{booking_id}/:
+    get:
+      operationId: video_room_retrieve
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - video
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/video/room/{booking_id}/join/:
+    post:
+      operationId: video_room_join_create
+      parameters:
+      - in: path
+        name: booking_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - video
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/video/webhook/:
+    post:
+      operationId: video_webhook_create
+      description: Handle Daily.co webhooks (recording.ready)
+      tags:
+      - video
+      security:
+      - jwtAuth: []
+      - basicAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Booking:
+      type: object
+      description: Serializer used for creating, retrieving, and updating bookings.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          title: Customer
+        user_full_name:
+          type: string
+          readOnly: true
+        pandit:
+          type: integer
+        pandit_full_name:
+          type: string
+          readOnly: true
+        service_name:
+          type: string
+          maxLength: 100
+        service_location:
+          $ref: '#/components/schemas/ServiceLocationEnum'
+        booking_date:
+          type: string
+          format: date
+        booking_time:
+          type: string
+          format: time
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        service_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        samagri_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        total_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        payment_status:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_reviewed:
+          type: string
+          readOnly: true
+        daily_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Official Daily.co join URL
+          maxLength: 500
+        video_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Video call link for online puja (Legacy)
+          maxLength: 500
+        recording_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Recorded session URL (post-puja)
+          maxLength: 500
+        recording_available:
+          type: boolean
+      required:
+      - booking_date
+      - booking_time
+      - created_at
+      - id
+      - is_reviewed
+      - pandit
+      - pandit_full_name
+      - payment_status
+      - samagri_fee
+      - service_fee
+      - service_name
+      - status
+      - total_fee
+      - user
+      - user_full_name
+    BookingCreate:
+      type: object
+      description: Serializer for creating new bookings
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pandit:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        service_name:
+          type: string
+          maxLength: 100
+        service_location:
+          $ref: '#/components/schemas/ServiceLocationEnum'
+        booking_date:
+          type: string
+          format: date
+        booking_time:
+          type: string
+          format: time
+        notes:
+          type: string
+          nullable: true
+          description: Customer special requests or notes
+        samagri_required:
+          type: boolean
+          description: Include samagri in booking
+        customer_timezone:
+          type: string
+          description: Customer's local timezone
+          maxLength: 50
+        customer_location:
+          type: string
+          nullable: true
+          description: Lat/Long of customer
+          maxLength: 100
+      required:
+      - booking_date
+      - booking_time
+      - id
+      - pandit
+      - service_name
+    BookingCreateRequest:
+      type: object
+      description: Serializer for creating new bookings
+      properties:
+        pandit:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        service_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        service_location:
+          $ref: '#/components/schemas/ServiceLocationEnum'
+        booking_date:
+          type: string
+          format: date
+        booking_time:
+          type: string
+          format: time
+        notes:
+          type: string
+          nullable: true
+          description: Customer special requests or notes
+        samagri_required:
+          type: boolean
+          description: Include samagri in booking
+        customer_timezone:
+          type: string
+          minLength: 1
+          description: Customer's local timezone
+          maxLength: 50
+        customer_location:
+          type: string
+          nullable: true
+          description: Lat/Long of customer
+          maxLength: 100
+      required:
+      - booking_date
+      - booking_time
+      - pandit
+      - service_name
+    BookingDetail:
+      type: object
+      description: Serializer for retrieving detailed booking information
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_full_name:
+          type: string
+          readOnly: true
+        user_phone:
+          type: string
+          readOnly: true
+        pandit:
+          type: integer
+          readOnly: true
+        pandit_full_name:
+          type: string
+          readOnly: true
+        pandit_expertise:
+          type: string
+          readOnly: true
+        pandit_language:
+          type: string
+          readOnly: true
+        service:
+          type: integer
+          readOnly: true
+          nullable: true
+        service_name:
+          type: string
+          readOnly: true
+        service_duration:
+          type: integer
+          readOnly: true
+        service_description:
+          type: string
+          readOnly: true
+        service_location:
+          allOf:
+          - $ref: '#/components/schemas/ServiceLocationEnum'
+          readOnly: true
+        booking_date:
+          type: string
+          format: date
+          readOnly: true
+        booking_time:
+          type: string
+          format: time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        notes:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Customer special requests or notes
+        samagri_required:
+          type: boolean
+          readOnly: true
+          description: Include samagri in booking
+        service_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        samagri_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        total_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        payment_status:
+          type: boolean
+          readOnly: true
+        payment_method:
+          type: string
+          readOnly: true
+          nullable: true
+        customer_timezone:
+          type: string
+          readOnly: true
+          description: Customer's local timezone
+        customer_location:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Lat/Long of customer
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_reviewed:
+          type: string
+          readOnly: true
+        daily_room_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Official Daily.co join URL
+        daily_room_name:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Daily.co room name for webhooks
+        video_room_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Video call link for online puja (Legacy)
+        recording_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Recorded session URL (post-puja)
+        recording_available:
+          type: boolean
+          readOnly: true
+      required:
+      - accepted_at
+      - booking_date
+      - booking_time
+      - completed_at
+      - created_at
+      - customer_location
+      - customer_timezone
+      - daily_room_name
+      - daily_room_url
+      - id
+      - is_reviewed
+      - notes
+      - pandit
+      - pandit_expertise
+      - pandit_full_name
+      - pandit_language
+      - payment_method
+      - payment_status
+      - recording_available
+      - recording_url
+      - samagri_fee
+      - samagri_required
+      - service
+      - service_description
+      - service_duration
+      - service_fee
+      - service_location
+      - service_name
+      - status
+      - total_fee
+      - updated_at
+      - user_full_name
+      - user_phone
+      - video_room_url
+    BookingList:
+      type: object
+      description: Serializer for listing bookings
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_full_name:
+          type: string
+          readOnly: true
+        pandit:
+          type: integer
+          readOnly: true
+        pandit_full_name:
+          type: string
+          readOnly: true
+        pandit_expertise:
+          type: string
+          readOnly: true
+        service_name:
+          type: string
+          readOnly: true
+        service_location:
+          allOf:
+          - $ref: '#/components/schemas/ServiceLocationEnum'
+          readOnly: true
+        booking_date:
+          type: string
+          format: date
+          readOnly: true
+        booking_time:
+          type: string
+          format: time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        service_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        samagri_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        total_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          readOnly: true
+        payment_status:
+          type: boolean
+          readOnly: true
+        payment_method:
+          type: string
+          readOnly: true
+          nullable: true
+        transaction_id:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Payment Gateway Transaction ID
+        service_duration:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_reviewed:
+          type: string
+          readOnly: true
+        daily_room_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Official Daily.co join URL
+        video_room_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Video call link for online puja (Legacy)
+        recording_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Recorded session URL (post-puja)
+        recording_available:
+          type: boolean
+          readOnly: true
+      required:
+      - booking_date
+      - booking_time
+      - created_at
+      - daily_room_url
+      - id
+      - is_reviewed
+      - pandit
+      - pandit_expertise
+      - pandit_full_name
+      - payment_method
+      - payment_status
+      - recording_available
+      - recording_url
+      - samagri_fee
+      - service_duration
+      - service_fee
+      - service_location
+      - service_name
+      - status
+      - total_fee
+      - transaction_id
+      - user_full_name
+      - video_room_url
+    BookingRequest:
+      type: object
+      description: Serializer used for creating, retrieving, and updating bookings.
+      properties:
+        pandit:
+          type: integer
+        service_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        service_location:
+          $ref: '#/components/schemas/ServiceLocationEnum'
+        booking_date:
+          type: string
+          format: date
+        booking_time:
+          type: string
+          format: time
+        daily_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Official Daily.co join URL
+          maxLength: 500
+        video_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Video call link for online puja (Legacy)
+          maxLength: 500
+        recording_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Recorded session URL (post-puja)
+          maxLength: 500
+        recording_available:
+          type: boolean
+      required:
+      - booking_date
+      - booking_time
+      - pandit
+      - service_name
+    CategoryEnum:
+      enum:
+      - ESSENTIAL
+      - TRADITIONAL
+      - OPTIONAL
+      - LUXURY
+      type: string
+      description: |-
+        * `ESSENTIAL` - Essential - Must Have
+        * `TRADITIONAL` - Traditional - Recommended
+        * `OPTIONAL` - Optional - Nice to Have
+        * `LUXURY` - Luxury - Premium Add-on
+    ChatRoom:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking:
+          type: integer
+          nullable: true
+        customer:
+          $ref: '#/components/schemas/User'
+        pandit:
+          $ref: '#/components/schemas/PanditSimple'
+        user:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_active:
+          type: boolean
+        is_pre_booking:
+          type: boolean
+          default: false
+        last_message:
+          type: string
+          readOnly: true
+        last_message_time:
+          type: string
+          readOnly: true
+        unread_count:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - customer
+      - id
+      - last_message
+      - last_message_time
+      - pandit
+      - unread_count
+      - user
+    ChatRoomRequest:
+      type: object
+      properties:
+        booking:
+          type: integer
+          nullable: true
+        customer:
+          $ref: '#/components/schemas/UserRequest'
+        pandit:
+          $ref: '#/components/schemas/PanditSimpleRequest'
+        is_active:
+          type: boolean
+        is_pre_booking:
+          type: boolean
+          default: false
+      required:
+      - customer
+      - pandit
+    ForgotPasswordOTPVerify:
+      type: object
+      description: Serializer for verifying OTP during password reset.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 15
+        email:
+          type: string
+          format: email
+        otp_code:
+          type: string
+          maxLength: 6
+      required:
+      - otp_code
+    ForgotPasswordOTPVerifyRequest:
+      type: object
+      description: Serializer for verifying OTP during password reset.
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 15
+        email:
+          type: string
+          format: email
+          minLength: 1
+        otp_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - otp_code
+    ForgotPasswordRequest:
+      type: object
+      description: Serializer for requesting password reset OTP.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+    ForgotPasswordRequestRequest:
+      type: object
+      description: Serializer for requesting password reset OTP.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        chat_room:
+          type: integer
+        sender:
+          type: string
+          readOnly: true
+        sender_obj:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        sender_name:
+          type: string
+          readOnly: true
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        content:
+          type: string
+        content_ne:
+          type: string
+          nullable: true
+          title: Content (Nepali)
+        file_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        is_read:
+          type: boolean
+      required:
+      - chat_room
+      - content
+      - id
+      - sender
+      - sender_name
+      - sender_obj
+      - timestamp
+    MessageRequest:
+      type: object
+      properties:
+        chat_room:
+          type: integer
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        content:
+          type: string
+          minLength: 1
+        content_ne:
+          type: string
+          nullable: true
+          title: Content (Nepali)
+        file_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        is_read:
+          type: boolean
+      required:
+      - chat_room
+      - content
+    MessageTypeEnum:
+      enum:
+      - TEXT
+      - IMAGE
+      - FILE
+      - SYSTEM
+      type: string
+      description: |-
+        * `TEXT` - Text
+        * `IMAGE` - Image
+        * `FILE` - File
+        * `SYSTEM` - System Message
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        type:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        title_ne:
+          type: string
+          nullable: true
+          title: Title (Nepali)
+          maxLength: 200
+        message:
+          type: string
+        message_ne:
+          type: string
+          nullable: true
+          title: Message (Nepali)
+        booking:
+          type: integer
+          nullable: true
+        is_read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        user_timezone:
+          type: string
+          maxLength: 50
+        action_url:
+          type: string
+          readOnly: true
+      required:
+      - action_url
+      - created_at
+      - id
+      - message
+      - notification_type
+      - read_at
+      - title
+      - type
+    NotificationRequest:
+      type: object
+      properties:
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        title_ne:
+          type: string
+          nullable: true
+          title: Title (Nepali)
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+        message_ne:
+          type: string
+          nullable: true
+          title: Message (Nepali)
+        booking:
+          type: integer
+          nullable: true
+        is_read:
+          type: boolean
+        user_timezone:
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+      - message
+      - notification_type
+      - title
+    NotificationTypeEnum:
+      enum:
+      - BOOKING_CREATED
+      - BOOKING_ACCEPTED
+      - BOOKING_COMPLETED
+      - BOOKING_CANCELLED
+      - PAYMENT_SUCCESS
+      - PAYMENT_FAILED
+      - NEW_MESSAGE
+      - REVIEW_RECEIVED
+      - PANDIT_VERIFIED
+      - PANDIT_REJECTED
+      - REMINDER
+      - PUJA_ROOM_READY
+      type: string
+      description: |-
+        * `BOOKING_CREATED` - Booking Created
+        * `BOOKING_ACCEPTED` - Booking Accepted
+        * `BOOKING_COMPLETED` - Booking Completed
+        * `BOOKING_CANCELLED` - Booking Cancelled
+        * `PAYMENT_SUCCESS` - Payment Successful
+        * `PAYMENT_FAILED` - Payment Failed
+        * `NEW_MESSAGE` - New Message
+        * `REVIEW_RECEIVED` - Review Received
+        * `PANDIT_VERIFIED` - Pandit Verified
+        * `PANDIT_REJECTED` - Pandit Rejected
+        * `REMINDER` - Reminder
+        * `PUJA_ROOM_READY` - Puja Room Ready
+    Pandit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+        user_details:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        expertise:
+          type: string
+          maxLength: 255
+        experience_years:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        language:
+          type: string
+          maxLength: 50
+        bio:
+          type: string
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        is_verified:
+          type: boolean
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatusEnum'
+        certification_file:
+          type: string
+          format: uri
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - expertise
+      - id
+      - language
+      - user
+      - user_details
+    PanditDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        user_details:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        bio:
+          type: string
+        expertise:
+          type: string
+          maxLength: 255
+        language:
+          type: string
+          maxLength: 50
+        experience_years:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_verified:
+          type: boolean
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanditService'
+          readOnly: true
+        average_rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          readOnly: true
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        review_count:
+          type: integer
+          readOnly: true
+        total_reviews:
+          type: integer
+          readOnly: true
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+          readOnly: true
+      required:
+      - average_rating
+      - expertise
+      - id
+      - language
+      - review_count
+      - reviews
+      - services
+      - total_reviews
+      - user
+      - user_details
+    PanditRegistration:
+      type: object
+      description: Separate serializer for Pandit registration with document upload
+      properties:
+        phone_number:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          maxLength: 150
+        expertise:
+          type: string
+          maxLength: 255
+        language:
+          type: string
+          maxLength: 50
+        experience_years:
+          type: integer
+          maximum: 100
+          minimum: 0
+        bio:
+          type: string
+          maxLength: 500
+        certification_file:
+          type: string
+          format: uri
+        email:
+          type: string
+          format: email
+      required:
+      - certification_file
+      - experience_years
+      - expertise
+      - full_name
+      - language
+    PanditRegistrationRequest:
+      type: object
+      description: Separate serializer for Pandit registration with document upload
+      properties:
+        phone_number:
+          type: string
+          maxLength: 15
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 6
+        expertise:
+          type: string
+          minLength: 1
+          maxLength: 255
+        language:
+          type: string
+          minLength: 1
+          maxLength: 50
+        experience_years:
+          type: integer
+          maximum: 100
+          minimum: 0
+        bio:
+          type: string
+          maxLength: 500
+        certification_file:
+          type: string
+          format: binary
+        email:
+          type: string
+          format: email
+      required:
+      - certification_file
+      - experience_years
+      - expertise
+      - full_name
+      - language
+    PanditRequest:
+      type: object
+      properties:
+        expertise:
+          type: string
+          minLength: 1
+          maxLength: 255
+        experience_years:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        language:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          minLength: 1
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        is_verified:
+          type: boolean
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatusEnum'
+        certification_file:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - expertise
+      - language
+    PanditService:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pandit:
+          type: integer
+          readOnly: true
+        puja_details:
+          allOf:
+          - $ref: '#/components/schemas/Puja'
+          readOnly: true
+        custom_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Pandit's price overrides base price
+        duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Estimated time in minutes
+        is_active:
+          type: boolean
+        is_online:
+          type: boolean
+        is_offline:
+          type: boolean
+      required:
+      - custom_price
+      - duration_minutes
+      - id
+      - pandit
+      - puja_details
+    PanditServiceRequest:
+      type: object
+      properties:
+        puja_id:
+          type: integer
+          writeOnly: true
+        custom_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Pandit's price overrides base price
+        duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Estimated time in minutes
+        is_active:
+          type: boolean
+        is_online:
+          type: boolean
+        is_offline:
+          type: boolean
+      required:
+      - custom_price
+      - duration_minutes
+      - puja_id
+    PanditSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          $ref: '#/components/schemas/User'
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        expertise:
+          type: string
+          maxLength: 255
+      required:
+      - expertise
+      - id
+      - user
+    PanditSimpleRequest:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserRequest'
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        expertise:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - expertise
+      - user
+    PasswordLogin:
+      type: object
+      description: Serializer for password-based login.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          maxLength: 150
+    PasswordLoginRequest:
+      type: object
+      description: Serializer for password-based login.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+    PatchedBookingRequest:
+      type: object
+      description: Serializer used for creating, retrieving, and updating bookings.
+      properties:
+        pandit:
+          type: integer
+        service_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        service_location:
+          $ref: '#/components/schemas/ServiceLocationEnum'
+        booking_date:
+          type: string
+          format: date
+        booking_time:
+          type: string
+          format: time
+        daily_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Official Daily.co join URL
+          maxLength: 500
+        video_room_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Video call link for online puja (Legacy)
+          maxLength: 500
+        recording_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Recorded session URL (post-puja)
+          maxLength: 500
+        recording_available:
+          type: boolean
+    PatchedChatRoomRequest:
+      type: object
+      properties:
+        booking:
+          type: integer
+          nullable: true
+        customer:
+          $ref: '#/components/schemas/UserRequest'
+        pandit:
+          $ref: '#/components/schemas/PanditSimpleRequest'
+        is_active:
+          type: boolean
+        is_pre_booking:
+          type: boolean
+          default: false
+    PatchedMessageRequest:
+      type: object
+      properties:
+        chat_room:
+          type: integer
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        content:
+          type: string
+          minLength: 1
+        content_ne:
+          type: string
+          nullable: true
+          title: Content (Nepali)
+        file_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        is_read:
+          type: boolean
+    PatchedNotificationRequest:
+      type: object
+      properties:
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        title_ne:
+          type: string
+          nullable: true
+          title: Title (Nepali)
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+        message_ne:
+          type: string
+          nullable: true
+          title: Message (Nepali)
+        booking:
+          type: integer
+          nullable: true
+        is_read:
+          type: boolean
+        user_timezone:
+          type: string
+          minLength: 1
+          maxLength: 50
+    PatchedPanditRequest:
+      type: object
+      properties:
+        expertise:
+          type: string
+          minLength: 1
+          maxLength: 255
+        experience_years:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        language:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          minLength: 1
+        rating:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        is_verified:
+          type: boolean
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatusEnum'
+        certification_file:
+          type: string
+          format: binary
+          nullable: true
+    PatchedPanditServiceRequest:
+      type: object
+      properties:
+        puja_id:
+          type: integer
+          writeOnly: true
+        custom_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Pandit's price overrides base price
+        duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Estimated time in minutes
+        is_active:
+          type: boolean
+        is_online:
+          type: boolean
+        is_offline:
+          type: boolean
+    PatchedPujaRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          minLength: 1
+        base_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        image:
+          type: string
+          format: binary
+          nullable: true
+    PatchedPujaTemplateRequest:
+      type: object
+      description: Serializer for puja templates (pre-configured samagri bundles).
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        puja_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        estimated_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        estimated_cost_with_discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+        is_featured:
+          type: boolean
+    PatchedSamagriCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Lucide icon name
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_active:
+          type: boolean
+    PatchedSamagriItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          type: integer
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 50
+        image:
+          type: string
+          format: binary
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedSamagriRecommendationRequest:
+      type: object
+      description: |-
+        Serializer for samagri recommendations.
+        Includes nested item details and puja info.
+      properties:
+        puja:
+          type: integer
+        confidence_score:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          description: Confidence score 0.0-1.0 based on historical data
+        is_essential:
+          type: boolean
+          description: Cannot be removed from booking
+        is_optional:
+          type: boolean
+          description: User can choose to include or exclude
+        priority:
+          type: integer
+          maximum: 10
+          minimum: 1
+          description: 1=highest priority, 10=lowest
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        quantity_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_default:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 50
+        reason:
+          type: string
+          description: Why this item is recommended
+        description:
+          type: string
+        average_rating:
+          type: number
+          format: double
+          maximum: 5.0
+          minimum: 0.0
+        is_active:
+          type: boolean
+        is_seasonal:
+          type: boolean
+        seasonal_months:
+          type: string
+          description: Comma-separated months (1-12) when recommended
+          maxLength: 100
+    PatchedUserSamagriPreferenceRequest:
+      type: object
+      description: Serializer for user's samagri preferences.
+      properties:
+        user:
+          type: integer
+        samagri_item_id:
+          type: integer
+          writeOnly: true
+        average_quantity:
+          type: number
+          format: double
+        is_favorite:
+          type: boolean
+        never_recommend:
+          type: boolean
+          description: User doesn't want this item recommended
+        prefer_bulk:
+          type: boolean
+    PhoneToken:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          maxLength: 15
+        otp_code:
+          type: string
+          maxLength: 6
+      required:
+      - otp_code
+      - phone_number
+    PhoneTokenRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 15
+        otp_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - otp_code
+      - phone_number
+    Puja:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        category_details:
+          allOf:
+          - $ref: '#/components/schemas/PujaCategory'
+          readOnly: true
+        description:
+          type: string
+        base_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        image:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - category_details
+      - description
+      - id
+      - name
+    PujaCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 120
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Lucide icon name
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - id
+      - name
+    PujaCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 120
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Lucide icon name
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - name
+    PujaRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          minLength: 1
+        base_duration_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+        image:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - description
+      - name
+    PujaSamagriRequirement:
+      type: object
+      properties:
+        samagri_name:
+          type: string
+          readOnly: true
+        samagri_unit:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+        samagri_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - quantity
+      - samagri_name
+      - samagri_price
+      - samagri_unit
+    PujaTemplate:
+      type: object
+      description: Serializer for puja templates (pre-configured samagri bundles).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        puja_type:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        recommended_for_pujas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Puja'
+          readOnly: true
+        samagri_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PujaTemplateItem'
+          readOnly: true
+        total_items_count:
+          type: string
+          readOnly: true
+        estimated_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        estimated_cost_with_discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+        is_featured:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - puja_type
+      - recommended_for_pujas
+      - samagri_items
+      - total_items_count
+      - updated_at
+    PujaTemplateItem:
+      type: object
+      description: Serializer for items in a puja template.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          type: integer
+        samagri_item:
+          allOf:
+          - $ref: '#/components/schemas/SamagriItem'
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          maxLength: 50
+        is_required:
+          type: boolean
+      required:
+      - id
+      - samagri_item
+      - template
+    PujaTemplateItemRequest:
+      type: object
+      description: Serializer for items in a puja template.
+      properties:
+        template:
+          type: integer
+        samagri_item_id:
+          type: integer
+          writeOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 50
+        is_required:
+          type: boolean
+      required:
+      - samagri_item_id
+      - template
+    PujaTemplateRequest:
+      type: object
+      description: Serializer for puja templates (pre-configured samagri bundles).
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        puja_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        estimated_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        estimated_cost_with_discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+        is_featured:
+          type: boolean
+      required:
+      - name
+      - puja_type
+    RecommendationLog:
+      type: object
+      description: Serializer for recommendation logs and analytics.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        booking:
+          type: integer
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/SamagriRecommendation'
+          readOnly: true
+        shown_count:
+          type: integer
+          readOnly: true
+        clicked_count:
+          type: integer
+          readOnly: true
+        purchased_count:
+          type: integer
+          readOnly: true
+        conversion_rate:
+          type: string
+          readOnly: true
+        user_feedback:
+          $ref: '#/components/schemas/UserFeedbackEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - booking
+      - clicked_count
+      - conversion_rate
+      - created_at
+      - id
+      - purchased_count
+      - recommendations
+      - shown_count
+      - updated_at
+      - user
+    ResetPassword:
+      type: object
+      description: Serializer for resetting password after OTP verification.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        otp_code:
+          type: string
+          maxLength: 6
+      required:
+      - otp_code
+    ResetPasswordRequest:
+      type: object
+      description: Serializer for resetting password after OTP verification.
+      properties:
+        phone_number:
+          type: string
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        otp_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 6
+      required:
+      - new_password
+      - otp_code
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_avatar:
+          type: string
+          readOnly: true
+        pandit_name:
+          type: string
+          readOnly: true
+        service_name:
+          type: string
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - comment
+      - created_at
+      - customer_avatar
+      - customer_name
+      - id
+      - pandit_name
+      - rating
+      - service_name
+    ReviewRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          minLength: 1
+      required:
+      - comment
+      - rating
+    SamagriCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          readOnly: true
+          nullable: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Lucide icon name
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_active:
+          type: boolean
+      required:
+      - id
+      - name
+      - slug
+    SamagriCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          description: Lucide icon name
+          maxLength: 50
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_active:
+          type: boolean
+      required:
+      - name
+    SamagriItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        category:
+          type: integer
+        category_name:
+          type: string
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        unit:
+          type: string
+          maxLength: 50
+        image:
+          type: string
+          format: uri
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - category_name
+      - created_at
+      - id
+      - name
+    SamagriItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          type: integer
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock_quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 50
+        image:
+          type: string
+          format: binary
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+      - category
+      - name
+    SamagriRecommendation:
+      type: object
+      description: |-
+        Serializer for samagri recommendations.
+        Includes nested item details and puja info.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        puja:
+          type: integer
+        puja_name:
+          type: string
+          readOnly: true
+        samagri_item:
+          allOf:
+          - $ref: '#/components/schemas/SamagriItem'
+          readOnly: true
+        confidence_score:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          description: Confidence score 0.0-1.0 based on historical data
+        is_essential:
+          type: boolean
+          description: Cannot be removed from booking
+        is_optional:
+          type: boolean
+          description: User can choose to include or exclude
+        priority:
+          type: integer
+          maximum: 10
+          minimum: 1
+          description: 1=highest priority, 10=lowest
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        quantity_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_default:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          maxLength: 50
+        reason:
+          type: string
+          description: Why this item is recommended
+        description:
+          type: string
+        times_recommended:
+          type: integer
+          readOnly: true
+        times_purchased:
+          type: integer
+          readOnly: true
+        purchase_rate:
+          type: number
+          format: double
+          readOnly: true
+          description: times_purchased / times_recommended
+        purchase_rate_percentage:
+          type: string
+          readOnly: true
+        average_rating:
+          type: number
+          format: double
+          maximum: 5.0
+          minimum: 0.0
+        is_active:
+          type: boolean
+        is_seasonal:
+          type: boolean
+        seasonal_months:
+          type: string
+          description: Comma-separated months (1-12) when recommended
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - puja
+      - puja_name
+      - purchase_rate
+      - purchase_rate_percentage
+      - samagri_item
+      - times_purchased
+      - times_recommended
+      - updated_at
+    SamagriRecommendationDetailed:
+      type: object
+      description: Extended serializer with additional analytics data.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        puja:
+          type: integer
+        puja_name:
+          type: string
+          readOnly: true
+        samagri_item:
+          allOf:
+          - $ref: '#/components/schemas/SamagriItem'
+          readOnly: true
+        confidence_score:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          description: Confidence score 0.0-1.0 based on historical data
+        is_essential:
+          type: boolean
+          description: Cannot be removed from booking
+        is_optional:
+          type: boolean
+          description: User can choose to include or exclude
+        priority:
+          type: integer
+          maximum: 10
+          minimum: 1
+          description: 1=highest priority, 10=lowest
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        quantity_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_default:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          maxLength: 50
+        reason:
+          type: string
+          description: Why this item is recommended
+        description:
+          type: string
+        times_recommended:
+          type: integer
+          readOnly: true
+        times_purchased:
+          type: integer
+          readOnly: true
+        purchase_rate:
+          type: number
+          format: double
+          readOnly: true
+          description: times_purchased / times_recommended
+        purchase_rate_percentage:
+          type: string
+          readOnly: true
+        average_rating:
+          type: number
+          format: double
+          maximum: 5.0
+          minimum: 0.0
+        is_active:
+          type: boolean
+        is_seasonal:
+          type: boolean
+        seasonal_months:
+          type: string
+          description: Comma-separated months (1-12) when recommended
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_recommended:
+          type: string
+          readOnly: true
+        recommendation_explanation:
+          type: string
+      required:
+      - created_at
+      - id
+      - is_recommended
+      - puja
+      - puja_name
+      - purchase_rate
+      - purchase_rate_percentage
+      - recommendation_explanation
+      - samagri_item
+      - times_purchased
+      - times_recommended
+      - updated_at
+    SamagriRecommendationRequest:
+      type: object
+      description: |-
+        Serializer for samagri recommendations.
+        Includes nested item details and puja info.
+      properties:
+        puja:
+          type: integer
+        confidence_score:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          description: Confidence score 0.0-1.0 based on historical data
+        is_essential:
+          type: boolean
+          description: Cannot be removed from booking
+        is_optional:
+          type: boolean
+          description: User can choose to include or exclude
+        priority:
+          type: integer
+          maximum: 10
+          minimum: 1
+          description: 1=highest priority, 10=lowest
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        quantity_min:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_max:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        quantity_default:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 50
+        reason:
+          type: string
+          description: Why this item is recommended
+        description:
+          type: string
+        average_rating:
+          type: number
+          format: double
+          maximum: 5.0
+          minimum: 0.0
+        is_active:
+          type: boolean
+        is_seasonal:
+          type: boolean
+        seasonal_months:
+          type: string
+          description: Comma-separated months (1-12) when recommended
+          maxLength: 100
+      required:
+      - puja
+    ServiceLocationEnum:
+      enum:
+      - ONLINE
+      - HOME
+      - TEMPLE
+      - PANDIT_LOCATION
+      type: string
+      description: |-
+        * `ONLINE` - Online (Video Call)
+        * `HOME` - Customer Home
+        * `TEMPLE` - Temple
+        * `PANDIT_LOCATION` - Pandit's Location
+    StatusEnum:
+      enum:
+      - PENDING
+      - ACCEPTED
+      - COMPLETED
+      - CANCELLED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending Confirmation
+        * `ACCEPTED` - Accepted by Pandit
+        * `COMPLETED` - Service Completed
+        * `CANCELLED` - Cancelled
+        * `FAILED` - Payment Failed
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        profile_pic:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - id
+      - username
+    UserFeedbackEnum:
+      enum:
+      - HELPFUL
+      - NOT_HELPFUL
+      - NO_FEEDBACK
+      type: string
+      description: |-
+        * `HELPFUL` - Helpful
+        * `NOT_HELPFUL` - Not Helpful
+        * `NO_FEEDBACK` - No Feedback
+    UserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        profile_pic:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - username
+    UserSamagriPreference:
+      type: object
+      description: Serializer for user's samagri preferences.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        samagri_item:
+          allOf:
+          - $ref: '#/components/schemas/SamagriItem'
+          readOnly: true
+        times_purchased:
+          type: integer
+          readOnly: true
+        last_purchased:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        average_quantity:
+          type: number
+          format: double
+        total_spent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        is_favorite:
+          type: boolean
+        never_recommend:
+          type: boolean
+          description: User doesn't want this item recommended
+        prefer_bulk:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - last_purchased
+      - samagri_item
+      - times_purchased
+      - total_spent
+      - updated_at
+      - user
+    UserSamagriPreferenceRequest:
+      type: object
+      description: Serializer for user's samagri preferences.
+      properties:
+        user:
+          type: integer
+        samagri_item_id:
+          type: integer
+          writeOnly: true
+        average_quantity:
+          type: number
+          format: double
+        is_favorite:
+          type: boolean
+        never_recommend:
+          type: boolean
+          description: User doesn't want this item recommended
+        prefer_bulk:
+          type: boolean
+      required:
+      - samagri_item_id
+      - user
+    VerificationStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending Review
+        * `APPROVED` - Approved
+        * `REJECTED` - Rejected
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -52,12 +52,12 @@ export interface Payment {
 }
 
 export async function fetchAdminPayments(): Promise<Payment[]> {
-    const response = await apiClient.get('/payments/admin/');
+    const response = await apiClient.get('payments/admin/');
     return response.data;
 }
 
 export async function refundPayment(id: number) {
-    const response = await apiClient.post(`/payments/${id}/refund/`);
+    const response = await apiClient.post(`payments/${id}/refund/`);
     return response.data;
 }
 
@@ -173,11 +173,11 @@ export interface AdminStats {
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
-    const response = await apiClient.get('/users/admin/stats/');
+    const response = await apiClient.get('users/admin/stats/');
     return response.data;
 }
 
-// Samagri/Shop logic moved to shop.service.ts
+// Samagri/Shop logic moved to samagri.service.ts
 
 // Extended Pandit APIs moved to pandit.service.ts
 

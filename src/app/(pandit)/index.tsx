@@ -143,7 +143,9 @@ export default function PanditDashboardScreen() {
       <View style={styles.statsContainer}>
         <StatCard label="Pending" value={stats.pending} icon="time-outline" color="#FF6F00" />
         <StatCard label="Upcoming" value={stats.upcoming} icon="calendar-outline" color="#3B82F6" />
-        <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#16A34A" />
+        <TouchableOpacity style={{ width: '23%' }} onPress={() => router.push('/(pandit)/earnings')}>
+          <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#16A34A" />
+        </TouchableOpacity>
         <StatCard label="Reviews" value={stats.rating} icon="star-outline" color="#FFD700" />
       </View>
 
@@ -172,7 +174,7 @@ export default function PanditDashboardScreen() {
         <View style={styles.actionGrid}>
           <ActionButton label="Accept/Decline" icon="checkmark-done-circle-outline" onPress={() => router.push('/(pandit)/bookings')} />
           <ActionButton label="Message" icon="chatbubble-ellipses-outline" onPress={() => router.push('/chat/rooms')} />
-          <ActionButton label="Join Video Puja" icon="videocam-outline" onPress={() => handleJoinVideo(0)} />
+          <ActionButton label="Withdraw Funds" icon="wallet-outline" onPress={() => router.push('/(pandit)/earnings')} />
           <ActionButton label="Update Calendar" icon="calendar-outline" onPress={() => router.push('/(pandit)/calendar')} />
         </View>
       </View>

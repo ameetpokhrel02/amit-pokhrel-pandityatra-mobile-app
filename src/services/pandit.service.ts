@@ -1,99 +1,32 @@
-import apiClient, { publicApi } from './api-client';
-import { Pandit, PanditReview, PanditService, Puja } from './api';
+// pandit.service.ts
+import { api, publicApi } from './api-client';
 
-export interface PanditRegisterPayload {
-  user_id?: number;
-  bio?: string;
-  experience_years?: number;
-  expertise?: string;
-  language?: string;
-  [key: string]: any;
-}
+// Public
+export const listPandits = (params?: any) => publicApi.get('pandits/', { params });
+export const getPanditSummary = (id: number) => publicApi.get(`pandits/${id}/`);
+export const getPanditProfile = (id: number) => publicApi.get(`pandits/${id}/profile/`);
+export const getPujaCatalog = () => publicApi.get('pandits/services/catalog/');
+export const registerPandit = (formData: FormData) => publicApi.post('pandits/register/', formData);
 
-export interface MyService {
-  id: number;
-  puja_details: Puja;
-  custom_price: string;
-  duration_minutes: number;
-  is_active: boolean;
-}
+// Pandit self-service
+export const getDashboardStats = () => api.get('pandits/dashboard/stats/');
+export const toggleAvailability = (data: any) => api.post('pandits/dashboard/toggle-availability/', data);
+export const getCalendar = () => api.get('pandits/me/calendar/');
+export const createCalendarBlock = (data: any) => api.post('pandits/me/calendar/', data);
+export const deleteCalendarBlock = (id: number) => api.delete(`pandits/me/calendar/blocks/${id}/`);
+export const getWallet = () => api.get('pandits/wallet/');
+export const getWithdrawals = () => api.get('pandits/withdrawals/');
+export const requestWithdrawal = (data: any) => api.post('pandits/withdrawal/request/', data);
 
-export async function fetchPandits(): Promise<Pandit[]> {
-  const response = await publicApi.get('/pandits/');
-  return response.data;
-}
+// Pandit profile CRUD
+export const updatePanditProfile = (id: number, data: any) => api.put(`pandits/${id}/`, data);
+export const patchPanditProfile = (id: number, data: any) => api.patch(`pandits/${id}/`, data);
+export const deletePanditProfile = (id: number) => api.delete(`pandits/${id}/`);
 
-export async function fetchPandit(id: number): Promise<Pandit> {
-  const response = await publicApi.get(`/pandits/${id}/profile/`);
-  return response.data;
-}
-
-export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
-  const response = await publicApi.get(`/pandits/${panditId}/services/`);
-  return response.data;
-}
-
-export async function registerPandit(payload: PanditRegisterPayload) {
-  const response = await apiClient.put('/users/profile/', payload);
-  return response.data;
-}
-
-export async function fetchPanditsWithFilters(params?: any): Promise<Pandit[]> {
-  const response = await apiClient.get('/pandits/', { params });
-  return response.data;
-}
-
-export async function fetchPanditMyServices(): Promise<MyService[]> {
-  const response = await apiClient.get('/pandits/my-services/');
-  return response.data;
-}
-
-export async function addPanditService(payload: { puja_id: number; custom_price: number; duration_minutes: number }) {
-  const response = await apiClient.post('/pandits/my-services/', payload);
-  return response.data;
-}
-
-export async function togglePanditAvailability(is_available: boolean) {
-  const response = await apiClient.post('/pandits/dashboard/toggle-availability/', { is_available });
-  return response.data;
-}
-
-export async function updatePanditProfile(id: number, data: any) {
-  const response = await apiClient.put(`/users/profile/`, data);
-  return response.data;
-}
-
-export async function fetchPanditDashboardStats() {
-  const response = await apiClient.get('/pandits/dashboard/stats/');
-  return response.data;
-}
-
-export async function fetchPanditCalendar() {
-  const response = await apiClient.get('/pandits/me/calendar/');
-  return response.data;
-}
-
-export async function addAvailabilityBlock(payload: { start_time: string; end_time: string; title: string }) {
-  const response = await apiClient.post('/pandits/me/calendar/', payload);
-  return response.data;
-}
-
-export async function deleteAvailabilityBlock(blockId: number) {
-  const response = await apiClient.delete(`/pandits/me/calendar/blocks/${blockId}/`);
-  return response.data;
-}
-
-export async function fetchPujaCatalog(): Promise<Puja[]> {
-  const response = await publicApi.get('/pandits/services/catalog/');
-  return response.data;
-}
-
-export async function fetchWalletBalance() {
-  const response = await apiClient.get('/pandits/wallet/');
-  return response.data;
-}
-
-export async function requestWithdrawal(payload: { amount: number; bank_details: string }) {
-  const response = await apiClient.post('/pandits/withdrawal/request/', payload);
-  return response.data;
-}
+// Pandit services
+export const listMyServices = () => api.get('pandits/my-services/');
+export const addService = (data: any) => api.post('pandits/my-services/', data);
+export const getService = (id: number) => api.get(`pandits/my-services/${id}/`);
+export const updateService = (id: number, data: any) => api.put(`pandits/my-services/${id}/`, data);
+export const patchService = (id: number, data: any) => api.patch(`pandits/my-services/${id}/`, data);
+export const deleteService = (id: number) => api.delete(`pandits/my-services/${id}/`);

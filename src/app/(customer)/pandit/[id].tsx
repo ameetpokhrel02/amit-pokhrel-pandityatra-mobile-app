@@ -4,10 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { fetchPandit } from '@/services/pandit.service';
+import { getPanditSummary } from '@/services/pandit.service';
 import { Pandit } from '@/types/pandit';
 import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 export default function PanditProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -15,13 +19,20 @@ export default function PanditProfileScreen() {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const [pandit, setPandit] = useState<Pandit | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPandit = async () => {
+    const loadData = async () => {
       try {
         if (typeof id === 'string') {
-          const data = await fetchPandit(Number(id));
+          const [panditRes, reviewsData] = await Promise.all([
+            getPanditSummary(Number(id)),
+            import('@/services/review.service').then(m => m.fetchPanditReviews(Number(id)))
+          ]);
+          
+          const data = panditRes.data;
+          
           if (data) {
             const mappedPandit: Pandit = {
               id: String(data.id),
@@ -33,9 +44,9 @@ export default function PanditProfileScreen() {
               experience: data.experience_years || 0,
               isAvailable: data.is_available,
               bio: data.bio || '',
-              specialization: data.expertise ? data.expertise.split(',').map(s => s.trim()) : [],
-              languages: data.language ? data.language.split(',').map(s => s.trim()) : [],
-              services: (data.services || []).map(s => ({
+              specialization: data.expertise ? data.expertise.split(',').map((s: string) => s.trim()) : [],
+              languages: data.language ? data.language.split(',').map((s: string) => s.trim()) : [],
+              services: (data.services || []).map((s: any) => ({
                 id: s.id,
                 name: s.puja_details?.name || 'Service',
                 duration: s.duration_minutes,
@@ -43,19 +54,20 @@ export default function PanditProfileScreen() {
                 image: s.puja_details?.image,
                 description: s.puja_details?.description
               })),
-              price: data.services && data.services.length > 0 ? Math.min(...data.services.map(s => parseFloat(s.custom_price))) : 500,
+              price: data.services && data.services.length > 0 ? Math.min(...data.services.map((s: any) => parseFloat(s.custom_price))) : 500,
               isVerified: data.is_verified
             };
             setPandit(mappedPandit);
+            setReviews(reviewsData);
           }
         }
       } catch (e) {
-        console.error('Failed to load pandit:', e);
+        console.error('Failed to load pandit data:', e);
       } finally {
         setLoading(false);
       }
     };
-    loadPandit();
+    loadData();
   }, [id]);
 
   if (loading) {
@@ -205,26 +217,40 @@ export default function PanditProfileScreen() {
           <View style={styles.section}>
             <View style={styles.flexRowBetween}>
               <Text style={styles.sectionHeaderTitle}>Recent Reviews</Text>
-              <TouchableOpacity><Text style={styles.seeAllServices}>View All</Text></TouchableOpacity>
+              {reviews.length > 0 && <TouchableOpacity><Text style={styles.seeAllServices}>View All</Text></TouchableOpacity>}
             </View>
-            <View style={styles.reviewCardHifi}>
-              <View style={styles.revTop}>
-                <View style={styles.revUserRow}>
-                  <View style={styles.revAvatar}><Text style={styles.revInitial}>R</Text></View>
-                  <View style={{ marginLeft: 10 }}>
-                    <Text style={styles.revUserName}>Ramesh Khetri</Text>
-                    <Text style={styles.revDate}>2 days ago</Text>
+            
+            {reviews.length > 0 ? (
+              reviews.slice(0, 3).map((review, idx) => (
+                <View key={idx} style={[styles.reviewCardHifi, { marginBottom: 12 }]}>
+                  <View style={styles.revTop}>
+                    <View style={styles.revUserRow}>
+                      <View style={styles.revAvatar}>
+                        {review.user_details?.profile_pic_url ? (
+                          <Image source={{ uri: review.user_details.profile_pic_url }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                        ) : (
+                          <Text style={styles.revInitial}>{review.user_details?.full_name?.[0]?.toUpperCase() || 'U'}</Text>
+                        )}
+                      </View>
+                      <View style={{ marginLeft: 10 }}>
+                        <Text style={styles.revUserName}>{review.user_details?.full_name || 'Anonymous'}</Text>
+                        <Text style={styles.revDate}>{dayjs(review.created_at).fromNow()}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.revRatingBadge}>
+                      <Ionicons name="star" size={12} color="#FFD700" />
+                      <Text style={styles.revRatingTxt}>{review.rating.toFixed(1)}</Text>
+                    </View>
                   </View>
+                  <Text style={styles.revComment}>{review.comment}</Text>
                 </View>
-                <View style={styles.revRatingBadge}>
-                  <Ionicons name="star" size={12} color="#FFD700" />
-                  <Text style={styles.revRatingTxt}>5.0</Text>
-                </View>
+              ))
+            ) : (
+              <View style={[styles.reviewCardHifi, { alignItems: 'center', paddingVertical: 30 }]}>
+                <Ionicons name="chatbox-outline" size={32} color={colors.text + '20'} />
+                <Text style={{ color: colors.text + '40', marginTop: 10 }}>No reviews yet for this Pandit.</Text>
               </View>
-              <Text style={styles.revComment}>
-                Very peaceful and authentic recitation of mantras. Pandit ji explained every ritual's meaning which made it very special.
-              </Text>
-            </View>
+            )}
           </View>
         </View>
       </ScrollView>
