@@ -2,12 +2,12 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { fetchChatRoomMessages, sendMessage, getAISuggestion, fetchChatRooms } from '@/services/chat.service';
 import { ChatMessage, ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
-import { useUser } from '@/store/UserContext';
+import { useUser } from '@/store/auth.store';
 import { getImageUrl } from '@/utils/image';
 
 export default function ChatRoomScreen() {

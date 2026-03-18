@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchWishlist, toggleWishlist } from '@/services/samagri.service';
 import { useCartStore } from '@/store/cart.store';

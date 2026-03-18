@@ -18,6 +18,10 @@ export const toggleAvailability = togglePanditAvailability;
 export const getCalendar = () => api.get('pandits/me/calendar/');
 export const createCalendarBlock = (data: any) => api.post('pandits/me/calendar/', data);
 export const deleteCalendarBlock = (id: number) => api.delete(`pandits/me/calendar/blocks/${id}/`);
+export const fetchPanditCalendar = async () => (await getCalendar()).data;
+export const addAvailabilityBlock = async (data: any) => (await createCalendarBlock(data)).data;
+export const deleteAvailabilityBlock = async (id: number) => (await deleteCalendarBlock(id)).data;
+
 export const getWallet = () => api.get('pandits/wallet/');
 export const fetchWalletBalance = getWallet;
 export const getWithdrawals = () => api.get('pandits/withdrawals/');

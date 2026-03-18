@@ -1,60 +1,59 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/auth.store';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 
 export default function SplashScreen() {
     const router = useRouter();
-    const { initialize, isAuthenticated, user } = useAuthStore();
+    const { isLoading, isAuthenticated, user, role } = useAuthStore();
 
     useEffect(() => {
         const checkNavigation = async () => {
-            console.log('[Splash] Starting navigation check...');
+            if (isLoading) return; 
+
+            console.log('[Splash] Starting navigation check...', { isAuthenticated, role });
+            
             try {
-                // Minimum delay of 2.5 seconds for branding
-                const timer = new Promise(resolve => setTimeout(resolve, 2500));
-
-                // Initialize auth store (loads tokens/user from storage)
-                await initialize();
-
                 const onboardingSeen = await AsyncStorage.getItem('onboarding_seen');
                 const token = await SecureStore.getItemAsync('access_token');
 
-                console.log('[Splash] Status:', { onboardingSeen, hasToken: !!token, isAuthenticated });
-
-                await timer; // Wait for branding delay
-
                 // 1. Check Onboarding
                 if (onboardingSeen !== 'true') {
-                    router.replace('/auth/onboarding' as any);
+                    router.replace('/(public)/onboarding');
                     return;
                 }
 
                 // 2. Check Auth
-                if (token && isAuthenticated && user) {
-                    if (user.role === 'pandit') {
-                        router.replace('/(pandit)' as any);
-                    } else if (user.role === 'admin') {
-                        router.replace('/admin/dashboard' as any);
+                if (token && isAuthenticated && role) {
+                    console.log('[Splash] Navigating to role-specific route:', role);
+                    
+                    if (role === 'pandit') {
+                        router.replace('/(pandit)');
+                    } else if (role === 'admin') {
+                        router.replace('/(customer)'); // Fallback or admin route
+                    } else if (role === 'guest') {
+                        router.replace('/(customer)');
                     } else {
-                        router.replace('/(customer)' as any);
+                        router.replace('/(customer)');
                     }
                 } else {
-                    // 3. Not logged in -> Go to Login
-                    router.replace('/auth/login' as any);
+                    // 3. Not logged in -> Go to Welcome
+                    console.log('[Splash] No valid session, going to welcome.');
+                    router.replace('/(public)/role-selection');
                 }
             } catch (error) {
                 console.error('[Splash] Navigation error:', error);
-                router.replace('/auth/login' as any);
+                router.replace('/(public)/role-selection');
             }
         };
 
-        checkNavigation();
-    }, [initialize, isAuthenticated, user, router]);
+        const timeout = setTimeout(checkNavigation, 2000); 
+        return () => clearTimeout(timeout);
+    }, [isLoading, isAuthenticated, role, router]);
 
     return (
         <View style={styles.container}>
@@ -76,12 +75,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light.primary,
-    },
-    background: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
+        backgroundColor: '#FF6F00',
     },
     overlay: {
         flex: 1,

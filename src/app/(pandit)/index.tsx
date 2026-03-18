@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
@@ -93,15 +93,7 @@ export default function PanditDashboardScreen() {
   };
 
   const handleJoinVideo = async (bookingId: number) => {
-    try {
-      const response = await joinVideoRoom(bookingId);
-      if (response.room_url) {
-        // Navigation or opening URL logic here
-        console.log('Joining room:', response.room_url);
-      }
-    } catch (error) {
-      console.error('Error joining video room:', error);
-    }
+    router.push(`/video/${bookingId}`);
   };
 
   if (loading && !refreshing) {
@@ -185,6 +177,7 @@ export default function PanditDashboardScreen() {
                 date={dayjs(booking.booking_date).format('DD MMM, hh:mm A')}
                 status={booking.status}
                 onPress={() => router.push({ pathname: '/(pandit)/bookings', params: { id: booking.id } } as any)}
+                onJoin={() => handleJoinVideo(booking.id)}
               />
             ))
           ) : (
@@ -281,12 +274,13 @@ function StatCard({ label, value, icon, color }: { label: string, value: string,
   );
 }
 
-function UpcomingPujaCard({ customerName, pujaType, date, status, onPress }: { 
+function UpcomingPujaCard({ customerName, pujaType, date, status, onPress, onJoin }: { 
   customerName: string, 
   pujaType: string, 
   date: string, 
   status: string,
-  onPress?: () => void
+  onPress?: () => void,
+  onJoin?: () => void
 }) {
   return (
     <TouchableOpacity style={styles.upcomingCard} onPress={onPress}>
@@ -302,6 +296,11 @@ function UpcomingPujaCard({ customerName, pujaType, date, status, onPress }: {
         <TouchableOpacity style={styles.viewButton} onPress={onPress}>
           <Text style={styles.viewButtonText}>Details</Text>
         </TouchableOpacity>
+        {(status === 'Confirmed' || status === 'accepted' || status === 'ACCEPTED') && (
+          <TouchableOpacity style={[styles.viewButton, { backgroundColor: '#FF6F00' }]} onPress={onJoin}>
+            <Text style={[styles.viewButtonText, { color: '#FFF' }]}>Join</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );

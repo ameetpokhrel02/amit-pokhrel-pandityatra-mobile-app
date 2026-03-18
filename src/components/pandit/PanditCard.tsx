@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { Pandit } from '@/types/pandit';
 import { getImageUrl } from '@/utils/image';
 

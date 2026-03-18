@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import { checkoutSamagri } from '@/services/samagri.service';
 import { Button } from '@/components/ui/Button';
@@ -15,8 +16,9 @@ export default function ShopCheckoutScreen() {
   const isDark = theme === 'dark';
 
   const [formData, setFormData] = useState({
-    full_name: '',
-    phone_number: '',
+    full_name: useAuthStore.getState().user?.name || '',
+    email: useAuthStore.getState().user?.email || '',
+    phone_number: useAuthStore.getState().user?.phone || '',
     shipping_address: '',
     city: '',
   });
@@ -24,13 +26,14 @@ export default function ShopCheckoutScreen() {
   const [loading, setLoading] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState('');
+  const [formHtml, setFormHtml] = useState('');
 
   const deliveryFee = 100;
   const total = totalPrice + deliveryFee;
 
   const handleCheckout = async () => {
-    if (!formData.full_name || !formData.phone_number || !formData.shipping_address || !formData.city) {
-      Alert.alert('Required', 'Please fill in all shipping details');
+    if (!formData.full_name || !formData.phone_number || !formData.email || !formData.shipping_address || !formData.city) {
+      Alert.alert('Required', 'Please fill in all personal and shipping details.');
       return;
     }
 
@@ -43,10 +46,39 @@ export default function ShopCheckoutScreen() {
       };
 
       const response = await checkoutSamagri(payload);
+      
+      const targetUrl = response.payment_url || response.checkout_url;
 
-      if (response.payment_url) {
-        setPaymentUrl(response.payment_url);
-        setShowWebView(true);
+      if (targetUrl) {
+          const esewaData = response.form_data || response.formData;
+          if (selectedMethod === 'ESEWA' && esewaData) {
+              const formFields = Object.keys(esewaData)
+                  .map(key => `<input type="hidden" name="${key}" value="${String(esewaData[key]).replace(/"/g, '&quot;')}" />`)
+                  .join('');
+              
+              const htmlContent = `
+                  <html>
+                      <head>
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      </head>
+                      <body onload="document.getElementById('esewaForm').submit();" style="display:flex; justify-content:center; align-items:center; height:100vh; background-color:#f9f9f9; font-family:sans-serif;">
+                          <form id="esewaForm" action="${targetUrl}" method="POST">
+                              ${formFields}
+                          </form>
+                          <div style="text-align:center;">
+                              <h2 style="color:#60BB46;">Redirecting to eSewa...</h2>
+                              <p>Please wait while we redirect you to the secure payment gateway.</p>
+                          </div>
+                      </body>
+                  </html>
+              `;
+              setFormHtml(htmlContent);
+              setPaymentUrl('');
+          } else {
+              setPaymentUrl(targetUrl);
+              setFormHtml('');
+          }
+          setShowWebView(true);
       } else {
         Alert.alert('Success', 'Order placed successfully!', [
           { text: 'OK', onPress: () => {
@@ -75,6 +107,7 @@ export default function ShopCheckoutScreen() {
         </View>
         <PaymentWebView
           url={paymentUrl}
+          html={formHtml}
           onSuccess={() => {
             setShowWebView(false);
             Alert.alert('Success', 'Payment successful and order placed!', [
@@ -105,39 +138,67 @@ export default function ShopCheckoutScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Shipping Section */}
+        {/* Personal Information Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Shipping Details</Text>
-          <View style={[styles.inputGroup, { backgroundColor: colors.card }]}>
-            <TextInput
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Full Name"
-              placeholderTextColor={isDark ? '#AAA' : '#999'}
-              value={formData.full_name}
-              onChangeText={(text) => setFormData({ ...formData, full_name: text })}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text, borderTopWidth: 1, borderTopColor: isDark ? '#333' : '#EEE' }]}
-              placeholder="Phone Number"
-              placeholderTextColor={isDark ? '#AAA' : '#999'}
-              keyboardType="phone-pad"
-              value={formData.phone_number}
-              onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text, borderTopWidth: 1, borderTopColor: isDark ? '#333' : '#EEE' }]}
-              placeholder="Shipping Address"
-              placeholderTextColor={isDark ? '#AAA' : '#999'}
-              value={formData.shipping_address}
-              onChangeText={(text) => setFormData({ ...formData, shipping_address: text })}
-            />
-            <TextInput
-              style={[styles.input, { color: colors.text, borderTopWidth: 1, borderTopColor: isDark ? '#333' : '#EEE' }]}
-              placeholder="City"
-              placeholderTextColor={isDark ? '#AAA' : '#999'}
-              value={formData.city}
-              onChangeText={(text) => setFormData({ ...formData, city: text })}
-            />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
+          <View style={styles.inputGroup}>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Name *</Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="Full Name"
+                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                value={formData.full_name}
+                onChangeText={(text) => setFormData({ ...formData, full_name: text })}
+              />
+            </View>
+
+            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Email Address</Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="email@example.com"
+                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(text) => setFormData({ ...formData, email: text })}
+              />
+            </View>
+
+            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Phone Number *</Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="+977"
+                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                keyboardType="phone-pad"
+                value={formData.phone_number}
+                onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
+              />
+            </View>
+            
+            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Shipping Address *</Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="Street Address, Area"
+                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                value={formData.shipping_address}
+                onChangeText={(text) => setFormData({ ...formData, shipping_address: text })}
+              />
+            </View>
+
+            <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>City *</Text>
+              <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder="e.g. Kathmandu"
+                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                value={formData.city}
+                onChangeText={(text) => setFormData({ ...formData, city: text })}
+              />
+            </View>
           </View>
         </View>
 
@@ -253,12 +314,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputGroup: {
+    gap: 16,
+  },
+  inputWrapper: {
     borderRadius: 12,
-    overflow: 'hidden',
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  inputLabel: {
+    fontSize: 12,
+    marginBottom: 2,
+    fontWeight: '500',
   },
   input: {
-    padding: 16,
-    fontSize: 15,
+    paddingVertical: 4,
+    fontSize: 16,
+    fontWeight: '500',
   },
   methodCard: {
     flexDirection: 'row',

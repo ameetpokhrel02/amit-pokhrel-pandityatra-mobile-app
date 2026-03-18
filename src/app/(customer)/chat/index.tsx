@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { fetchChatRooms } from '@/services/chat.service';
 import { ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';

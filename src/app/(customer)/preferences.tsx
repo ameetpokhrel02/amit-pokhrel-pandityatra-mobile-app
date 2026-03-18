@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchUserPreferences, updateUserPreference, createUserPreference } from '@/services/recommender.service';
 

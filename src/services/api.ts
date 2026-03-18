@@ -237,6 +237,7 @@ export interface PanchangData {
 
 export interface SamagriCheckoutPayload {
     full_name: string;
+    email?: string;
     phone_number: string;
     shipping_address: string;
     city: string;

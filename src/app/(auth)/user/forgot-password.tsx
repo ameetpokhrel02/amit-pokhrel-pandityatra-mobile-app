@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { requestPasswordResetOtp } from '@/services/auth.service';
 
 export default function ForgotPasswordScreen() {
@@ -29,7 +29,7 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       await requestPasswordResetOtp({ email: identifier });
-      router.push({ pathname: '/auth/otp', params: { email: identifier, mode: 'reset-password' } } as any);
+      router.push({ pathname: '/(auth)/user/otp', params: { email: identifier, mode: 'reset-password' } } as any);
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to send verification code. Please try again.');
     } finally {

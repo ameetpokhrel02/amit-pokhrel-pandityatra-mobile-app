@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps, View, StyleProp } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 
 interface ButtonProps extends TouchableOpacityProps {
@@ -30,7 +30,7 @@ export const Button = ({
     if (disabled) return '#E0E0E0';
     switch (variant) {
       case 'primary': return colors.primary;
-      case 'secondary': return colors.deepRed;
+      case 'secondary': return colors.notification || '#DC2626';
       case 'outline': return 'transparent';
       case 'text': return 'transparent';
       default: return colors.primary;

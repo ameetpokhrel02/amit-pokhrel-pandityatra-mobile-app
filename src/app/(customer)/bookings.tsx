@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { listBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
-import { useChat } from '@/store/ChatContext';
+import { useChat } from '@/store/chat.store';
 
 export default function BookingsScreen() {
   const { colors, theme } = useTheme();
@@ -120,7 +120,7 @@ export default function BookingsScreen() {
             {(item.status === 'ACCEPTED' || item.status === 'PENDING') && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: 8 }]}
-                onPress={() => router.push(`/(customer)/video/${item.id}` as any)}
+                onPress={() => router.push(`/video/${item.id}`)}
               >
                 <Ionicons name="videocam" size={16} color="#FFF" />
                 <Text style={styles.quickActionText}>Video Puja</Text>

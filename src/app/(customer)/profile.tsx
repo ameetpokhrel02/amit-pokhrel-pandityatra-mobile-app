@@ -5,7 +5,7 @@ import { LogoutModal } from '@/components/ui/LogoutModal';
 import { DeleteAccountModal } from '@/components/ui/DeleteAccountModal';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
-import { useUser } from '@/store/UserContext';
+import { useAuthStore, useUser } from '@/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getProfile } from '@/services/auth.service';
 import { listBookings } from '@/services/booking.service';
 import { getImageUrl } from '@/utils/image';
-import { useAuthStore } from '@/store/auth.store';
+import { useCurrencyStore } from '@/store/currency.store';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -27,6 +27,12 @@ export default function ProfileScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
+
+  const { currency, setCurrency, fetchExchangeRate } = useCurrencyStore();
+
+  useEffect(() => {
+    fetchExchangeRate();
+  }, []);
 
   useEffect(() => {
     // Only fetch profile data if the user is authenticated
@@ -77,7 +83,7 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     setShowLogoutModal(false);
     await logout();
-    router.replace('/auth/welcome');
+    router.replace('/(public)/role-selection');
   };
 
   const handleEditPress = () => {
@@ -91,7 +97,7 @@ export default function ProfileScreen() {
       await import('@/services/auth.service').then(m => m.deleteProfile());
       await logout();
       Alert.alert("Success", "Your account has been deleted.");
-      router.replace('/auth/welcome');
+      router.replace('/(public)/role-selection');
     } catch (error: any) {
       console.error('Delete account error:', error);
       Alert.alert("Error", error.message || "Failed to delete account");
@@ -150,7 +156,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Personal</Text>
           {renderSettingItem("person-outline", "Edit Profile", handleEditPress)}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          {renderSettingItem("planet-outline", "My Kundali", () => router.push('/(customer)/floating-kundali' as any))}
+          {renderSettingItem("planet-outline", "My Kundali", () => router.push('/(customer)/kundali' as any))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("heart-outline", "My Wishlist", () => router.push('/(customer)/wishlist' as any))}
         </View>
@@ -207,7 +213,34 @@ export default function ProfileScreen() {
               <Ionicons name="cash-outline" size={24} color={colors.text} />
               <Text style={[styles.label, { color: colors.text }]}>Currency Preference</Text>
             </View>
-            <Text style={{ color: colors.text, opacity: 0.5 }}>NPR (Default)</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setCurrency('NPR')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  backgroundColor: currency === 'NPR' ? colors.primary : colors.card,
+                  borderWidth: 1,
+                  borderColor: currency === 'NPR' ? colors.primary : colors.border,
+                }}
+              >
+                <Text style={{ color: currency === 'NPR' ? '#FFF' : colors.text, fontWeight: 'bold' }}>Rs</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setCurrency('USD')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  backgroundColor: currency === 'USD' ? colors.primary : colors.card,
+                  borderWidth: 1,
+                  borderColor: currency === 'USD' ? colors.primary : colors.border,
+                }}
+              >
+                <Text style={{ color: currency === 'USD' ? '#FFF' : colors.text, fontWeight: 'bold' }}>USD</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
@@ -228,7 +261,7 @@ export default function ProfileScreen() {
         {/* Support Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
-          {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(customer)/help' as any))}
+          {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(customer)/help'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />

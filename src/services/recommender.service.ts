@@ -80,3 +80,31 @@ export async function fetchUserInsights() {
     const response = await apiClient.get('recommender/user/preferences/insights/');
     return response.data;
 }
+
+/**
+ * Fetch user preference (alias)
+ */
+export const fetchUserPreferences = fetchUserInsights;
+
+/**
+ * Update user preference
+ */
+export async function updateUserPreference(id: number, data: any) {
+    const response = await apiClient.patch(`recommender/user/preferences/${id}/`, data);
+    return response.data;
+}
+
+/**
+ * Create user preference
+ */
+export async function createUserPreference(data: any) {
+    const response = await apiClient.post('recommender/user/preferences/', data);
+    return response.data;
+}
+
+/**
+ * Fetch recommendations for a specific puja (alias)
+ */
+export const fetchPujaSamagriRecommendations = async (pujaId: number) => {
+    return await fetchRecommendationsByPuja({ puja_id: pujaId });
+};

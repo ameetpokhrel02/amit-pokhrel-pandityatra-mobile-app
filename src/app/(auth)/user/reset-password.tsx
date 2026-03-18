@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { resetPasswordWithToken } from '@/services/auth.service';
 
 export default function ResetPasswordScreen() {
@@ -45,7 +45,7 @@ export default function ResetPasswordScreen() {
       Alert.alert(
         'Success',
         'Password reset successfully! You can now login with your new password.',
-        [{ text: 'OK', onPress: () => router.replace('/auth/login' as any) }]
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/user/login' as any) }]
       );
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to reset password. Please try again.');

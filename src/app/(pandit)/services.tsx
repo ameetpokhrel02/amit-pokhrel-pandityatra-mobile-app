@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Modal, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { Button } from '@/components/ui/Button';
 import { fetchPanditMyServices, addPanditService, updateService, deleteService, MyService } from '@/services/pandit.service';
 import { fetchServices } from '@/services/puja.service';

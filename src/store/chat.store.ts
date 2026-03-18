@@ -23,3 +23,11 @@ export const useChatStore = create<ChatState>((set) => ({
 
   closeChat: () => set({ chatVisible: false }),
 }));
+
+// Helper hook for compatibility if needed
+export const useChat = () => {
+    const store = useChatStore();
+    return {
+        ...store
+    };
+};

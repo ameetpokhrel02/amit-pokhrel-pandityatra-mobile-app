@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { fetchBookings, updateBookingStatus } from '@/services/booking.service';
 import { Booking } from '@/services/api';
 import dayjs from 'dayjs';
@@ -93,6 +93,20 @@ export default function BookingsScreen() {
             onPress={() => handleStatusUpdate(item.id, 'confirmed')}
           >
             <Text style={styles.acceptButtonText}>Accept</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {(item.status === 'confirmed' || item.status === 'accepted') && (
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.acceptButton, { backgroundColor: '#FF6F00' }]}
+            onPress={() => router.push(`/video/${item.id}`)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="videocam-outline" size={18} color="#FFF" />
+              <Text style={styles.acceptButtonText}>Join Session</Text>
+            </View>
           </TouchableOpacity>
         </View>
       )}

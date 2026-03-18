@@ -20,7 +20,7 @@ import * as Google from "expo-auth-session/providers/google";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
 
@@ -41,7 +41,7 @@ type RoleMode = "customer" | "pandit";
 export default function LoginScreen() {
   const router = useRouter();
 
-  const [role, setRole] = useState<RoleMode>("customer");
+  const [role] = useState<RoleMode>("customer");
   const [loginMode, setLoginMode] = useState<LoginMode>("otp");
   const [identifierMode, setIdentifierMode] = useState<IdentifierMode>("phone");
   const [email, setEmail] = useState("");
@@ -49,7 +49,7 @@ export default function LoginScreen() {
   const [formattedPhone, setFormattedPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"selectRole" | "selectMethod" | "form">("selectRole");
+  const [step, setStep] = useState<"selectMethod" | "form">("selectMethod");
   const [showPassword, setShowPassword] = useState(false);
 
   const redirectUri = useMemo(
@@ -108,7 +108,7 @@ export default function LoginScreen() {
         return;
       }
       await requestOTP({ phone_number: finalPhone });
-      router.push({ pathname: "/auth/otp", params: { phone: finalPhone } });
+      router.push({ pathname: "/(auth)/user/otp", params: { phone: finalPhone } });
     } catch (e: any) {
       console.error(e);
       Alert.alert("OTP Error", e?.message || "Failed to send OTP. Try again.");
@@ -158,7 +158,7 @@ export default function LoginScreen() {
   };
 
   const navToSignup = () => {
-    router.push(role === "pandit" ? ("/auth/pandit-register" as any) : ("/auth/customer-register" as any));
+    router.push("/(auth)/user/register" as any);
   };
 
   return (
@@ -167,8 +167,8 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {step !== "selectRole" && (
-            <TouchableOpacity style={styles.backButtonTop} onPress={() => setStep(step === "form" ? "selectMethod" : "selectRole")}>
+        {step === "form" && (
+            <TouchableOpacity style={styles.backButtonTop} onPress={() => setStep("selectMethod")}>
                 <Ionicons name="arrow-back" size={24} color="#333" />
             </TouchableOpacity>
         )}
@@ -185,30 +185,7 @@ export default function LoginScreen() {
           <Text style={styles.title}>PanditYatra</Text>
           <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
 
-          {/* STEP 1: ROLE SELECTION */}
-          {step === "selectRole" && (
-            <View style={styles.stepContainer}>
-              <Button
-                title="Login as Customer"
-                onPress={() => { setRole("customer"); setStep("selectMethod"); }}
-                style={styles.fullWidthBtn}
-                leftIcon={<Ionicons name="person" size={20} color="#FFF" />}
-              />
-              <Button
-                title="Login as Pandit"
-                variant="outline"
-                onPress={() => { setRole("pandit"); setStep("selectMethod"); }}
-                style={styles.fullWidthBtn}
-                leftIcon={<Ionicons name="school" size={20} color="#FF6F00" />}
-              />
-              
-              <TouchableOpacity style={styles.guestLink} onPress={handleGuest}>
-                <Text style={styles.guestText}>Explore as Guest →</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* STEP 2: MODE SELECTION */}
+          {/* MODE SELECTION */}
           {step === "selectMethod" && (
             <View style={styles.stepContainer}>
               <Button
@@ -305,7 +282,7 @@ export default function LoginScreen() {
                     }
                   />
                   {loginMode === "password" && (
-                      <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/auth/forgot-password/request' as any)}>
+                      <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/user/forgot-password' as any)}>
                           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                       </TouchableOpacity>
                   )}
@@ -424,10 +401,11 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   submitBtn: {
-    width: "100%",
+    width: "60%",
+    alignSelf: "center",
     height: 54,
     borderRadius: 12,
-    marginTop: 8,
+    marginTop: 16,
     shadowColor: '#FF6F00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

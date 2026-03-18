@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshC
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { usePanditStore } from '@/store/pandit.store';
 import { PanditCard } from '@/components/pandit/PanditCard';
 import { PanditFilterSheet } from '@/components/pandit/PanditFilterSheet';

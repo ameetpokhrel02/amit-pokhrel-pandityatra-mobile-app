@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { registerPandit } from '@/services/pandit.service';
 import { useTheme } from '@/store/ThemeContext';
@@ -26,8 +26,9 @@ export default function PanditProfileSetupScreen() {
     React.useEffect(() => {
         const checkExistingProfile = async () => {
             try {
-                const user = await fetchProfile();
-                if (user.role === 'pandit' && (user.pandit_profile || user.expertise || user.experience_years)) {
+                const response = await fetchProfile();
+                const user = response.data || response;
+                if (user?.role === 'pandit' && (user.pandit_profile || user.expertise || user.experience_years)) {
                     router.replace('/(pandit)');
                 }
             } catch (error) {
@@ -64,12 +65,12 @@ export default function PanditProfileSetupScreen() {
 
         try {
             setLoading(true);
-            await registerPandit({
-                experience_years: parseInt(form.experience),
-                expertise: selectedExpertise.join(', '),
-                language: form.language,
-                bio: form.bio,
-            });
+            const formData = new FormData();
+            formData.append('experience_years', form.experience);
+            formData.append('expertise', selectedExpertise.join(', '));
+            formData.append('language', form.language);
+            formData.append('bio', form.bio);
+            await registerPandit(formData as any);
 
             setIsSuccess(true);
         } catch (error: any) {
@@ -90,7 +91,7 @@ export default function PanditProfileSetupScreen() {
                 </Text>
                 <Button
                     title="Back to Login"
-                    onPress={() => router.replace('/auth/login')}
+                    onPress={() => router.replace('/(public)/role-selection')}
                     style={[styles.successButton, { backgroundColor: colors.primary }] as any}
                 />
             </View>

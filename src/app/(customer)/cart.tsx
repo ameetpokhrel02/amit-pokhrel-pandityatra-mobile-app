@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
 

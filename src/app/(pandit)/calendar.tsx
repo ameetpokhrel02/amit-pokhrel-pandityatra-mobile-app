@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { fetchPanditCalendar, addAvailabilityBlock, deleteAvailabilityBlock } from '@/services/pandit.service';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';

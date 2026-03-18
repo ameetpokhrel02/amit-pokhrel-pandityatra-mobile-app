@@ -8,7 +8,7 @@ import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 import { useTheme } from '@/store/ThemeContext';
 import { getPanditSummary } from '@/services/pandit.service';
-import { createBooking, availableSlots } from '@/services/booking.service';
+import { createBooking, availableSlots as fetchAvailableSlots } from '@/services/booking.service';
 import { initiatePayment, PaymentIntentResponse } from '@/services/payment.service';
 import { Booking, PanditService, Pandit, SamagriItem } from '@/services/api';
 import { fetchPujaSamagriRecommendations } from '@/services/recommender.service';
@@ -50,7 +50,7 @@ export default function BookingScreen() {
 
         // Pre-select service if serviceId is provided
         if (data?.services && serviceId) {
-          const service = data.services.find(s => s.id === Number(serviceId));
+          const service = data.services.find((s: PanditService) => s.id === Number(serviceId));
           if (service) {
             setSelectedService(service);
           }
@@ -118,7 +118,7 @@ export default function BookingScreen() {
     if (!panditId) return;
     try {
       setLoadingSlots(true);
-      const response = await availableSlots(Number(panditId), dateStr, selectedService?.puja_details?.id);
+      const response = await fetchAvailableSlots(Number(panditId), dateStr, selectedService?.puja_details?.id as number);
       const slots = response.data;
       setAvailableSlots(slots);
       if (slots.length > 0 && !slots.includes(selectedTime)) {
@@ -146,7 +146,7 @@ export default function BookingScreen() {
       setIsSubmitting(true);
 
       // 1️⃣ Create booking on backend
-      const bookingPayload: BookingPayload = {
+      const bookingPayload: any = {
         pandit: pandit.id,
         service: selectedService.id,
         booking_date: dayjs(selectedDate).format('YYYY-MM-DD'),

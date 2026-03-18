@@ -20,7 +20,7 @@ const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
 const IOS_CLIENT_ID = EXTRA.iosClientId || "";
 const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
 
-export default function PanditRegister() {
+export default function CustomerRegister() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -98,11 +98,11 @@ export default function PanditRegister() {
         phone_number: finalPhone,
         email,
         password,
-        role: 'pandit',
+        role: 'user',
       });
       
       router.push({
-        pathname: '/auth/otp',
+        pathname: '/(auth)/user/otp',
         params: { phone: finalPhone, email, mode: 'register' }
       } as any);
     } catch (e: any) {
@@ -145,7 +145,7 @@ export default function PanditRegister() {
           </View>
 
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join PanditYatra as a Pandit</Text>
+          <Text style={styles.subtitle}>Join PanditYatra as a Customer</Text>
 
           <View style={styles.formContainer}>
             <Input 
@@ -204,7 +204,7 @@ export default function PanditRegister() {
             />
 
             <Button
-              title={loading ? 'Creating Pandit Account...' : 'Sign Up'}
+              title={loading ? 'Creating Account...' : 'Sign Up'}
               onPress={handleSubmit}
               disabled={loading}
               style={styles.submitBtn}
@@ -228,7 +228,7 @@ export default function PanditRegister() {
 
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/auth/login' as any)}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/user/login' as any)}>
                 <Text style={styles.linkText}>Login</Text>
               </TouchableOpacity>
             </View>

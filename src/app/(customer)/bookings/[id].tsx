@@ -179,7 +179,7 @@ export default function BookingDetailScreen() {
           {booking.status === 'ACCEPTED' && (
             <Button 
                title="Join Live Session" 
-               onPress={() => router.push(`/(customer)/video/${booking.id}`)}
+               onPress={() => router.push(`/video/${booking.id}`)}
                variant="primary"
                leftIcon={<Ionicons name="videocam" size={20} color="white" />}
                style={styles.actionButton}
@@ -205,10 +205,10 @@ export default function BookingDetailScreen() {
 
           {(booking.status === 'PENDING' || booking.status === 'ACCEPTED') && !cancelling && (
             <TouchableOpacity 
-               style={[styles.cancelButton, { borderColor: colors.deepRed || '#DC2626' }]} 
+               style={[styles.cancelButton, { borderColor: colors.notification || '#DC2626' }]} 
                onPress={handleCancel}
             >
-              <Text style={[styles.cancelButtonText, { color: colors.deepRed || '#DC2626' }]}>Cancel Booking</Text>
+              <Text style={[styles.cancelButtonText, { color: colors.notification || '#DC2626' }]}>Cancel Booking</Text>
             </TouchableOpacity>
           )}
 

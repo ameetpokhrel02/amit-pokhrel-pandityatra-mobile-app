@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/theme/colors";
 import { loginOTP, getProfile, verifyForgotOTP } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,7 +79,7 @@ export default function OTPScreen() {
       if (mode === 'reset-password') {
         const res = await verifyForgotOTP({ email: emailStr, otp: otpString });
         router.push({
-          pathname: "/auth/reset-password",
+          pathname: "/(auth)/user/reset-password",
           params: { token: res.data.token, email: emailStr },
         } as any);
       } else {
@@ -89,9 +89,9 @@ export default function OTPScreen() {
         if (emailStr) verifyPayload.email = emailStr;
 
         const verifyRes = await loginOTP(verifyPayload);
-        const { access, refresh, user: userData } = verifyRes.data;
+        const { access, refresh } = verifyRes.data;
 
-        // Load profile for full data if needed, or use userData from login response
+        // Load profile for full data
         const profileRes = await getProfile();
         const user = profileRes.data;
 
@@ -112,10 +112,10 @@ export default function OTPScreen() {
           if (isProfileComplete) {
             router.replace("/(pandit)" as any);
           } else {
-            router.replace("/auth/pandit-profile-setup" as any);
+            router.replace("/(auth)/pandit/profile-setup" as any);
           }
         } else if (user.role === "admin") {
-          router.replace("/admin/dashboard" as any);
+          router.replace("/(customer)" as any); // Fallback to customer for now
         } else {
           router.replace("/(customer)" as any);
         }

@@ -17,9 +17,12 @@ export default function PendingReviewsScreen() {
     const loadBookings = async () => {
         try {
             setLoading(true);
-            const data = await fetchMyBookings();
+            const res = await fetchMyBookings();
+            const bookingsData = res.data || res;
             // Filter: status is COMPLETED and not reviewed
-            const pending = data.filter(b => b.status === 'COMPLETED' && !b.is_reviewed);
+            const pending = (Array.isArray(bookingsData) ? bookingsData : []).filter(
+                (b: Booking) => b.status === 'COMPLETED' && !b.is_reviewed
+            );
             setBookings(pending);
         } catch (error) {
             console.error('Error loading pending reviews:', error);

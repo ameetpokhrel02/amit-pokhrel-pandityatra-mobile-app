@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
-import { useUser } from '@/store/UserContext';
+import { useAuthStore, useUser } from '@/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchProfile } from '@/services/auth.service';
-import { useAuthStore } from '@/store/auth.store';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -55,14 +54,14 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     setShowLogoutModal(false);
     await logout();
-    router.replace('/auth/welcome');
+    router.replace('/(public)/role-selection');
   };
 
   const handleDeleteAccount = () => {
     setShowDeleteModal(false);
     Alert.alert("Account Deleted", "Your account has been queued for deletion.");
     logout();
-    router.replace('/auth/welcome');
+    router.replace('/(public)/role-selection');
   };
 
   const handleEditPress = () => {
@@ -208,7 +207,7 @@ export default function ProfileScreen() {
         {/* Support & Account */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
-          {renderSettingItem("help-circle-outline", "Help & Support", () => { })}
+          {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(pandit)/help'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
         </View>

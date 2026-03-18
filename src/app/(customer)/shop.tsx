@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, FlatList, ActivityIndicator, Alert, Dimensions, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
 import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
 import { SamagriItem } from '@/services/api';

@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
-import { useUser } from '@/store/UserContext';
+import { useUser } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
 import { updateProfile } from '@/services/auth.service';

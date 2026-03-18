@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, ActivityIndicator, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useRouter } from 'expo-router';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
@@ -209,7 +209,10 @@ export default function CustomerHomeScreen() {
                   <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
                   <TouchableOpacity
                     style={styles.bannerButton}
-                    onPress={() => router.push('/(customer)/services')}
+                    onPress={() => router.push({
+                      pathname: '/(customer)/services/list',
+                      params: { category: 1, title: 'Daily Rituals' }
+                    })}
                   >
                     <Text style={styles.bannerButtonText}>Explore Now</Text>
                   </TouchableOpacity>
@@ -258,7 +261,10 @@ export default function CustomerHomeScreen() {
               title="Book Puja"
               icon="color-filter-outline"
               color="#F97316"
-              onPress={() => router.push('/(customer)/services')}
+              onPress={() => router.push({
+                pathname: '/(customer)/services/list',
+                params: { category: 1, title: 'Daily Rituals' }
+              })}
             />
             <QuickActionItem
               title="Find Pandit"
@@ -300,7 +306,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Pujas</Text>
-            <TouchableOpacity onPress={() => router.push('/(customer)/services' as any)}>
+            <TouchableOpacity onPress={() => router.push('/(customer)/services/list')}>
               <Text style={[styles.seeAll, { color: '#FF6F00' }]}>See All</Text>
             </TouchableOpacity>
           </View>

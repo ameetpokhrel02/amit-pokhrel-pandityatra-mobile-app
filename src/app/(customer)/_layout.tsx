@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useColorScheme, View, Text } from 'react-native';
 import { useCartStore } from '@/store/cart.store';
 import { useChatStore } from '@/store/chat.store';
@@ -124,7 +124,7 @@ function LayoutContent() {
         'bookings/samagri-recommendations', 'cart', 'shop/[id]',
         'kundali', 'edit-profile', 'checkout', 'panchang',
         'services/index', 'chat/[id]', 'pandit/[id]', 'payments',
-        'video/[bookingId]', 'services/list',
+        'services/list',
         'services/[id]', 'shop/ai-recommend', 'reviews/pending',
         'reviews/history', 'reviews/platform-feedback', 'bookings/review',
         'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',

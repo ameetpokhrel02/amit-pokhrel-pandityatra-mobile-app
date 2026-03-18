@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, SafeAreaView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 import { Booking } from '@/services/api';
 import { getBooking } from '@/services/booking.service';
-import { initiatePayment, verifyKhaltiPayment, verifyEsewaPayment } from '@/services/payment.service';
+import { initiatePayment, verifyKhaltiPayment, verifyEsewaPayment, checkPaymentStatus } from '@/services/payment.service';
+import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/Button';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
+import { TextInput } from 'react-native';
 
 export default function CheckoutScreen() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -23,6 +25,12 @@ export default function CheckoutScreen() {
     const [showWebView, setShowWebView] = useState(false);
     const [paymentUrl, setPaymentUrl] = useState('');
     const [formHtml, setFormHtml] = useState('');
+    
+    const [formData, setFormData] = useState({
+        full_name: useAuthStore.getState().user?.name || '',
+        email: useAuthStore.getState().user?.email || '',
+        phone_number: useAuthStore.getState().user?.phone || '',
+    });
 
     useEffect(() => {
         if (bookingId) {
@@ -100,6 +108,7 @@ export default function CheckoutScreen() {
 
     const handlePaymentSuccess = async (pidx?: string, esewaData?: string) => {
         try {
+            // Step 1: Tell backend to verify the redirect token
             if (pidx) {
                 await verifyKhaltiPayment({
                     token: pidx,
@@ -109,12 +118,26 @@ export default function CheckoutScreen() {
                 await verifyEsewaPayment({ data: esewaData });
             }
             
+            // Step 2: Universally verify the booking was actually marked PAID
+            if (booking) {
+                const statusRes: any = await checkPaymentStatus(booking.id);
+                const paymentStatus = statusRes.status || statusRes.payment_status;
+                
+                if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED' || paymentStatus === 'PENDING') {
+                    // It's possible the webhook hasn't fired yet for Stripe, but we can warn the user.
+                    if (selectedMethod !== 'stripe') {
+                       Alert.alert('Payment Not Confirmed', 'The payment was not completely verified by our servers.');
+                       return;
+                    }
+                }
+            }
+            
             Alert.alert('Success', 'Payment successful!', [
                 { text: 'OK', onPress: () => router.replace('/(customer)/bookings') }
             ]);
-        } catch (e) {
+        } catch (e: any) {
             console.error('Verification Error:', e);
-            Alert.alert('Verification Failed', 'Payment verification failed. Please contact support.');
+            Alert.alert('Verification Failed', e?.message || 'Payment verification failed. Please contact support.');
         }
     };
 
@@ -196,6 +219,48 @@ export default function CheckoutScreen() {
                     <View style={styles.totalRow}>
                         <Text style={[styles.totalLabel, { color: colors.text }]}>Total Amount</Text>
                         <Text style={[styles.totalValue, { color: colors.primary }]}>NPR {booking.total_fee}</Text>
+                    </View>
+                </View>
+
+                {/* Personal Information */}
+                <View style={styles.section}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
+                    <View style={styles.inputGroup}>
+                        <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+                            <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Name *</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder="Full Name"
+                                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                                value={formData.full_name}
+                                onChangeText={(text) => setFormData({ ...formData, full_name: text })}
+                            />
+                        </View>
+
+                        <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+                            <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Email Address</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder="email@example.com"
+                                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={formData.email}
+                                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                            />
+                        </View>
+
+                        <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
+                            <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Your Phone Number *</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder="+977"
+                                placeholderTextColor={isDark ? '#777' : '#AAA'}
+                                keyboardType="phone-pad"
+                                value={formData.phone_number}
+                                onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
+                            />
+                        </View>
                     </View>
                 </View>
 
@@ -364,6 +429,26 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 16,
+    },
+    inputGroup: {
+        gap: 16,
+        marginBottom: 24,
+    },
+    inputWrapper: {
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    inputLabel: {
+        fontSize: 12,
+        marginBottom: 2,
+        fontWeight: '500',
+    },
+    input: {
+        paddingVertical: 4,
+        fontSize: 16,
+        fontWeight: '500',
     },
     methodCard: {
         flexDirection: 'row',

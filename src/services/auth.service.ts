@@ -30,4 +30,5 @@ export const fetchProfile = getProfile; // Alias for store compatibility
 export const updateProfile = (data: any) => api.patch('users/profile/', data);
 export const deleteProfile = () => api.delete('users/profile/');
 export const contactSupport = (data: any) => publicApi.post('users/contact/', data);
+export const contactUs = contactSupport; // Alias for UI consistency
 export const siteContent = () => publicApi.get('users/site-content/');

@@ -1,19 +1,30 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/Button';
-import { Colors } from '@/constants/Colors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '@/store/auth.store';
 
-import { ImageBackground } from 'react-native';
-
-export default function WelcomeScreen() {
+export default function RoleSelectionScreen() {
   const router = useRouter();
+  const { continueAsGuest } = useAuthStore();
+
+  const handleGuestMode = async () => {
+    await continueAsGuest();
+    router.replace('/(customer)');
+  };
+
+  const selectRole = (role: 'user' | 'pandit') => {
+    if (role === 'pandit') {
+       router.push('/(auth)/pandit/login' as any);
+    } else {
+       router.push('/(auth)/user/login' as any);
+    }
+  };
 
   return (
     <ImageBackground
-      source={require('@/assets/images/spash 4.png')}
+      source={require('@/../assets/images/spash 4.png')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -21,7 +32,7 @@ export default function WelcomeScreen() {
       <View style={styles.container}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('@/assets/images/pandit-logo.png')}
+            source={require('@/../assets/images/pandit-logo.png')}
             style={styles.logo}
             contentFit="contain"
           />
@@ -31,17 +42,21 @@ export default function WelcomeScreen() {
 
         <View style={styles.buttonContainer}>
           <Button
-            title="Join as Customer"
-            onPress={() => router.push('/auth/login' as any)}
+            title="Join as User"
+            onPress={() => selectRole('user')}
             style={styles.button}
           />
 
           <Button
             title="Join as Pandit"
             variant="secondary"
-            onPress={() => router.push('/auth/pandit-register' as any)}
+            onPress={() => selectRole('pandit')}
             style={styles.button}
           />
+
+          <TouchableOpacity style={styles.guestButton} onPress={handleGuestMode}>
+            <Text style={styles.guestText}>Explore as Guest</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ImageBackground>
@@ -69,29 +84,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
+    width: 180,
+    height: 180,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: '#D97706',
+    color: '#FF6F00',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 18,
-    color: Colors.light.text,
+    color: '#4B5563',
     textAlign: 'center',
+    fontWeight: '500',
   },
   buttonContainer: {
     gap: 16,
-    marginBottom: 40,
+    marginBottom: 60,
   },
   button: {
     width: '100%',
+    height: 56,
   },
-  textButton: {
-    marginTop: 8,
+  guestButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  guestText: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

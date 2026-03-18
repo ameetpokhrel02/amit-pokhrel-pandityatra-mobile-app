@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '@/store/notification.store';
 import { Notification } from '@/services/notification.service';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-
-dayjs.extend(relativeTime);
+import { Colors } from '@/theme/colors';
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, isLoading, fetchNotifications, markAsRead, markAllRead, deleteNotification } = useNotificationStore();
+  const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllRead, deleteNotification } = useNotificationStore();
 
   React.useEffect(() => {
     fetchNotifications();
@@ -26,123 +24,155 @@ export default function NotificationsScreen() {
       await markAsRead(item.id);
     }
     // Handle navigation based on type if needed
-  };
-
-  const getTimeAgo = (dateString: string) => {
-    try {
-      return dayjs(dateString).fromNow();
-    } catch (e) {
-      return 'just now';
+    if (item.type === 'BOOKING' && item.data?.booking_id) {
+        router.push(`/(customer)/bookings/${item.data.booking_id}`);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    await deleteNotification(id);
+  const formatDate = (dateString: string) => {
+    try {
+      return dayjs(dateString).format('MMM DD YYYY, hh:mm a');
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+        case 'BOOKING': return 'calendar-outline';
+        case 'ORDER': return 'cart-outline';
+        case 'PAYMENT': return 'cash-outline';
+        case 'ANNOUNCEMENT': return 'megaphone-outline';
+        default: return 'notifications-outline';
+    }
   };
 
   const renderItem = ({ item }: { item: Notification }) => (
-    <View style={styles.cardContainer}>
-      <TouchableOpacity 
-        style={[styles.notificationCard, !item.is_read && styles.unreadCard]}
-        onPress={() => handleNotifPress(item)}
-      >
+    <TouchableOpacity 
+      style={[styles.notificationRow, !item.is_read && styles.unreadRow]}
+      onPress={() => handleNotifPress(item)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.iconContainer}>
         <View style={styles.iconCircle}>
           <Ionicons 
-            name={item.type === 'BOOKING' ? 'calendar' : item.type === 'ORDER' ? 'cart' : 'notifications'} 
-            size={20} 
-            color="#f97316" 
+            name={getIcon(item.type) as any} 
+            size={22} 
+            color={Colors.light.primary} 
           />
         </View>
-        <View style={styles.textContainer}>
-          <View style={styles.titleRow}>
-            <Text style={styles.notifTitle}>{item.title}</Text>
-            <Text style={styles.notifTime}>{getTimeAgo(item.created_at)}</Text>
-          </View>
-          <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
-        </View>
-        {!item.is_read && <View style={styles.unreadDot} />}
-      </TouchableOpacity>
+      </View>
       
-      <TouchableOpacity 
-        style={styles.deleteBtn}
-        onPress={() => handleDelete(item.id)}
-      >
-        <Ionicons name="trash-outline" size={20} color="#999" />
-      </TouchableOpacity>
-    </View>
+      <View style={styles.contentContainer}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.notifTitle, !item.is_read && styles.boldText]}>{item.title}</Text>
+          {!item.is_read && <View style={styles.unreadIconDot} />}
+        </View>
+        <Text style={styles.notifMessage} numberOfLines={3}>{item.message}</Text>
+        <Text style={styles.notifDate}>{formatDate(item.created_at)}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#f97316" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
-        <TouchableOpacity onPress={handleMarkAllRead}>
-          <Text style={styles.markReadText}>Mark all read</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
+            </TouchableOpacity>
+            <View style={{ marginLeft: 12 }}>
+                <Text style={styles.title}>Notifications</Text>
+                {unreadCount > 0 && (
+                    <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadBadgeText}>{unreadCount} Unread</Text>
+                    </View>
+                )}
+            </View>
+          </View>
+          <TouchableOpacity onPress={handleMarkAllRead}>
+            <Text style={styles.markReadText}>Mark all as read</Text>
+          </TouchableOpacity>
+        </View>
 
-      {isLoading ? (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#f97316" />
-        </View>
-      ) : notifications.length > 0 ? (
-        <FlatList
-          data={notifications}
-          renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>No new notifications</Text>
-        </View>
-      )}
-    </View>
+        {isLoading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={Colors.light.primary} />
+          </View>
+        ) : notifications.length > 0 ? (
+          <FlatList
+            data={notifications}
+            renderItem={renderItem}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.centerContainer}>
+            <Ionicons name="notifications-off-outline" size={60} color="#E5E7EB" />
+            <Text style={styles.emptyText}>No notifications yet</Text>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff7ed' },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: '#fff'
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6'
   },
-  backButton: { padding: 5 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#3E2723' },
-  markReadText: { color: '#f97316', fontWeight: '600', fontSize: 14 },
-  listContent: { padding: 15 },
-  notificationCard: { 
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { padding: 4 },
+  title: { fontSize: 22, fontWeight: 'bold', color: Colors.light.text },
+  unreadBadge: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginTop: 2,
+    alignSelf: 'flex-start'
+  },
+  unreadBadgeText: { fontSize: 10, color: '#EF4444', fontWeight: 'bold' },
+  markReadText: { color: Colors.light.primary, fontWeight: '600', fontSize: 14 },
+  listContent: { paddingBottom: 50 },
+  notificationRow: { 
     flexDirection: 'row', 
     backgroundColor: '#fff', 
-    padding: 15, 
-    borderRadius: 12, 
-    flex: 1,
-    alignItems: 'center',
-    position: 'relative'
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    alignItems: 'flex-start'
   },
-  unreadCard: { borderLeftWidth: 4, borderLeftColor: '#f97316' },
+  unreadRow: { backgroundColor: '#FFF7ED' },
+  iconContainer: { marginRight: 15, paddingTop: 2 },
   iconCircle: { 
-    width: 40, height: 40, borderRadius: 20, 
-    backgroundColor: '#fff7ed', justifyContent: 'center', alignItems: 'center',
-    marginRight: 15
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: '#F9FAFB', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  textContainer: { flex: 1 },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  notifTitle: { fontSize: 16, fontWeight: 'bold', color: '#3E2723' },
-  notifTime: { fontSize: 12, color: '#999' },
-  notifMessage: { fontSize: 14, color: '#666', lineHeight: 20 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#f97316', marginHorizontal: 10 },
-  cardContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  deleteBtn: { padding: 10, justifyContent: 'center', alignItems: 'center' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 10, color: '#999', fontSize: 16 },
+  contentContainer: { flex: 1 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  notifTitle: { fontSize: 16, color: Colors.light.text, flex: 1 },
+  boldText: { fontWeight: 'bold' },
+  notifMessage: { fontSize: 14, color: '#6B7280', lineHeight: 20, marginBottom: 8 },
+  notifDate: { fontSize: 12, color: '#9CA3AF' },
+  unreadIconDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.light.primary, marginLeft: 10 },
+  separator: { height: 1, backgroundColor: '#F3F4F6' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+  emptyText: { marginTop: 16, color: '#9CA3AF', fontSize: 16, fontWeight: '500' },
 });
