@@ -1,12 +1,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  Alert, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  KeyboardAvoidingView, 
+  ScrollView, 
+  Platform,
+  Dimensions,
+  StatusBar
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from "expo-image";
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { registerUser, googleLogin, getProfile } from '@/services/auth.service';
+import { registerUser, googleLogin } from '@/services/auth.service';
+import { useAuthStore } from "@/store/auth.store";
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
@@ -20,8 +31,11 @@ const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
 const IOS_CLIENT_ID = EXTRA.iosClientId || "";
 const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export default function CustomerRegister() {
   const router = useRouter();
+  const loginStore = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -61,12 +75,13 @@ export default function CustomerRegister() {
 
       try {
         setLoading(true);
-        await googleLogin({ id_token: idToken }); 
-        const profileRes = await getProfile(); 
-        const profile: any = profileRes?.data ?? profileRes;
-        const roleValue = profile?.role ?? profile?.user?.role;
+        const res = await googleLogin({ id_token: idToken }); 
+        
+        const userData = res.data.user;
+        const tokens = { access: res.data.access, refresh: res.data.refresh };
+        await loginStore.login(userData, tokens);
 
-        if (roleValue === "pandit") router.replace("/(pandit)" as any);
+        if (userData.role === "pandit") router.replace("/(pandit)" as any);
         else router.replace("/(customer)" as any);
       } catch (e: any) {
         console.error(e);
@@ -118,46 +133,41 @@ export default function CustomerRegister() {
       Alert.alert("Config Error", "Missing Google client id.");
       return;
     }
-    if (!googleRequest) {
-      Alert.alert("Wait", "Google request not ready. Try again.");
-      return;
-    }
     await googlePromptAsync();
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      className="flex-1 bg-zinc-50"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.backButtonTop} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-
-        <View style={styles.card}>
-          <View style={styles.logoContainer}>
+      <StatusBar barStyle="dark-content" />
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }} 
+        keyboardShouldPersistTaps="handled" 
+        bounces={false}
+      >
+        <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center my-10">
+          <View className="items-center mb-8">
             <Image
               source={require("@/assets/images/pandit-logo.png")}
-              style={styles.logo}
+              className="w-[120px] h-[120px] mb-4"
               contentFit="contain"
             />
+            <Text className="text-[28px] font-[800] text-primary text-center">Create Account</Text>
+            <Text className="text-[15px] text-zinc-500 text-center font-medium mt-1">Join PanditYatra as a Customer</Text>
           </View>
 
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join PanditYatra as a Customer</Text>
-
-          <View style={styles.formContainer}>
+          <View className="gap-4">
             <Input 
               label="Full Name *" 
               placeholder="Your full name" 
               value={fullName} 
               onChangeText={setFullName}
-              leftIcon={<Ionicons name="person-outline" size={20} color="#9CA3AF" />}
             />
             
-            <View style={{ marginBottom: 16 }}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
+            <View>
+              <Text className="text-sm font-semibold text-zinc-700 mb-2">Phone Number</Text>
               <CustomPhoneInput
                 value={phone}
                 onChangeText={setPhone}
@@ -165,198 +175,86 @@ export default function CustomerRegister() {
               />
             </View>
 
-            <Input 
-              label="Email Address *" 
-              placeholder="you@example.com" 
-              value={email} 
-              onChangeText={setEmail} 
-              keyboardType="email-address" 
-              autoCapitalize="none" 
-              leftIcon={<Ionicons name="mail-outline" size={20} color="#9CA3AF" />}
-            />
+            <View>
+              <Input 
+                label="Email Address *" 
+                placeholder="you@example.com" 
+                value={email} 
+                onChangeText={setEmail} 
+                keyboardType="email-address" 
+                autoCapitalize="none" 
+              />
+            </View>
             
-            <Input 
-              label="Password *" 
-              placeholder="••••••••" 
-              value={password} 
-              onChangeText={setPassword} 
-              secureTextEntry={!showPassword}
-              leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />}
-              rightIcon={
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
-                  <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
-                </TouchableOpacity>
-              }
-            />
+            <View>
+              <Input 
+                label="Password *" 
+                placeholder="••••••••" 
+                value={password} 
+                onChangeText={setPassword} 
+                secureTextEntry={!showPassword}
+                rightIcon={
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                }
+              />
+            </View>
 
-            <Input 
-              label="Confirm Password *" 
-              placeholder="••••••••" 
-              value={confirmPassword} 
-              onChangeText={setConfirmPassword} 
-              secureTextEntry={!showConfirmPassword}
-              leftIcon={<Ionicons name="shield-checkmark-outline" size={20} color="#9CA3AF" />}
-              rightIcon={
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={{ padding: 4 }}>
-                  <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
-                </TouchableOpacity>
-              }
-            />
+            <View>
+              <Input 
+                label="Confirm Password *" 
+                placeholder="••••••••" 
+                value={confirmPassword} 
+                onChangeText={setConfirmPassword} 
+                secureTextEntry={!showConfirmPassword}
+                rightIcon={
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                }
+              />
+            </View>
 
-            <Button
-              title={loading ? 'Creating Account...' : 'Sign Up'}
+            <TouchableOpacity
+              className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-6 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
               onPress={handleSubmit}
               disabled={loading}
-              style={styles.submitBtn}
-            />
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white text-lg font-bold">Sign Up</Text>}
+            </TouchableOpacity>
 
-            <View style={styles.orRow}>
-              <View style={styles.orLine} />
-              <Text style={styles.orText}>OR</Text>
-              <View style={styles.orLine} />
+            <View className="flex-row items-center my-5">
+              <View className="flex-1 h-[1px] bg-zinc-200" />
+              <Text className="px-4 text-sm text-zinc-400 font-semibold">OR</Text>
+              <View className="flex-1 h-[1px] bg-zinc-200" />
             </View>
 
-            <Button
-              title="Sign up with Google"
-              variant="outline"
+            <TouchableOpacity 
+              className={`w-full h-14 border border-zinc-200 rounded-2xl flex-row items-center justify-center gap-3 active:bg-zinc-50 ${loading ? 'opacity-50' : ''}`}
               onPress={handleGooglePress}
-              style={styles.googleBtnStyle}
-              textStyle={{ color: '#374151' }}
-              leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
-              disabled={!googleRequest || loading}
-            />
+              disabled={loading}
+            >
+              <Ionicons name="logo-google" size={18} color="#EA4335" />
+              <Text className="text-zinc-700 text-base font-semibold">Sign up with Google</Text>
+            </TouchableOpacity>
 
-            <View style={styles.footerRow}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+            <View className="flex-row justify-center items-center mt-6">
+              <Text className="text-zinc-500 text-[15px]">Already have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/user/login' as any)}>
-                <Text style={styles.linkText}>Login</Text>
+                <Text className="text-primary font-bold text-[15px]">Login</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity 
+              className="items-center mt-4" 
+              onPress={() => router.back()}
+            >
+              <Text className="text-zinc-500 font-semibold">← Go Back</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  backButtonTop: {
-      position: 'absolute',
-      top: 50,
-      left: 20,
-      zIndex: 10,
-      padding: 8,
-      backgroundColor: '#FFF',
-      borderRadius: 20,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-  },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
-    paddingTop: 40,
-    paddingBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 4,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    marginTop: 20,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FF6F00", // Saffron
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#4B5563",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  formContainer: {
-    width: '100%',
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  submitBtn: {
-    width: "100%",
-    height: 54,
-    borderRadius: 12,
-    marginTop: 8,
-    shadowColor: '#FF6F00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  orRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  orText: {
-    marginHorizontal: 12,
-    color: "#9CA3AF",
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  googleBtnStyle: {
-    width: "100%",
-    height: 54,
-    borderRadius: 12,
-    borderColor: '#E5E7EB',
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  footerText: {
-    color: "#6B7280",
-    fontSize: 14,
-  },
-  linkText: {
-    color: "#FF6F00",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-});

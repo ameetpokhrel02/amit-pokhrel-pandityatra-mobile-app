@@ -15,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '@/store/ThemeContext';
-import { quickChat, getChatWebSocketUrl } from '@/services/chat.service';
+import { getAiAssistantResponse } from '@/services/ai.service';
+import { getChatWebSocketUrl } from '@/services/chat.service';
 import { ChatMessage } from '@/types/chat';
 
 interface ChatModalProps {
@@ -128,7 +129,8 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         if (mode === 'guide') {
             try {
                 setLoading(true);
-                const reply = await quickChat(textToSend);
+                const res = await getAiAssistantResponse(textToSend);
+                const reply = res.response || res.message || res;
                 const botMessage: ChatMessage = {
                     id: Math.random().toString(),
                     chatId: 'guide',

@@ -1,9 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
+  StatusBar,
+  Dimensions
+} from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/auth.store';
+import { Ionicons } from '@expo/vector-icons';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function RoleSelectionScreen() {
   const router = useRouter();
@@ -23,99 +33,158 @@ export default function RoleSelectionScreen() {
   };
 
   return (
-    <ImageBackground
-      source={require('@/../assets/images/spash 4.png')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay} />
-      <View style={styles.container}>
-        <View style={styles.logoContainer}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        bounces={false}
+      >
+        <View style={styles.logoSection}>
           <Image
             source={require('@/../assets/images/pandit-logo.png')}
             style={styles.logo}
             contentFit="contain"
           />
-          <Text style={styles.title}>PanditYatra</Text>
-          <Text style={styles.subtitle}>Connecting Faith with Excellence</Text>
+          <Text style={styles.appName}>PanditYatra</Text>
+          <Text style={styles.tagline}>Spiritual Services at Your Fingertips</Text>
         </View>
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Join as User"
+        <View style={styles.buttonSection}>
+          <TouchableOpacity 
+            style={[styles.roleCard, { backgroundColor: '#FF6F00' }]} 
             onPress={() => selectRole('user')}
-            style={styles.button}
-          />
+            activeOpacity={0.9}
+          >
+            <View style={styles.iconCircle}>
+              <Ionicons name="person" size={28} color="#FF6F00" />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.cardTitle}>Join as Customer</Text>
+              <Text style={styles.cardDesc}>Book Pandits, Puja, and Astrology</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
 
-          <Button
-            title="Join as Pandit"
-            variant="secondary"
+          <TouchableOpacity 
+            style={[styles.roleCard, { backgroundColor: '#374151' }]} 
             onPress={() => selectRole('pandit')}
-            style={styles.button}
-          />
+            activeOpacity={0.9}
+          >
+            <View style={styles.iconCircle}>
+              <Ionicons name="school" size={28} color="#374151" />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.cardTitle}>Join as Pandit</Text>
+              <Text style={styles.cardDesc}>Register your services and grow</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.guestButton} onPress={handleGuestMode}>
-            <Text style={styles.guestText}>Explore as Guest</Text>
+          <TouchableOpacity 
+            style={[styles.roleCard, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#E5E7EB' }]} 
+            onPress={handleGuestMode}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#F3F4F6' }]}>
+              <Ionicons name="eye" size={28} color="#6B7280" />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={[styles.cardTitle, { color: '#111827' }]}>Explore as Guest</Text>
+              <Text style={[styles.cardDesc, { color: '#6B7280' }]}>Browse services without an account</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Made with ❤️ for Spirituality</Text>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-  },
   container: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
   },
-  logoContainer: {
-    flex: 1,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 40,
+    minHeight: SCREEN_HEIGHT - 60,
     justifyContent: 'center',
+  },
+  logoSection: {
     alignItems: 'center',
+    marginBottom: 48,
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: 20,
+    width: 140,
+    height: 140,
+    marginBottom: 16,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: 'bold',
+  appName: {
+    fontSize: 38,
+    fontWeight: '900',
     color: '#FF6F00',
-    marginBottom: 8,
+    letterSpacing: -1,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#4B5563',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  buttonContainer: {
-    gap: 16,
-    marginBottom: 60,
-  },
-  button: {
-    width: '100%',
-    height: 56,
-  },
-  guestButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  guestText: {
+  tagline: {
     fontSize: 16,
     color: '#6B7280',
     fontWeight: '600',
-    textDecorationLine: 'underline',
+    marginTop: 4,
+  },
+  buttonSection: {
+    gap: 16,
+  },
+  roleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  cardDesc: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '600',
   },
 });

@@ -8,7 +8,7 @@ import { fetchUserPreferences, updateUserPreference, createUserPreference } from
 
 export default function PreferencesScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, mode, setMode } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<any>({ 
@@ -123,6 +123,45 @@ export default function PreferencesScreen() {
             )}
           </View>
 
+          <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 30 }]}>Appearance</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.item, { borderBottomColor: colors.border }]}>
+              <View style={styles.itemLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="contrast-outline" size={22} color={colors.primary} />
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.itemTitle, { color: colors.text }]}>Theme Mode</Text>
+                  <Text style={[styles.itemSubtitle, { color: colors.text + '70' }]}>Choose appearance or auto-detect from system.</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, padding: 15 }}>
+              {(['system', 'light', 'dark'] as const).map((m) => (
+                <TouchableOpacity 
+                  key={m}
+                  onPress={() => setMode(m)}
+                  style={[
+                    styles.themeModeBtn,
+                    { 
+                      backgroundColor: mode === m ? colors.primary : colors.background,
+                      borderColor: mode === m ? colors.primary : colors.border,
+                    }
+                  ]}
+                >
+                  <Ionicons 
+                    name={m === 'system' ? 'phone-portrait-outline' : m === 'light' ? 'sunny-outline' : 'moon-outline'} 
+                    size={18} 
+                    color={mode === m ? '#FFF' : colors.text} 
+                  />
+                  <Text style={[styles.themeModeText, { color: mode === m ? '#FFF' : colors.text }]}>
+                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 30 }]}>Spiritual Tradition</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TouchableOpacity style={[styles.traditionItem, { borderBottomColor: colors.border }]}>
@@ -176,4 +215,6 @@ const styles = StyleSheet.create({
   helperText: { fontSize: 12, textAlign: 'center', marginTop: 30, lineHeight: 18, paddingHorizontal: 20 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   savingOverlay: { position: 'absolute', top: 60, right: 20, backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 20 },
+  themeModeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
+  themeModeText: { fontWeight: '700', fontSize: 13 },
 });

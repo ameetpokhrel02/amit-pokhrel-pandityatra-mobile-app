@@ -1,56 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
-import { useColorScheme, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import { useCartStore } from '@/store/cart.store';
-import { useChatStore } from '@/store/chat.store';
 import { useTheme } from '@/store/ThemeContext';
+import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
 function ShopIcon({ color, focused }: { color: string, focused: boolean }) {
   const { totalItems } = useCartStore();
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Ionicons name={focused ? 'bag-handle' : 'bag-handle-outline'} size={24} color={color} />
-      {totalItems >= 0 && (
-        <View
-          style={{
-            position: 'absolute',
-            right: -8,
-            top: -4,
-            backgroundColor: '#FF6F00', // Match notification orange
-            borderRadius: 10,
-            minWidth: 16,
-            height: 16,
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: 2,
-            borderWidth: 1.5,
-            borderColor: Colors.light.background,
-          }}
+    <View className="items-center justify-center">
+      <Ionicons name={focused ? 'bag-handle' : 'bag-handle-outline'} size={22} color={color} />
+      {totalItems > 0 && (
+        <View 
+            style={{ backgroundColor: '#FF6F00' }}
+            className="absolute -right-2 -top-1 rounded-full min-w-[16px] h-4 justify-center items-center px-0.5 border-1.5 border-white"
         >
-          <Text style={{ color: '#FFF', fontSize: 9, fontWeight: 'bold' }}>{totalItems}</Text>
+          <Text className="text-white text-[9px] font-bold">{totalItems}</Text>
         </View>
       )}
-    </View>
-  );
-}
-
-function AIChatIcon({ color, focused }: { color: string, focused: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Ionicons
-        name={focused ? 'chatbox' : 'chatbox-outline'}
-        size={26}
-        color={color}
-      />
-      <View style={{ position: 'absolute', top: 6 }}>
-        <Text style={{
-          fontSize: 8,
-          fontWeight: 'bold',
-          color: color,
-          textTransform: 'uppercase'
-        }}>AI</Text>
-      </View>
     </View>
   );
 }
@@ -62,91 +30,102 @@ function LayoutContent() {
   const inactiveColor = '#8E8E93';
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: activeColor,
-        tabBarInactiveTintColor: inactiveColor,
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: isDark ? '#333' : '#E5E5EA',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-          ),
+    <View className="flex-1">
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: activeColor,
+          tabBarInactiveTintColor: inactiveColor,
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colors.background,
+            borderTopColor: isDark ? '#333' : '#E5E5EA',
+            height: 75,
+            paddingBottom: 20,
+            paddingTop: 8,
+            elevation: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+          },
         }}
-      />
-      <Tabs.Screen
-        name="pandits"
-        options={{
-          title: 'Pandits',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={26} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{
-          title: 'Bookings',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="shop"
-        options={{
-          title: 'Shop',
-          tabBarIcon: ({ color, focused }) => (
-            <ShopIcon color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      {/* Hidden Screens */}
-      {[
-        'bookings/[id]', 'booking', 'chat/ai-guide', 'chat/index',
-        'bookings/samagri-recommendations', 'cart', 'shop/[id]',
-        'kundali', 'edit-profile', 'checkout', 'panchang',
-        'services/index', 'chat/[id]', 'pandit/[id]', 'payments',
-        'services/list',
-        'services/[id]', 'shop/ai-recommend', 'reviews/pending',
-        'reviews/history', 'reviews/platform-feedback', 'bookings/review',
-        'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',
-        'booking-confirmation', 'invoice', 'help', 'help-contact', 'wishlist', 'preferences',
-        'ai-assistant'
-      ].map(screen => (
+      >
         <Tabs.Screen
-          key={screen}
-          name={screen}
+          name="index"
           options={{
-            href: undefined as any,
-            tabBarButton: () => null,
-            tabBarItemStyle: { display: 'none' }
+            title: 'Home',
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            ),
           }}
         />
-      ))}
-    </Tabs>
+        <Tabs.Screen
+          name="pandits"
+          options={{
+            title: 'Pandits',
+            tabBarLabel: 'Pandits',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="bookings"
+          options={{
+            title: 'Bookings',
+            tabBarLabel: 'Bookings',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="shop"
+          options={{
+            title: 'Shop',
+            tabBarLabel: 'Shop',
+            tabBarIcon: ({ color, focused }) => (
+              <ShopIcon color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            ),
+          }}
+        />
+        
+        {/* Hidden Screens - Standardizing with href: null for a clean layout */}
+        {[
+          'bookings/[id]', 'booking/index', 'booking', 'bookings.tsx', 'booking.tsx',
+          'chat/ai-guide', 'chat/index', 'bookings/samagri-recommendations', 'cart', 'shop/[id]',
+          'kundali', 'edit-profile', 'checkout', 'panchang', 'services/index', 'chat/[id]', 
+          'pandit/[id]', 'payments', 'services/list', 'services/[id]', 'shop/ai-recommend', 
+          'reviews/pending', 'reviews/history', 'reviews/platform-feedback', 'bookings/review',
+          'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',
+          'booking-confirmation', 'invoice', 'help', 'help-contact', 'wishlist', 'preferences',
+          'ai-assistant', 'chat/dual-chat'
+        ].map(screen => (
+          <Tabs.Screen
+            key={screen}
+            name={screen}
+            options={{
+              href: null,
+            }}
+          />
+        ))}
+      </Tabs>
+      <FloatingChatButton />
+    </View>
   );
 }
 
 export default function CustomerTabLayout() {
   return <LayoutContent />;
 }
-
-

@@ -1,6 +1,5 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 
 export default function PanditTabLayout() {
@@ -17,15 +16,23 @@ export default function PanditTabLayout() {
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopColor: '#E5E5EA',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -33,8 +40,9 @@ export default function PanditTabLayout() {
         name="bookings"
         options={{
           title: 'Bookings',
+          tabBarLabel: 'Bookings',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'list' : 'list-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -42,8 +50,9 @@ export default function PanditTabLayout() {
         name="services"
         options={{
           title: 'Services',
+          tabBarLabel: 'Services',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -51,8 +60,9 @@ export default function PanditTabLayout() {
         name="messages"
         options={{
           title: 'Messages',
+          tabBarLabel: 'Messages',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -60,14 +70,16 @@ export default function PanditTabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={24} color={color} />
           ),
         }}
       />
-      {/* Hidden Screens */}
+      
+      {/* Hidden Screens Moved to Profile or List logic */}
       {[
-        'calendar', 'earnings', 'feedback', 'reviews'
+        'calendar', 'earnings', 'feedback', 'reviews', 'help', 'payout-history', 'upload-recording'
       ].map(screen => (
         <Tabs.Screen
           key={screen}

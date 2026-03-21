@@ -11,50 +11,45 @@ export async function joinVideoRoom(bookingId: number): Promise<VideoLinkRespons
     return response.data;
 }
 
-export const generateVideoJoinLink = joinVideoRoom;
+export async function startVideoRoom(bookingId: number) {
+    const response = await apiClient.post(`video/room/${bookingId}/start/`);
+    return response.data;
+}
 
-// --- New Backend Endpoints --- //
+export async function endVideoRoom(bookingId: number) {
+    const response = await apiClient.post(`video/room/${bookingId}/end/`);
+    return response.data;
+}
 
+// --- Production Video Management --- //
+
+/**
+ * Validate if a room is active/ready
+ */
 export async function validateVideoRoom(roomId: string | number) {
     const response = await apiClient.get(`video/${roomId}/validate/`);
     return response.data;
 }
 
+/**
+ * Create a new video session token (Daily.co)
+ */
 export async function createVideoToken(payload: { room_name: string; participant_identity: string; }) {
     const response = await apiClient.post(`video/create-token/`, payload);
     return response.data;
 }
 
-export async function generateLinkViaBooking(bookingId: number) {
-    const response = await apiClient.post(`video/generate-link/${bookingId}/`);
+/**
+ * High-level helper to get a join link for a specific booking
+ */
+export async function generateVideoLink(bookingId: number) {
+    const response = await apiClient.post(`video/room/${bookingId}/join/`);
     return response.data;
 }
 
-export async function createVideoRoom(payload: any) {
-    const response = await apiClient.post(`video/rooms/create/`, payload);
-    return response.data;
-}
-
-export async function getVideoRoomDetails(roomId: string | number) {
-    const response = await apiClient.get(`video/rooms/${roomId}/`);
-    return response.data;
-}
-
-export async function updateVideoRoom(roomId: string | number, payload: any) {
-    const response = await apiClient.patch(`video/rooms/${roomId}/`, payload);
-    return response.data;
-}
-
-export async function startVideoRoom(roomId: string | number) {
-    const response = await apiClient.post(`video/rooms/${roomId}/start/`);
-    return response.data;
-}
-
-export async function endVideoRoom(roomId: string | number) {
-    const response = await apiClient.post(`video/rooms/${roomId}/end/`);
-    return response.data;
-}
-
+/**
+ * Upload a recording for a booking
+ */
 export async function uploadBookingRecording(bookingId: number, fileUri: string) {
     const formData = new FormData();
     const filename = fileUri.split('/').pop() || `recording_${bookingId}.mp4`;

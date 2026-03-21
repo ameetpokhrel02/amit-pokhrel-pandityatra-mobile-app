@@ -6,8 +6,10 @@ import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import { checkoutSamagri } from '@/services/samagri.service';
+import { verifyKhaltiPayment, verifyEsewaPayment, checkPaymentStatus } from '@/services/payment.service';
 import { Button } from '@/components/ui/Button';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
+import { useStripe } from '@stripe/stripe-react-native';
 
 export default function ShopCheckoutScreen() {
   const router = useRouter();
@@ -22,7 +24,7 @@ export default function ShopCheckoutScreen() {
     shipping_address: '',
     city: '',
   });
-  const [selectedMethod, setSelectedMethod] = useState<'KHALTI' | 'STRIPE' | 'ESEWA'>('KHALTI');
+  const [selectedMethod, setSelectedMethod] = useState<'khalti' | 'stripe' | 'esewa'>('khalti');
   const [loading, setLoading] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState('');
@@ -30,6 +32,7 @@ export default function ShopCheckoutScreen() {
 
   const deliveryFee = 100;
   const total = totalPrice + deliveryFee;
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const handleCheckout = async () => {
     if (!formData.full_name || !formData.phone_number || !formData.email || !formData.shipping_address || !formData.city) {
@@ -41,7 +44,7 @@ export default function ShopCheckoutScreen() {
       setLoading(true);
       const payload = {
         ...formData,
-        payment_method: selectedMethod,
+        payment_method: selectedMethod.toUpperCase() as any,
         items: items.map(item => ({ id: Number(item.id), quantity: item.quantity })),
       };
 
@@ -51,7 +54,7 @@ export default function ShopCheckoutScreen() {
 
       if (targetUrl) {
           const esewaData = response.form_data || response.formData;
-          if (selectedMethod === 'ESEWA' && esewaData) {
+          if (selectedMethod === 'esewa' && esewaData) {
               const formFields = Object.keys(esewaData)
                   .map(key => `<input type="hidden" name="${key}" value="${String(esewaData[key]).replace(/"/g, '&quot;')}" />`)
                   .join('');
@@ -70,7 +73,7 @@ export default function ShopCheckoutScreen() {
                               <p>Please wait while we redirect you to the secure payment gateway.</p>
                           </div>
                       </body>
-                  </html>
+                   </html>
               `;
               setFormHtml(htmlContent);
               setPaymentUrl('');
@@ -79,15 +82,36 @@ export default function ShopCheckoutScreen() {
               setFormHtml('');
           }
           setShowWebView(true);
+      } else if (selectedMethod === 'stripe') {
+           if (!response.client_secret) {
+               throw new Error('Stripe client secret missing');
+           }
+
+           const { error: initError } = await initPaymentSheet({
+               paymentIntentClientSecret: response.client_secret,
+               merchantDisplayName: 'PanditYatra Shop',
+           });
+
+           if (initError) {
+               Alert.alert('Error', initError.message);
+               return;
+           }
+
+           const { error: presentError } = await presentPaymentSheet();
+           if (presentError) {
+               if (presentError.code !== 'Canceled') {
+                   Alert.alert('Error', presentError.message);
+               }
+           } else {
+               clearCart();
+               router.replace('/(customer)/bookings');
+               Alert.alert('Success', 'Order placed successfully!');
+           }
       } else {
-        Alert.alert('Success', 'Order placed successfully!', [
-          { text: 'OK', onPress: () => {
-            clearCart();
-            router.replace('/(customer)/bookings'); // Or shop-specific orders if available
-          }}
-        ]);
-      }
-    } catch (error: any) {
+        // This was previously alerting 'Success' even if URL was missing!
+        console.error('[Checkout] Missing payment URL in response:', response);
+        Alert.alert('Payment Error', 'Failed to retrieve payment gateway URL. Please try again.');
+      }    } catch (error: any) {
       console.error('Checkout failed:', error);
       Alert.alert('Error', error.message || 'Failed to process checkout');
     } finally {
@@ -95,7 +119,28 @@ export default function ShopCheckoutScreen() {
     }
   };
 
-  if (showWebView && paymentUrl) {
+  const handlePaymentSuccess = async (pidx?: string, esewaData?: string) => {
+    try {
+      setLoading(true);
+      if (pidx) {
+        await verifyKhaltiPayment({ pidx: pidx, amount: total });
+      } else if (esewaData) {
+        await verifyEsewaPayment({ data: esewaData });
+      }
+
+      clearCart();
+      router.replace('/(customer)/bookings');
+      Alert.alert('Success', 'Payment successful and order placed!');
+    } catch (e: any) {
+      console.error('Verification Error:', e);
+      Alert.alert('Verification Failed', 'Payment succeeded but verification failed. Please check your orders.');
+      router.replace('/(customer)/bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showWebView && (paymentUrl || formHtml)) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.card }]}>
@@ -108,14 +153,11 @@ export default function ShopCheckoutScreen() {
         <PaymentWebView
           url={paymentUrl}
           html={formHtml}
-          onSuccess={() => {
+          onSuccess={(data) => {
             setShowWebView(false);
-            Alert.alert('Success', 'Payment successful and order placed!', [
-              { text: 'OK', onPress: () => {
-                clearCart();
-                router.replace('/(customer)/bookings');
-              }}
-            ]);
+            const pidx = data.url.split('pidx=')[1]?.split('&')[0];
+            const esewaData = data.url.split('data=')[1]?.split('&')[0];
+            handlePaymentSuccess(pidx, esewaData);
           }}
           onFailure={() => {
             setShowWebView(false);
@@ -206,8 +248,8 @@ export default function ShopCheckoutScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment Method</Text>
           <TouchableOpacity
-            style={[styles.methodCard, { backgroundColor: colors.card }, selectedMethod === 'KHALTI' && { borderColor: colors.primary, borderWidth: 1 }]}
-            onPress={() => setSelectedMethod('KHALTI')}
+            style={[styles.methodCard, { backgroundColor: colors.card }, selectedMethod === 'khalti' && { borderColor: colors.primary, borderWidth: 1 }]}
+            onPress={() => setSelectedMethod('khalti')}
           >
             <View style={styles.methodInfo}>
               <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
@@ -219,12 +261,12 @@ export default function ShopCheckoutScreen() {
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
             </View>
-            <Ionicons name={selectedMethod === 'KHALTI' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'KHALTI' ? colors.primary : '#AAA'} />
+            <Ionicons name={selectedMethod === 'khalti' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'khalti' ? colors.primary : '#AAA'} />
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'ESEWA' && { borderColor: colors.primary, borderWidth: 1 }]}
-            onPress={() => setSelectedMethod('ESEWA')}
+            style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'esewa' && { borderColor: colors.primary, borderWidth: 1 }]}
+            onPress={() => setSelectedMethod('esewa')}
           >
             <View style={styles.methodInfo}>
               <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
@@ -236,12 +278,12 @@ export default function ShopCheckoutScreen() {
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>eSewa</Text>
             </View>
-            <Ionicons name={selectedMethod === 'ESEWA' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'ESEWA' ? colors.primary : '#AAA'} />
+            <Ionicons name={selectedMethod === 'esewa' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'esewa' ? colors.primary : '#AAA'} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'STRIPE' && { borderColor: colors.primary, borderWidth: 1 }]}
-            onPress={() => setSelectedMethod('STRIPE')}
+            style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'stripe' && { borderColor: colors.primary, borderWidth: 1 }]}
+            onPress={() => setSelectedMethod('stripe')}
           >
             <View style={styles.methodInfo}>
               <View style={[styles.methodIcon, { backgroundColor: '#6772E5' }]}>
@@ -249,7 +291,7 @@ export default function ShopCheckoutScreen() {
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>Stripe (Card)</Text>
             </View>
-            <Ionicons name={selectedMethod === 'STRIPE' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'STRIPE' ? colors.primary : '#AAA'} />
+            <Ionicons name={selectedMethod === 'stripe' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'stripe' ? colors.primary : '#AAA'} />
           </TouchableOpacity>
         </View>
 

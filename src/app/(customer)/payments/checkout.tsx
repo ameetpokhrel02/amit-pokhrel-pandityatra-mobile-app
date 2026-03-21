@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/Button';
 import { PaymentWebView } from '@/components/common/PaymentWebView';
 import { TextInput } from 'react-native';
+import { useStripe } from '@stripe/stripe-react-native';
 
 export default function CheckoutScreen() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -25,6 +26,7 @@ export default function CheckoutScreen() {
     const [showWebView, setShowWebView] = useState(false);
     const [paymentUrl, setPaymentUrl] = useState('');
     const [formHtml, setFormHtml] = useState('');
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
     
     const [formData, setFormData] = useState({
         full_name: useAuthStore.getState().user?.name || '',
@@ -60,16 +62,46 @@ export default function CheckoutScreen() {
             // Universal payment initiation via backend redirect
             const paymentIntent = await initiatePayment({
                 booking: booking.id,
-                payment_method: selectedMethod,
+                payment_method: selectedMethod.toUpperCase() as any,
                 amount: booking.total_fee,
             });
 
             const urlToOpen = paymentIntent.payment_url || paymentIntent.checkout_url;
 
-            if (urlToOpen) {
+            if (selectedMethod === 'stripe') {
+                if (!paymentIntent.client_secret) {
+                    throw new Error('Stripe client secret missing from response');
+                }
+                
+                const { error: initError } = await initPaymentSheet({
+                    paymentIntentClientSecret: paymentIntent.client_secret,
+                    merchantDisplayName: 'PanditYatra',
+                    defaultBillingDetails: {
+                        name: formData.full_name,
+                        email: formData.email,
+                        phone: formData.phone_number,
+                    }
+                });
+
+                if (initError) {
+                    Alert.alert('Error', initError.message);
+                    return;
+                }
+
+                const { error: presentError } = await presentPaymentSheet();
+                if (presentError) {
+                    if (presentError.code === 'Canceled') {
+                        // User cancelled
+                    } else {
+                        Alert.alert('Error', presentError.message);
+                    }
+                } else {
+                    handlePaymentSuccess();
+                }
+            } else if (urlToOpen) {
                 if (selectedMethod === 'esewa' && paymentIntent.form_data) {
                     const formFields = Object.keys(paymentIntent.form_data)
-                        .map(key => `<input type="hidden" name="${key}" value="${paymentIntent.form_data[key].replace(/"/g, '&quot;')}" />`)
+                        .map(key => `<input type="hidden" name="${key}" value="${String(paymentIntent.form_data[key]).replace(/"/g, '&quot;')}" />`)
                         .join('');
                     
                     const htmlContent = `
@@ -111,7 +143,7 @@ export default function CheckoutScreen() {
             // Step 1: Tell backend to verify the redirect token
             if (pidx) {
                 await verifyKhaltiPayment({
-                    token: pidx,
+                    pidx: pidx,
                     amount: booking?.total_fee || 0
                 });
             } else if (esewaData) {

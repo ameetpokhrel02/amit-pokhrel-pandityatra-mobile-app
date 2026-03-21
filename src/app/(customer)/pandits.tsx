@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/theme/colors';
 import { usePanditStore } from '@/store/pandit.store';
+import { useAuthStore } from '@/store/auth.store';
 import { PanditCard } from '@/components/pandit/PanditCard';
 import { PanditFilterSheet } from '@/components/pandit/PanditFilterSheet';
 import { Pandit } from '@/types/pandit';
@@ -13,6 +14,7 @@ import { useTheme } from '@/store/ThemeContext';
 export default function PanditListingPage() {
   const router = useRouter();
   const { pandits, isLoading, error, fetchPandits, filter, setFilter } = usePanditStore();
+  const { isAuthenticated } = useAuthStore();
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { colors, theme } = useTheme();
@@ -37,7 +39,16 @@ export default function PanditListingPage() {
       pandit={item}
       index={index}
       onPress={() => router.push(`/(customer)/pandit/${item.id}`)}
-      onBook={() => router.push(`/(customer)/booking?panditId=${item.id}`)}
+      onBook={() => {
+        if (!isAuthenticated) {
+          Alert.alert('Login Required', 'Please login or register to book a Pandit.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Login', onPress: () => router.push('/(public)/role-selection' as any) }
+          ]);
+          return;
+        }
+        router.push(`/(customer)/booking?panditId=${item.id}`);
+      }}
     />
   );
 

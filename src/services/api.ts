@@ -241,7 +241,7 @@ export interface SamagriCheckoutPayload {
     phone_number: string;
     shipping_address: string;
     city: string;
-    payment_method: 'STRIPE' | 'KHALTI' | 'ESEWA';
+    payment_method: 'stripe' | 'khalti' | 'esewa' | 'STRIPE' | 'KHALTI' | 'ESEWA';
     items: { id: number; quantity: number }[];
 }
 

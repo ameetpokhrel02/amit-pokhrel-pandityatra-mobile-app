@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
-import { generalAiChat, fetchAiGuide } from '@/services/chat.service';
+import { sendAiChatMessage } from '@/services/ai.service';
 
 interface Message {
   id: string;
@@ -29,10 +29,10 @@ export default function AIAssistantScreen() {
   const loadInitialGuide = async () => {
     setLoading(true);
     try {
-      const guideText = await fetchAiGuide();
+      // Re-using generalAiChat logic for the greeting or hardcoding a stable one
       const initialMsg: Message = {
         id: '1',
-        text: guideText || "Namaste! I am your PanditYatra AI Guide. How can I help you with your spiritual journey today?",
+        text: "Namaste! I am your PanditYatra AI Guide. How can I help you with your spiritual journey today?",
         sender: 'ai',
         timestamp: Date.now(),
       };
@@ -59,7 +59,7 @@ export default function AIAssistantScreen() {
     setLoading(true);
 
     try {
-      const aiResponse = await generalAiChat(inputText);
+      const aiResponse = await sendAiChatMessage(inputText);
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         text: aiResponse,

@@ -33,10 +33,25 @@ try {
       addIceCandidate() {}
     },
     RTCView: ({ children }: any) => <View style={{ flex: 1, backgroundColor: '#222' }}>{children}</View>,
-    mediaDevices: { getUserMedia: async () => ({ getTracks: () => [], toURL: () => '' }) },
+    mediaDevices: { 
+      getUserMedia: async () => {
+        const mockStream = { 
+          getTracks: () => [], 
+          getVideoTracks: () => [{ enabled: true, stop: () => {}, _switchCamera: () => {} }],
+          getAudioTracks: () => [{ enabled: true, stop: () => {} }],
+          toURL: () => '' 
+        };
+        return mockStream;
+      } 
+    },
     RTCSessionDescription: class {},
     RTCIceCandidate: class {},
-    MediaStream: class { getTracks() { return []; } toURL() { return ''; } },
+    MediaStream: class { 
+      getTracks() { return []; } 
+      getVideoTracks() { return [{ enabled: true, stop: () => {}, _switchCamera: () => {} }]; }
+      getAudioTracks() { return [{ enabled: true, stop: () => {} }]; }
+      toURL() { return ''; } 
+    },
   };
 }
 
@@ -54,7 +69,7 @@ import { getImageUrl } from '@/utils/image';
 import { Image } from 'expo-image';
 import { ChatMessage } from '@/types/chat';
 import { startVideoRoom, endVideoRoom, joinVideoRoom } from '@/services/video.service';
-import apiClient from '@/services/api-client';
+import { API_BASE_URL } from '@/services/api-client';
 import { BlurView } from 'expo-blur';
 import Animated, { 
   useSharedValue, 
@@ -175,9 +190,14 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
 
       // 3. Connect Signaling
       const token = await SecureStore.getItemAsync('access_token');
-      const wsUrl = apiClient.defaults.baseURL?.replace('http', 'ws').replace('/api/', '') || 'ws://localhost:8000';
-      const fullUrl = `${wsUrl}/ws/video/${bookingId}/?token=${token}`;
       
+      // Correctly derive WS URL from API_BASE_URL
+      // API_BASE_URL: http://192.168.1.83:8000/api/
+      // Target WS: ws://192.168.1.83:8000/ws/video/{bookingId}/?token=<JWT>
+      const wsBase = API_BASE_URL.replace('http', 'ws').replace('/api/', '');
+      const fullUrl = `${wsBase}/ws/video/${bookingId}/?token=${token}`;
+      
+      console.log('[NativeVideo] Connecting to Signaling:', fullUrl);
       socket.current = new WebSocket(fullUrl);
 
       socket.current.onopen = () => {
@@ -191,12 +211,14 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
 
         switch (data.type) {
           case 'offer':
+            console.log('[NativeVideo] Handling Offer');
             await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
             const answer = await peer.createAnswer();
             await peer.setLocalDescription(answer);
-            socket.current?.send(json({ type: 'answer', sdp: answer }));
+            socket.current?.send(JSON.stringify({ type: 'answer', sdp: answer }));
             break;
           case 'answer':
+            console.log('[NativeVideo] Handling Answer');
             await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
             break;
           case 'ice-candidate':

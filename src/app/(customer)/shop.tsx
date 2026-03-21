@@ -1,33 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, FlatList, ActivityIndicator, Alert, Dimensions, Animated } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  TextInput, 
+  FlatList, 
+  ActivityIndicator, 
+  Alert, 
+  Dimensions, 
+  Animated 
+} from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
-import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
-import { SamagriItem } from '@/services/api';
-import { useTheme } from '@/store/ThemeContext';
-import { getProfile } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
+import { useTheme } from '@/store/ThemeContext';
+import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
+import { SamagriItem, SamagriCategory } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
 const BANNERS = [
   { 
     id: 1, 
-    image: require('@/assets/images/hero 2.png'), 
+    image: require('../../../assets/images/hero_2.png'), 
     title: 'Divine Shanti', 
     subtitle: 'Spiritual Essentials & Holistic Goods' 
   },
   { 
     id: 2, 
-    image: require('@/assets/images/oils products.png'), 
+    image: require('../../../assets/images/oils_products.png'), 
     title: 'Authentic Oils', 
     subtitle: 'Pure & Energized Spiritual Oils' 
   },
   { 
     id: 3, 
-    image: require('@/assets/images/hero section 3.png'), 
+    image: require('../../../assets/images/hero_3.png'), 
     title: 'Sacred Rituals', 
     subtitle: 'Complete Samagri for Every Occasion' 
   }
@@ -36,17 +48,16 @@ const BANNERS = [
 export default function ShopScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
-  const { addToCart, totalItems, totalPrice } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
-  const isDark = theme === 'dark';
-
-  const [products, setProducts] = useState<SamagriItem[]>([]);
-  const [categories, setCategories] = useState<{ id: number | string, name: string }[]>([{ id: 'All', name: 'All' }]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const { isAuthenticated, user } = useAuthStore();
+  const { totalItems, addToCart } = useCartStore();
+  
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [userName, setUserName] = useState('Devotee');
+  const [products, setProducts] = useState<SamagriItem[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [wishlist, setWishlist] = useState<number[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Banner Carousel animation
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -55,7 +66,6 @@ export default function ShopScreen() {
 
   useEffect(() => {
     loadData();
-    getUserInfo();
 
     // Auto-slide interval (4 seconds)
     const interval = setInterval(() => {
@@ -72,13 +82,11 @@ export default function ShopScreen() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Load public data (items + categories) always
       const [itemsRes, categoriesRes] = await Promise.all([
         getSamagriItems(),
         getSamagriCategories(),
@@ -90,91 +98,62 @@ export default function ShopScreen() {
       setProducts(itemsData);
       setCategories([{ id: 'All', name: 'All' }, ...categoriesData]);
 
-      // Load wishlist ONLY if authenticated (requires token)
       if (isAuthenticated) {
         try {
           const wishlistRes = await getWishlist();
           const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
-          // WishlistSerializer returns { id, item: { id, name, ... }, created_at }
           const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
           setWishlist(ids);
-        } catch (e) {
-          console.log('Wishlist load skipped (auth issue)');
+        } catch (error) {
+          console.warn('Wishlist load failed', error);
         }
       }
     } catch (error) {
-      console.error('Error loading shop data:', error);
+      console.error('Data load failed', error);
+      Alert.alert('Error', 'Failed to load shop items');
     } finally {
       setLoading(false);
     }
   };
 
-  const getUserInfo = async () => {
-    try {
-      const response = await getProfile();
-      const profile = response.data;
-      if (profile?.full_name) {
-        setUserName(profile.full_name.split(' ')[0]);
-      }
-    } catch (e) {
-      console.log('Using default username');
-    }
-  };
-
   const handleToggleWishlist = async (itemId: number) => {
     if (!isAuthenticated) {
-      Alert.alert('Login Required', 'Please log in to add items to your wishlist.');
+      router.push('/(public)/role-selection');
       return;
     }
-    // Optimistic UI update
-    const wasInWishlist = wishlist.includes(itemId);
-    setWishlist(prev =>
-      wasInWishlist ? prev.filter(id => id !== itemId) : [...prev, itemId]
-    );
     try {
       await toggleWishlist(itemId);
-    } catch (e) {
-      // Revert on error
-      setWishlist(prev =>
-        wasInWishlist ? [...prev, itemId] : prev.filter(id => id !== itemId)
-      );
-      console.error('Failed to toggle wishlist:', e);
-      Alert.alert('Error', 'Could not update wishlist. Please try again.');
+      const wishlistRes = await getWishlist();
+      const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
+      const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
+      setWishlist(ids);
+    } catch (err) {
+      Alert.alert('Error', 'Wishlist update failed');
     }
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || String(p.category) === selectedCategory;
-    return matchesSearch && matchesCategory;
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = selectedCategory === 'All' || 
+      (product as any).category_name === selectedCategory || 
+      (product as any).category?.name === selectedCategory;
+    
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      
+    return matchesCategory && matchesSearch;
   });
 
-  const renderBanner = ({ item }: { item: typeof BANNERS[0] }) => (
-    <View style={styles.bannerItem}>
-      <Image 
-        source={item.image} 
-        style={styles.bannerImage}
-        resizeMode="cover"
-      />
-      <View style={styles.bannerOverlay}>
-        <Text style={styles.bannerTitle}>{item.title}</Text>
-        <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.bannerButton}>
-          <Text style={styles.bannerButtonText}>Explore Now</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const userName = user?.name ? user.name.split(' ')[0] : 'Guest';
 
-  const renderProduct = ({ item }: { item: SamagriItem }) => (
-    <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+  const renderProductItem = ({ item }: { item: SamagriItem }) => (
+    <View style={[styles.productCard, { backgroundColor: colors.card }]}>
       <TouchableOpacity 
         style={styles.productTouchable}
         onPress={() => router.push(`/(customer)/shop/${item.id}`)}
       >
         <View style={[styles.imageWrapper, { backgroundColor: colors.background }]}>
           {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.productImg} resizeMode="cover" />
+            <Image source={{ uri: item.image }} style={styles.productImg} contentFit="cover" />
           ) : (
             <Ionicons name="image-outline" size={40} color={colors.text + '20'} />
           )}
@@ -184,8 +163,8 @@ export default function ShopScreen() {
           >
             <Ionicons 
               name={wishlist.includes(item.id) ? "heart" : "heart-outline"} 
-              size={18} 
-              color={wishlist.includes(item.id) ? colors.secondary : colors.primary} 
+              size={20} 
+              color={wishlist.includes(item.id) ? colors.primary : colors.text} 
             />
           </TouchableOpacity>
         </View>
@@ -193,9 +172,7 @@ export default function ShopScreen() {
         <View style={styles.productInfo}>
           <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
           <View style={styles.priceRow}>
-            <Text style={[styles.priceText, { color: colors.primary }]}>NPR {item.price}</Text>
-            {/* Mock original price for premium feel */}
-            <Text style={[styles.originalPrice, { color: colors.text + '40' }]}>NPR {Math.round(item.price * 1.2)}</Text>
+            <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.price}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -209,388 +186,222 @@ export default function ShopScreen() {
     </View>
   );
 
+  const renderBannerItem = ({ item }: { item: any }) => (
+    <View style={styles.bannerItem}>
+      <Image 
+        source={item.image} 
+        style={styles.bannerImage}
+        contentFit="cover"
+      />
+      <View style={styles.bannerOverlay}>
+        <Text style={styles.bannerTitle}>{item.title}</Text>
+        <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
+        <TouchableOpacity style={styles.bannerBtn}>
+          <Text style={styles.bannerBtnText}>Shop Now</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  if (loading && products.length === 0) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.welcomeText, { color: colors.text + '80' }]}>Welcome back,</Text>
-          <Text style={[styles.userName, { color: colors.text }]}>{userName}</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={[styles.iconBox, { backgroundColor: colors.card }]}>
-            <Ionicons name="search-outline" size={22} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.iconBox, { backgroundColor: colors.card }]}
-            onPress={() => router.push('/(customer)/wishlist' as any)}
-          >
-            <Ionicons name={wishlist.length > 0 ? "heart" : "heart-outline"} size={22} color={wishlist.length > 0 ? colors.primary : colors.text} />
-            {wishlist.length > 0 && (
-              <View style={[styles.cartBadge, { backgroundColor: '#DC2626' }]}>
-                <Text style={styles.cartBadgeText}>{wishlist.length}</Text>
-              </View>
+      <View style={[styles.header, { borderBottomColor: colors.border + '20', borderBottomWidth: 1 }]}>
+        {!showSearch ? (
+          <View style={styles.headerTitleRow}>
+            <View>
+              <Text style={[styles.welcomeText, { color: colors.text + '80' }]}>Sacred Market,</Text>
+              <Text style={[styles.userName, { color: colors.text }]}>{userName}</Text>
+            </View>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity 
+                style={[styles.iconBox, { backgroundColor: colors.card }]}
+                onPress={() => setShowSearch(true)}
+              >
+                <Ionicons name="search-outline" size={22} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.iconBox, { backgroundColor: colors.card }]}
+                onPress={() => router.push('/(customer)/wishlist' as any)}
+              >
+                <Ionicons name="heart-outline" size={22} color={colors.text} />
+                {wishlist.length > 0 && (
+                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.badgeText}>{wishlist.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.iconBox, { backgroundColor: colors.card }]}
+                onPress={() => router.push('/(customer)/cart')}
+              >
+                <Ionicons name="bag-handle-outline" size={22} color={colors.text} />
+                {totalItems > 0 && (
+                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.badgeText}>{totalItems}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.searchHeader}>
+            <TouchableOpacity onPress={() => { setShowSearch(false); setSearchQuery(''); }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TextInput
+              style={[styles.searchInput, { color: colors.text, backgroundColor: colors.card }]}
+              placeholder="Search samagri..."
+              placeholderTextColor={colors.text + '60'}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={20} color={colors.text + '60'} />
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.iconBox, { backgroundColor: colors.card }]}
-            onPress={() => router.push('/(customer)/cart')}
-          >
-            <Ionicons name="bag-handle-outline" size={22} color={colors.text} />
-            {totalItems > 0 && (
-              <View style={[styles.cartBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.cartBadgeText}>{totalItems}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+          </View>
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Banner Carousel */}
-        <View style={styles.carouselContainer}>
-          <FlatList
-            ref={flatListRef}
-            data={BANNERS}
-            renderItem={renderBanner}
-            keyExtractor={item => item.id.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: false }
-            )}
-            onMomentumScrollEnd={(event) => {
-              currentIndexRef.current = Math.floor(event.nativeEvent.contentOffset.x / width);
-            }}
-          />
-          <View style={styles.pagination}>
-            {BANNERS.map((_, i) => {
-              const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-              const dotWidth = scrollX.interpolate({
-                inputRange,
-                outputRange: [8, 16, 8],
-                extrapolate: 'clamp'
-              });
-              const opacity = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp'
-              });
-              return (
-                <Animated.View 
-                  key={i} 
-                  style={[styles.dot, { width: dotWidth, opacity, backgroundColor: colors.primary }]} 
-                />
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Categories</Text>
-          <TouchableOpacity><Text style={{ color: colors.primary, fontWeight: '600' }}>See all</Text></TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesList}>
-          {categories.map(cat => (
-            <TouchableOpacity 
-              key={cat.id} 
-              onPress={() => setSelectedCategory(String(cat.id))}
-              style={[
-                styles.categoryChip, 
-                { backgroundColor: colors.card },
-                selectedCategory === String(cat.id) && { backgroundColor: colors.primary, borderColor: colors.primary }
-              ]}
-            >
-              <Text style={[
-                styles.categoryLabel, 
-                { color: colors.text + '80' },
-                selectedCategory === String(cat.id) && { color: '#FFF', fontWeight: 'bold' }
-              ]}>
-                {cat.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Dynamic Search during implementation */}
-        <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Ionicons name="search" size={18} color={colors.text + '40'} />
-          <TextInput 
-            placeholder="Search spiritual items..."
-            placeholderTextColor={colors.text + '40'}
-            style={[styles.searchInput, { color: colors.text }]}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        {/* Product Grid */}
-        <View style={styles.gridHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>New Arrivals</Text>
-          <TouchableOpacity><Text style={{ color: colors.primary, fontWeight: '600' }}>Filters</Text></TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-        ) : (
-          <View style={styles.productGrid}>
-            {filteredProducts.map(item => (
-              <React.Fragment key={item.id}>
-                {renderProduct({ item })}
-              </React.Fragment>
-            ))}
+        {!showSearch && (
+          <View style={styles.bannerSection}>
+            <FlatList
+              ref={flatListRef}
+              data={BANNERS}
+              renderItem={renderBannerItem}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
+              keyExtractor={(item) => item.id.toString()}
+            />
+            {/* Pagination Dots */}
+            <View style={styles.pagination}>
+              {BANNERS.map((_, i) => {
+                const opacity = scrollX.interpolate({
+                  inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+                  outputRange: [0.3, 1, 0.3],
+                  extrapolate: 'clamp',
+                });
+                return <Animated.View key={i} style={[styles.dot, { backgroundColor: colors.primary, opacity }]} />;
+              })}
+            </View>
           </View>
         )}
-      </ScrollView>
 
-      {/* Sticky Cart Button */}
-      {totalItems > 0 && (
-        <TouchableOpacity 
-          style={[styles.stickyCart, { backgroundColor: colors.secondary }]}
-          onPress={() => router.push('/(customer)/cart')}
-        >
-          <View style={styles.stickyCartLeft}>
-            <View style={styles.cartCircle}>
-              <Ionicons name="bag-handle" size={20} color="#FFF" />
-              <View style={styles.cartCount}><Text style={styles.cartCountText}>{totalItems}</Text></View>
-            </View>
-            <View>
-              <Text style={styles.stickyCartTotal}>NPR {totalPrice}</Text>
-              <Text style={styles.stickyCartSub}>Ready to order</Text>
-            </View>
+        {/* Categories */}
+        <View style={styles.categoriesContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                onPress={() => setSelectedCategory(cat.name)}
+                style={[
+                  styles.categoryChip,
+                  { backgroundColor: selectedCategory === cat.name ? colors.primary : colors.card },
+                  selectedCategory === cat.name && styles.activeChip
+                ]}
+              >
+                <Text style={[
+                  styles.categoryText,
+                  { color: selectedCategory === cat.name ? '#FFF' : colors.text }
+                ]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Products Grid */}
+        <View style={styles.productsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {showSearch ? `Results for "${searchQuery}"` : selectedCategory === 'All' ? 'Sacred Samagri' : selectedCategory}
+            </Text>
+            <Text style={[styles.itemCount, { color: colors.text + '60' }]}>
+              {filteredProducts.length} items
+            </Text>
           </View>
-          <View style={styles.stickyCartBtn}>
-            <Text style={styles.stickyCartBtnText}>View Cart</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.secondary} />
-          </View>
-        </TouchableOpacity>
-      )}
+
+          <FlatList
+            data={filteredProducts}
+            renderItem={renderProductItem}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            scrollEnabled={false}
+            columnWrapperStyle={styles.columnWrapper}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="search" size={48} color={colors.text + '20'} />
+                <Text style={[styles.emptyText, { color: colors.text + '60' }]}>No items found</Text>
+              </View>
+            }
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  welcomeText: { fontSize: 13, marginBottom: 2 },
-  userName: { fontSize: 20, fontWeight: 'bold' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 10 },
+  headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  welcomeText: { fontSize: 13, fontWeight: '500' },
+  userName: { fontSize: 20, fontWeight: '800' },
   headerIcons: { flexDirection: 'row', gap: 12 },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
-  },
-  cartBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  scrollContent: { paddingBottom: 120 },
-  carouselContainer: {
-    width: width,
-    height: 200,
-    marginBottom: 24,
-  },
-  bannerItem: {
-    width: width,
-    paddingHorizontal: 20,
-    height: 180,
-    justifyContent: 'center',
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-  },
-  bannerOverlay: {
-    position: 'absolute',
-    left: 40,
-    top: 30,
-    right: 40,
-  },
-  bannerTitle: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
-  bannerSubtitle: { color: '#FFF', fontSize: 12, opacity: 0.9, marginBottom: 16 },
-  bannerButton: {
-    backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  bannerButtonText: { color: '#FF6F00', fontWeight: 'bold', fontSize: 12 },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: -20,
-    gap: 6,
-  },
-  dot: { height: 8, borderRadius: 4 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold' },
-  categoriesList: { paddingHorizontal: 20, gap: 10, marginBottom: 24 },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  categoryLabel: { fontSize: 14 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    height: 48,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  searchInput: { flex: 1, fontSize: 14 },
-  gridHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  productGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
-  },
-  productCard: {
-    width: (width - 50) / 2,
-    borderRadius: 20,
-    padding: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    position: 'relative',
-  },
+  iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  badge: { position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF', paddingHorizontal: 4 },
+  badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
+  searchHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 44 },
+  searchInput: { flex: 1, height: 44, borderRadius: 14, paddingHorizontal: 15, fontSize: 15, fontWeight: '500' },
+  scrollContent: { paddingBottom: 100 },
+  bannerSection: { marginVertical: 10 },
+  bannerItem: { width: width, paddingHorizontal: 20, height: 180 },
+  bannerImage: { width: '100%', height: '100%', borderRadius: 25 },
+  bannerOverlay: { position: 'absolute', inset: 0, left: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 25, padding: 25, justifyContent: 'center' },
+  bannerTitle: { color: '#FFF', fontSize: 24, fontWeight: '900', marginBottom: 5 },
+  bannerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600', marginBottom: 15 },
+  bannerBtn: { backgroundColor: '#FFF', alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12 },
+  bannerBtnText: { color: '#FF6F00', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
+  pagination: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 15 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  categoriesContainer: { marginVertical: 15 },
+  categoriesScroll: { paddingHorizontal: 20, gap: 10 },
+  categoryChip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 15 },
+  activeChip: { elevation: 4, shadowColor: '#FF6F00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  categoryText: { fontSize: 13, fontWeight: '700' },
+  productsSection: { paddingHorizontal: 20, marginTop: 10 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  itemCount: { fontSize: 12, fontWeight: '600' },
+  columnWrapper: { justifyContent: 'space-between', marginBottom: 20 },
+  productCard: { width: (width - 55) / 2, borderRadius: 25, padding: 10, position: 'relative' },
   productTouchable: { flex: 1 },
-  imageWrapper: {
-    width: '100%',
-    height: 140,
-    borderRadius: 16,
-    marginBottom: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
+  imageWrapper: { width: '100%', height: 140, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 12, overflow: 'hidden' },
   productImg: { width: '100%', height: '100%' },
-  wishlistBtn: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  productInfo: { paddingHorizontal: 4 },
-  productName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  priceText: { fontSize: 16, fontWeight: 'bold' },
-  originalPrice: { fontSize: 12, textDecorationLine: 'line-through' },
-  addBtn: {
-    position: 'absolute',
-    bottom: -8,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#F5F5F5', // Background color to "pop" it out
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  stickyCart: {
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    height: 64,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  stickyCartLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cartCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  cartCount: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#FFD700',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartCountText: { color: '#3E2723', fontSize: 10, fontWeight: 'bold' },
-  stickyCartTotal: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  stickyCartSub: { color: '#FFF', fontSize: 11, opacity: 0.8 },
-  stickyCartBtn: {
-    backgroundColor: '#FFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 4,
-  },
-  stickyCartBtnText: { fontWeight: 'bold', fontSize: 13 },
+  wishlistBtn: { position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: 12, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  productInfo: { paddingHorizontal: 5 },
+  productName: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  productPrice: { fontSize: 16, fontWeight: '900' },
+  stockLabel: { fontSize: 10, color: '#EF4444', fontWeight: '700' },
+  addBtn: { position: 'absolute', bottom: -5, right: -5, width: 40, height: 40, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#FAFAFA' },
+  emptyContainer: { alignItems: 'center', marginTop: 50, gap: 15 },
+  emptyText: { fontSize: 15, fontWeight: '600' }
 });

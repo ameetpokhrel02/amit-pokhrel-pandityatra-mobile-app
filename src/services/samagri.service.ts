@@ -93,3 +93,15 @@ export async function deleteSamagriCategory(id: number) {
     const response = await apiClient.delete(`samagri/categories/${id}/`);
     return response.data;
 }
+
+// --- Cart APIs ---
+
+export async function addToCart(itemId: number, quantity: number = 1) {
+    const response = await apiClient.post('samagri/cart/add/', { item_id: itemId, quantity });
+    return response.data;
+}
+
+export async function fetchCart() {
+    const response = await apiClient.get('samagri/cart/');
+    return response.data.results || response.data;
+}

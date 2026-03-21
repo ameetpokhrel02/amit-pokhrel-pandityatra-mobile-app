@@ -14,6 +14,8 @@ import { Booking, PanditService, Pandit, SamagriItem } from '@/services/api';
 import { fetchPujaSamagriRecommendations } from '@/services/recommender.service';
 import { getSamagriRequirements } from '@/services/samagri.service';
 import { Image } from 'expo-image';
+import { BookingDateTime } from '@/components/booking/BookingDateTime';
+import MapLocationPicker from '@/components/ui/MapLocationPicker';
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
 
@@ -188,19 +190,26 @@ export default function BookingScreen() {
           Please complete your payment to finalize the booking.
         </Text>
 
-        <View style={{ gap: 12 }}>
+        <View className="w-full gap-3 mt-4">
           <TouchableOpacity
-            style={[styles.homeButton, { backgroundColor: colors.primary }]}
+            className="w-full h-14 bg-primary rounded-2xl items-center justify-center shadow-lg shadow-primary/30 active:opacity-80"
             onPress={() => router.replace(`/(customer)/payments/checkout?bookingId=${(paymentInfo as any)?.bookingId}`)}
           >
-            <Text style={styles.homeButtonText}>Pay Now</Text>
+            <Text className="text-white text-lg font-bold">Pay Now</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.homeButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary }]}
+            className="w-full h-14 border-2 border-primary rounded-2xl items-center justify-center active:bg-primary/5"
             onPress={() => router.push('/(customer)/bookings')}
           >
-            <Text style={[styles.homeButtonText, { color: colors.primary }]}>Pay Later (Go to my Bookings)</Text>
+            <Text className="text-primary text-lg font-bold">View My Bookings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="w-full h-14 bg-zinc-100 dark:bg-zinc-800 rounded-2xl items-center justify-center active:opacity-70"
+            onPress={() => router.replace('/(customer)/' as any)}
+          >
+            <Text className="text-zinc-600 dark:text-zinc-300 text-lg font-bold">Back to Home</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -215,7 +224,7 @@ export default function BookingScreen() {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Book Pandit</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Book Puja</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -251,17 +260,26 @@ export default function BookingScreen() {
           {currentStep === 0 && (
             <View key="step0">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Select Service</Text>
-              <View style={styles.optionsContainer}>
+              <View className="gap-3">
                 {pandit?.services?.map((service) => (
                   <TouchableOpacity
                     key={service.id}
-                    style={[styles.optionCard, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' }, selectedService?.id === service.id && { borderColor: colors.primary, backgroundColor: isDark ? '#332' : '#FFF7ED' }]}
+                    className={`flex-row items-center p-4 rounded-2xl border mb-3 active:opacity-70 ${selectedService?.id === service.id ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-zinc-800'}`}
+                    style={{ backgroundColor: selectedService?.id === service.id ? (isDark ? '#332' : '#FFF7ED') : colors.card }}
                     onPress={() => setSelectedService(service)}
                   >
-                    <View style={[styles.radioCircle, { borderColor: isDark ? '#666' : '#CCC' }, selectedService?.id === service.id && { borderColor: colors.primary }]}>
-                      {selectedService?.id === service.id && <View style={[styles.radioDot, { backgroundColor: colors.primary }]} />}
+                    <View 
+                      className="w-5 h-5 rounded-full border-2 mr-3 items-center justify-center"
+                      style={{ borderColor: selectedService?.id === service.id ? colors.primary : (isDark ? '#666' : '#CCC') }}
+                    >
+                      {selectedService?.id === service.id && (
+                        <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.primary }} />
+                      )}
                     </View>
-                    <Text style={[styles.optionText, { color: colors.text }, selectedService?.id === service.id && { color: colors.primary, fontWeight: '600' }]}>
+                    <Text 
+                      className={`text-base flex-1 ${selectedService?.id === service.id ? 'text-primary font-bold' : ''}`}
+                      style={{ color: selectedService?.id === service.id ? colors.primary : colors.text }}
+                    >
                       {service.puja_details?.name}
                     </Text>
                   </TouchableOpacity>
@@ -302,35 +320,34 @@ export default function BookingScreen() {
               {loadingSlots ? (
                 <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
               ) : availableSlots.length > 0 ? (
-                <View style={styles.timeGrid}>
+                <View className="flex-row flex-wrap gap-3">
                   {availableSlots.map((time) => (
                     <TouchableOpacity
                       key={time}
-                      style={[
-                        styles.timeCard,
-                        { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' },
-                        selectedTime === time && { backgroundColor: colors.primary, borderColor: colors.primary }
-                      ]}
+                      className={`flex-row items-center justify-center p-4 rounded-2xl border gap-2 active:opacity-70 ${selectedTime === time ? 'border-primary bg-primary' : 'border-gray-100 dark:border-zinc-800'}`}
+                      style={{ 
+                        backgroundColor: selectedTime === time ? colors.primary : colors.card,
+                        width: '48%'
+                      }}
                       onPress={() => setSelectedTime(time)}
                     >
                       <Ionicons
                         name={time.includes('Morning') ? 'sunny-outline' : time.includes('Evening') ? 'moon-outline' : 'time-outline'}
-                        size={20}
+                        size={18}
                         color={selectedTime === time ? '#FFF' : colors.text}
                       />
-                      <Text style={[
-                        styles.timeText,
-                        { color: colors.text },
-                        selectedTime === time && { color: '#FFF', fontWeight: '600' }
-                      ]}>
+                      <Text 
+                        className={`text-sm font-semibold ${selectedTime === time ? 'text-white' : ''}`}
+                        style={{ color: selectedTime === time ? '#FFF' : colors.text }}
+                      >
                         {time}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               ) : (
-                <View style={[styles.timeCard, { backgroundColor: colors.card, borderColor: '#FED7D7' }]}>
-                  <Text style={{ color: '#C53030' }}>No slots available for this date.</Text>
+                <View className="p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/10">
+                  <Text className="text-red-700 dark:text-red-400">No slots available for this date.</Text>
                 </View>
               )}
             </View>
@@ -342,13 +359,13 @@ export default function BookingScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Full Address</Text>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: colors.card, color: colors.text, borderColor: isDark ? '#333' : '#F0F0F0' }]}
-                  placeholder="Street, Area, City"
-                  placeholderTextColor={isDark ? '#AAA' : '#999'}
+                <MapLocationPicker
                   value={address}
-                  onChangeText={setAddress}
-                  multiline
+                  onSelect={(loc) => setAddress(loc.address)}
+                  placeholder="Select your puja location on map"
+                  colors={colors}
+                  isDark={isDark}
+                  label="Select Puja Location"
                 />
               </View>
 
@@ -371,32 +388,29 @@ export default function BookingScreen() {
             <View key="step3">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Review Booking</Text>
 
-              <View style={[styles.summaryCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Pandit</Text>
-                  <Text style={[styles.summaryValue, { color: colors.text }]}>{pandit?.user_details?.full_name}</Text>
-                </View>
-                <View style={[styles.summaryDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Service</Text>
-                  <Text style={[styles.summaryValue, { color: colors.text }]}>{selectedService?.puja_details?.name}</Text>
-                </View>
-                <View style={[styles.summaryDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Date & Time</Text>
-                  <Text style={[styles.summaryValue, { color: colors.text }]}>
-                    {dayjs(selectedDate).format('ddd, MMM D')} | {selectedTime}
-                  </Text>
-                </View>
-                <View style={[styles.summaryDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Location</Text>
-                  <Text style={[styles.summaryValue, { color: colors.text }]}>{address}</Text>
-                </View>
-                <View style={[styles.summaryDivider, { backgroundColor: isDark ? '#333' : '#F0F0F0' }]} />
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: isDark ? '#AAA' : '#666' }]}>Total Amount</Text>
-                  <Text style={[styles.totalPrice, { color: colors.primary }]}>NPR {selectedService?.custom_price}</Text>
+              <View 
+                className="rounded-3xl p-5 shadow-sm border mb-6"
+                style={{ backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F3F4F6' }}
+              >
+                {[
+                  { label: 'Pandit', value: pandit?.user_details?.full_name },
+                  { label: 'Service', value: selectedService?.puja_details?.name },
+                  { label: 'Date & Time', value: `${dayjs(selectedDate).format('ddd, MMM D')} | ${selectedTime}` },
+                  { label: 'Location', value: address }
+                ].map((item, index) => (
+                  <View key={index}>
+                    <View className="flex-row justify-between py-3">
+                      <Text className="text-sm text-gray-500 dark:text-gray-400">{item.label}</Text>
+                      <Text className="text-sm font-bold flex-1 text-right ml-4" style={{ color: colors.text }}>{item.value}</Text>
+                    </View>
+                    {index < 3 && <View className="h-[1px] bg-gray-100 dark:bg-zinc-800" />}
+                  </View>
+                ))}
+                
+                <View className="h-[1px] bg-gray-100 dark:bg-zinc-800 my-2" />
+                <View className="flex-row justify-between items-center pt-2">
+                  <Text className="text-base font-bold" style={{ color: colors.text }}>Total Amount</Text>
+                  <Text className="text-xl font-bold text-primary">NPR {selectedService?.custom_price}</Text>
                 </View>
               </View>
 
@@ -409,11 +423,14 @@ export default function BookingScreen() {
                       <Text style={[styles.aiBadgeText, { color: '#3B82F6' }]}>Required Samagri</Text>
                     </View>
                   </View>
-                  <View style={[styles.summaryCard, { backgroundColor: colors.card, padding: 15 }]}>
+                  <View 
+                    className="rounded-2xl p-4 border mt-2" 
+                    style={{ backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F3F4F6' }}
+                  >
                     {requirements.map((req, idx) => (
-                      <View key={idx} style={[styles.summaryRow, idx === requirements.length -1 && { borderBottomWidth: 0 }]}>
-                        <Text style={[styles.summaryLabel, { color: colors.text }]}>{req.samagri_item_details?.name || 'Item'}</Text>
-                        <Text style={[styles.summaryValue, { color: colors.text }]}>{req.quantity} {req.unit || 'pcs'}</Text>
+                      <View key={idx} className={`flex-row justify-between py-2 ${idx < requirements.length - 1 ? 'border-b border-gray-100 dark:border-zinc-800' : ''}`}>
+                        <Text className="text-sm" style={{ color: colors.text }}>{req.samagri_item_details?.name || 'Item'}</Text>
+                        <Text className="text-sm font-bold" style={{ color: colors.text }}>{req.quantity} {req.unit || 'pcs'}</Text>
                       </View>
                     ))}
                   </View>
@@ -468,18 +485,21 @@ export default function BookingScreen() {
         </ScrollView>
 
       {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#F0F0F0' }]}>
+      <View 
+        className="absolute bottom-0 left-0 right-0 p-5 border-t"
+        style={{ backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#F3F4F6' }}
+      >
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: colors.primary }, isSubmitting && styles.nextButtonDisabled]}
+          className={`w-full h-14 bg-primary rounded-2xl flex-row items-center justify-center gap-2 shadow-lg shadow-primary/30 active:opacity-80 ${(isSubmitting || (currentStep === 1 && !selectedTime)) ? 'opacity-50' : ''}`}
           onPress={handleNext}
-          disabled={isSubmitting}
+          disabled={isSubmitting || (currentStep === 1 && !selectedTime)}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#FFF" />
           ) : (
             <>
-              <Text style={styles.nextButtonText}>
-                {currentStep === STEPS.length - 1 ? 'Confirm & Pay' : 'Continue'}
+              <Text className="text-white text-lg font-bold">
+                {currentStep === STEPS.length - 1 ? 'Book Puja' : 'Continue'}
               </Text>
               {currentStep < STEPS.length - 1 && (
                 <Ionicons name="arrow-forward" size={20} color="#FFF" />
@@ -565,33 +585,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 24,
   },
-  optionsContainer: {
-    gap: 12,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  optionText: {
-    fontSize: 16,
-  },
   subLabel: {
     fontSize: 16,
     fontWeight: '600',
@@ -603,37 +596,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     marginBottom: 24,
-  },
-  dateCard: {
-    width: 70,
-    height: 90,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  dayText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  timeGrid: {
-    gap: 12,
-  },
-  timeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  timeText: {
-    fontSize: 16,
   },
   inputGroup: {
     marginBottom: 20,
@@ -649,39 +611,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
   },
-  summaryCard: {
-    borderRadius: 16,
-    padding: 20,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  summaryLabel: {
-    fontSize: 14,
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'right',
-    flex: 1,
-    marginLeft: 16,
-  },
-  summaryDivider: {
-    height: 1,
-    marginVertical: 8,
-  },
-  totalPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   paymentNote: {
     flexDirection: 'row',
     padding: 16,
@@ -692,30 +621,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    borderTopWidth: 1,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-  },
-  nextButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  nextButtonDisabled: {
-    opacity: 0.7,
   },
   successContainer: {
     flex: 1,
@@ -739,16 +644,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
-  },
-  homeButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  homeButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   recsSection: {
     marginTop: 10,

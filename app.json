@@ -60,7 +60,9 @@
           "merchantIdentifier": "merchant.com.anonymous.pandityatraapp",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-video",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

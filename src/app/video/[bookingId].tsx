@@ -71,7 +71,13 @@ export default function VideoCallScreen() {
             userName={user?.name || (isPandit ? 'Pandit Ji' : 'Customer')}
             peerName={peerInfo.name}
             peerAvatar={peerInfo.avatar}
-            onLeave={() => router.back()}
+            onLeave={() => {
+                if (router.canGoBack()) {
+                    router.back();
+                } else {
+                    router.replace(isPandit ? '/(pandit)' : '/(customer)');
+                }
+            }}
             isPandit={isPandit}
         />
     );

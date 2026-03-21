@@ -23,23 +23,25 @@ export const PaymentWebView: React.FC<PaymentWebViewProps> = ({
 
         // Custom logic to handle redirect URLs from payment gateways
         if (
-            currentUrl.includes('payment/success') || 
+            currentUrl.includes('payments/success') || 
             currentUrl.includes('status=completed') || 
             currentUrl.includes('status=Completed') ||
-            currentUrl.includes('/payment/khalti/verify') || 
-            currentUrl.includes('/payment/esewa/verify') ||
+            currentUrl.includes('/payments/khalti/verify') || 
+            currentUrl.includes('/payments/esewa/verify') ||
             currentUrl.includes('pidx=') ||
-            currentUrl.includes('q=su') || // eSewa success shorthand often used
-            currentUrl.includes('oid=') && currentUrl.includes('amt=') // eSewa legacy success
+            currentUrl.includes('q=su') || 
+            (currentUrl.includes('oid=') && currentUrl.includes('amt=') && !currentUrl.includes('q=fu'))
         ) {
+            console.log('[PaymentWebView] Success redirect detected:', currentUrl);
             onSuccess({ url: currentUrl });
         } else if (
-            currentUrl.includes('payment/failure') || 
+            currentUrl.includes('payments/failure') || 
             currentUrl.includes('status=failed') || 
             currentUrl.includes('status=Failed') ||
-            currentUrl.includes('/payment/failure') ||
-            currentUrl.includes('q=fu') // eSewa failure shorthand
+            currentUrl.includes('/payments/failure') ||
+            currentUrl.includes('q=fu')
         ) {
+            console.log('[PaymentWebView] Failure redirect detected:', currentUrl);
             onFailure({ url: currentUrl });
         } else if (
             currentUrl.includes('payment/cancel') || 

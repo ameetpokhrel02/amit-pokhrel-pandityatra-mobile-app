@@ -67,28 +67,11 @@ export async function initiateChat(panditId: number): Promise<ChatRoom> {
   return mapChatRoom(response.data);
 }
 
-// AI Mode: Ritual Guide (Suggestions/Initial)
-export async function fetchAiGuide(): Promise<string> {
-  const response = await apiClient.get('ai/guide/');
-  return response.data.response || response.data.message || response.data.detail;
-}
-
-// AI Mode: General AI Chat
-export async function generalAiChat(message: string): Promise<string> {
-  const response = await apiClient.post('ai/chat/', { message });
-  return response.data.response || response.data.message;
-}
-
-// AI Quick Guide Chat (Existing legacy helper)
-export async function quickChat(message: string): Promise<string> {
-  const response = await apiClient.post('chat/quick-chat/', { message });
-  return response.data.response;
-}
-
 // WebSocket URL helper
 export function getChatWebSocketUrl(roomId: string | number, token: string): string {
-  // Replace http with ws for the base URL
+  // Replace http with ws for the base URL and handle standard Django Channels path
   const baseUrl = apiClient.defaults.baseURL?.replace('http', 'ws') || 'ws://localhost:8000/api';
-  return `${baseUrl}/ws/chat/${roomId}/?token=${token}`;
+  // Note: Backend expectation is ws://<host>/ws/chat/{roomId}/?token=<jwt>
+  return `${baseUrl.replace('/api/', '')}/ws/chat/${roomId}/?token=${token}`;
 }
 

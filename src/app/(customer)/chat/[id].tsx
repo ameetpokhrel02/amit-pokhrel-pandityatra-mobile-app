@@ -9,6 +9,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
 import { useUser } from '@/store/auth.store';
 import { getImageUrl } from '@/utils/image';
+import { useChatSocket } from '@/hooks/useChatSocket';
 
 export default function ChatRoomScreen() {
   const { id } = useLocalSearchParams();
@@ -16,7 +17,7 @@ export default function ChatRoomScreen() {
   const { colors, theme } = useTheme();
   const { user } = useUser();
   const isDark = theme === 'dark';
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { messages, status, manualRefresh } = useChatSocket(typeof id === 'string' ? id : undefined);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState<ChatRoom | null>(null);
@@ -24,16 +25,12 @@ export default function ChatRoomScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    loadMessages();
+    loadRoomDetails();
   }, [id]);
 
-  const loadMessages = async () => {
+  const loadRoomDetails = async () => {
     if (typeof id !== 'string') return;
     try {
-      // Fetch messages
-      const data = await fetchChatRoomMessages(id);
-      setMessages(data);
-
       // Fetch room details to get the Pandit name
       const rooms = await fetchChatRooms();
       const currentRoom = rooms.find(r => String(r.id) === String(id));
@@ -42,8 +39,8 @@ export default function ChatRoomScreen() {
       }
 
       // Check for AI suggestion based on last message
-      if (data.length > 0) {
-        const lastMsg = data[data.length - 1];
+      if (messages.length > 0) {
+        const lastMsg = messages[messages.length - 1];
         if (lastMsg.senderId !== user?.email && lastMsg.senderId !== 'u1') {
           const suggestion = await getAISuggestion(id, lastMsg.text);
           setAiSuggestion(suggestion);
@@ -70,7 +67,7 @@ export default function ChatRoomScreen() {
       isRead: true,
     };
 
-    setMessages(prev => [...prev, optimisticMessage]);
+    // setMessages(prev => [...prev, optimisticMessage]); // useChatSocket will handle the message once it comes back or we can keep it for UI snappiness
     setInputText('');
     setAiSuggestion(null); // Clear suggestion after sending
 
@@ -132,8 +129,10 @@ export default function ChatRoomScreen() {
             {room?.participants.find(p => p.role === 'pandit')?.name || 'Chat with Pandit'}
           </Text>
           <View style={styles.verifiedBadge}>
-            <IconSymbol name="checkmark.circle.fill" size={14} color={colors.primary} />
-            <Text style={[styles.verifiedText, { color: colors.primary }]}>Verified Pandit</Text>
+            <View style={[styles.statusDot, { backgroundColor: status === 'connected' ? '#4CAF50' : '#F44336' }]} />
+            <Text style={[styles.statusText, { color: status === 'connected' ? '#4CAF50' : '#F44336' }]}>
+              {status === 'connected' ? 'Live' : 'Connecting...'}
+            </Text>
           </View>
         </View>
       </View>
@@ -323,5 +322,15 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  statusText: {
+    fontSize: 12,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

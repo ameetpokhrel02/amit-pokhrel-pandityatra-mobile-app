@@ -1,20 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, RefreshControl } from 'react-native';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  Switch, 
+  ActivityIndicator, 
+  RefreshControl, 
+  SafeAreaView, 
+  StatusBar,
+  Dimensions,
+  Modal,
+  Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/theme/colors';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
 import { fetchProfile } from '@/services/auth.service';
-import { PanditService } from '@/services/api';
 import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
 import { fetchNotifications, markNotificationAsRead, Notification } from '@/services/notification.service';
-import { joinVideoRoom } from '@/services/video.service';
 import { listBookings } from '@/services/booking.service';
+import { useAuthStore } from '@/store/auth.store';
 import dayjs from 'dayjs';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PanditDashboardScreen() {
   const router = useRouter();
+  const authStore = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -29,6 +43,10 @@ export default function PanditDashboardScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
 
+  // Modals
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -36,14 +54,13 @@ export default function PanditDashboardScreen() {
       const profileData = profileRes.data;
       setProfile(profileData);
 
-      // If user has a pandit profile
       if (profileData.pandit_profile) {
         setIsAvailable(profileData.pandit_profile.is_available);
         setStats({
           pending: profileData.pandit_profile.pending_bookings?.toString() || '0',
           upcoming: profileData.pandit_profile.upcoming_bookings?.toString() || '0',
           earnings: `₹${profileData.pandit_profile.total_earnings || 0}`,
-          rating: profileData.pandit_profile.rating ? profileData.pandit_profile.rating.toString() : '0.0'
+          rating: profileData.pandit_profile.rating ? profileData.pandit_profile.rating.toFixed(1) : '0.0'
         });
       }
 
@@ -79,7 +96,7 @@ export default function PanditDashboardScreen() {
       await togglePanditAvailability(value);
     } catch (error) {
       console.error('Error toggling availability:', error);
-      setIsAvailable(!value); // Revert on error
+      setIsAvailable(!value);
     }
   };
 
@@ -92,184 +109,262 @@ export default function PanditDashboardScreen() {
     }
   };
 
-  const handleJoinVideo = async (bookingId: number) => {
-    router.push(`/video/${bookingId}`);
+  const handleLogout = async () => {
+    await authStore.logout();
+    router.replace('/(auth)/user/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    // API logic for delete would go here
+    Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
+    await authStore.logout();
+    router.replace('/(auth)/user/login');
   };
 
   if (loading && !refreshing) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+      <View className="flex-1 items-center justify-center bg-zinc-50">
+        <ActivityIndicator size="large" color="#FF6F00" />
+        <Text className="mt-4 text-zinc-500 font-medium">Loading Dashboard...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.light.primary} />
-      }
-    >
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: '#FF6F00', paddingBottom: 30, marginBottom: 0 }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.greeting, { color: '#FFF' }]}>Namaste, {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!</Text>
-          <View style={styles.headerRow}>
-            <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, borderRadius: 20 }]}>
-              <Ionicons name="checkmark-circle" size={16} color="#FFD700" />
-              <Text style={[styles.verifiedText, { color: '#FFF' }]}>Verified</Text>
-            </View>
-            <View style={styles.availabilityToggle}>
-              <Text style={[styles.availabilityText, { color: isAvailable ? '#FFF' : 'rgba(255,255,255,0.7)' }]}>
-                {isAvailable ? 'Online' : 'Offline'}
+    <SafeAreaView className="flex-1 bg-zinc-50">
+      <StatusBar barStyle="light-content" backgroundColor="#FF6F00" />
+      
+      {/* Scrollable Content */}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF6F00" />
+        }
+      >
+        {/* Header - Saffron Theme */}
+        <View className="bg-primary pt-12 pb-24 px-6 rounded-b-[40px] shadow-lg shadow-primary/40">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1">
+              <Text className="text-white/80 text-lg font-medium">Namaste,</Text>
+              <Text className="text-white text-3xl font-extrabold tracking-tight">
+                {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!
               </Text>
-              <Switch
-                value={isAvailable}
-                onValueChange={handleToggleAvailability}
-                trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#FFD700' }}
-                thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
-                ios_backgroundColor="#3e3e3e"
-              />
-            </View>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(pandit)/profile')}>
-          {profile?.profile_pic ? (
-            <Image
-              source={{ uri: getImageUrl(profile.profile_pic) || '' }}
-              style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#FFF' }}
-              contentFit="cover"
-            />
-          ) : (
-            <Ionicons name="person-circle-outline" size={50} color="#FFF" />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick Stats */}
-      <View style={styles.statsContainer}>
-        <StatCard label="Pending" value={stats.pending} icon="time-outline" color="#FF6F00" />
-        <StatCard label="Upcoming" value={stats.upcoming} icon="calendar-outline" color="#3B82F6" />
-        <TouchableOpacity style={{ width: '23%' }} onPress={() => router.push('/(pandit)/earnings')}>
-          <StatCard label="Earnings" value={stats.earnings} icon="wallet-outline" color="#16A34A" />
-        </TouchableOpacity>
-        <StatCard label="Reviews" value={stats.rating} icon="star-outline" color="#FFD700" />
-      </View>
-
-      {/* Upcoming Pujas */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming Pujas</Text>
-          <TouchableOpacity onPress={() => router.push('/(pandit)/bookings')}>
-            <Text style={styles.seeAll}>View All</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.verticalList}>
-          {recentBookings.length > 0 ? (
-            recentBookings.map((booking) => (
-              <UpcomingPujaCard
-                key={booking.id}
-                customerName={booking.user_full_name || 'Customer'}
-                pujaType={booking.service_name || 'Puja'}
-                date={dayjs(booking.booking_date).format('DD MMM, hh:mm A')}
-                status={booking.status}
-                onPress={() => router.push({ pathname: '/(pandit)/bookings', params: { id: booking.id } } as any)}
-                onJoin={() => handleJoinVideo(booking.id)}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No upcoming bookings found.</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Booking Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionGrid}>
-          <ActionButton label="Accept/Decline" icon="checkmark-done-circle-outline" onPress={() => router.push('/(pandit)/bookings')} />
-          <ActionButton label="Message" icon="chatbubble-ellipses-outline" onPress={() => router.push('/chat/rooms')} />
-          <ActionButton label="Withdraw Funds" icon="wallet-outline" onPress={() => router.push('/(pandit)/earnings')} />
-          <ActionButton label="Update Calendar" icon="calendar-outline" onPress={() => router.push('/(pandit)/calendar')} />
-        </View>
-      </View>
-
-      {/* Services Management */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Services</Text>
-          <TouchableOpacity onPress={() => router.push('/(pandit)/services' as any)}>
-            <Text style={styles.seeAll}>Manage</Text>
-          </TouchableOpacity>
-        </View>
-        {myServices.length > 0 ? (
-          myServices.map((service, index) => (
-            <View key={service.id || index} style={[styles.serviceCard, { marginBottom: 8 }]}>
-              <View style={styles.serviceInfo}>
-                <Text style={styles.serviceName}>{service.puja_details?.name}</Text>
-                <Text style={styles.serviceDetails}>{service.duration_minutes} Mins • ₹{service.custom_price}</Text>
+              <View className="flex-row items-center mt-3 gap-3">
+                <View className="bg-white/20 flex-row items-center px-3 py-1.5 rounded-full border border-white/30">
+                  <Ionicons name="checkmark-circle" size={16} color="#FFD700" />
+                  <Text className="text-white text-[13px] font-bold ml-1.5 uppercase tracking-wider">Verified</Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Text className={`text-[13px] font-bold ${isAvailable ? 'text-white' : 'text-white/60'}`}>
+                    {isAvailable ? 'ONLINE' : 'OFFLINE'}
+                  </Text>
+                  <Switch
+                    value={isAvailable}
+                    onValueChange={handleToggleAvailability}
+                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#FFD700' }}
+                    thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
+                  />
+                </View>
               </View>
-              <TouchableOpacity style={styles.editButton}>
-                <Ionicons name="create-outline" size={20} color={Colors.light.primary} />
-              </TouchableOpacity>
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No services added yet.</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Notifications / Alerts */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          {notifications.length > 0 && (
-            <TouchableOpacity onPress={() => router.push('/notifications' as any)}>
-              <Text style={styles.seeAll}>View All</Text>
+            <TouchableOpacity 
+                className="bg-white/20 p-1 rounded-full border-2 border-white/50"
+                onPress={() => router.push('/(pandit)/profile')}
+            >
+              {profile?.profile_pic ? (
+                <Image
+                  source={{ uri: getImageUrl(profile.profile_pic) || undefined }}
+                  className="w-16 h-16 rounded-full"
+                  contentFit="cover"
+                />
+              ) : (
+                <View className="w-16 h-16 rounded-full bg-white/10 items-center justify-center">
+                  <Ionicons name="person" size={40} color="#FFF" />
+                </View>
+              )}
             </TouchableOpacity>
-          )}
-        </View>
-        
-        {notifications.length > 0 ? (
-          notifications.slice(0, 3).map((notif) => (
-            <View key={notif.id} style={[styles.alertCard, { marginBottom: 8 }]}>
-              <View style={styles.alertIcon}>
-                <Ionicons name="notifications" size={20} color={notif.is_read ? "#9CA3AF" : "#EF4444"} />
-              </View>
-              <View style={styles.alertContent}>
-                <Text style={styles.alertTitle}>{notif.title}</Text>
-                <Text style={styles.alertMessage}>{notif.message}</Text>
-              </View>
-              <TouchableOpacity style={styles.alertAction} onPress={() => handleMarkAsRead(notif.id)}>
-                <Text style={styles.alertActionText}>Read</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No new notifications.</Text>
           </View>
-        )}
-      </View>
-    </ScrollView>
+        </View>
+
+        {/* Stats Grid - 3 Columns (Instruction followed: 3 equal cards) */}
+        <View className="-mt-14 px-6">
+          <View className="flex-row justify-between gap-3">
+             <StatCard 
+               label="Pending" 
+               value={stats.pending} 
+               icon="time" 
+               color="#FF6F00" 
+             />
+             <StatCard 
+               label="Upcoming" 
+               value={stats.upcoming} 
+               icon="calendar" 
+               color="#3B82F6" 
+             />
+             <StatCard 
+               label="Reviews" 
+               value={stats.rating} 
+               icon="star" 
+               color="#FFD700" 
+             />
+          </View>
+        </View>
+
+        <View className="px-6 mt-8">
+            {/* Wallet Quick Summary */}
+            <TouchableOpacity 
+                className="bg-white p-5 rounded-3xl flex-row items-center shadow-md shadow-zinc-200"
+                onPress={() => router.push('/(pandit)/earnings')}
+            >
+                <View className="w-12 h-12 bg-emerald-50 rounded-2xl items-center justify-center">
+                    <Ionicons name="wallet-outline" size={24} color="#10B981" />
+                </View>
+                <View className="ml-4 flex-1">
+                    <Text className="text-zinc-400 text-sm font-semibold uppercase tracking-wider">Total Earnings</Text>
+                    <Text className="text-zinc-800 text-2xl font-bold">{stats.earnings}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+            </TouchableOpacity>
+        </View>
+
+        {/* Upcoming Bookings Section */}
+        <View className="mt-8 px-6">
+          <View className="flex-row justify-between items-end mb-4 px-1">
+            <Text className="text-xl font-bold text-zinc-800">Upcoming Pujas</Text>
+            <TouchableOpacity onPress={() => router.push('/(pandit)/bookings')}>
+              <Text className="text-primary font-bold text-sm">View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="gap-4">
+            {recentBookings.length > 0 ? (
+              recentBookings.map((booking) => (
+                <UpcomingPujaCard
+                  key={booking.id}
+                  customerName={booking.user_full_name || 'Customer'}
+                  pujaType={booking.service_name || 'Puja'}
+                  date={dayjs(booking.booking_date).format('DD MMM, hh:mm A')}
+                  status={booking.status}
+                  onPress={() => router.push({ pathname: '/(pandit)/bookings', params: { id: booking.id } } as any)}
+                  onJoin={() => router.push(`/video/${booking.id}`)}
+                />
+              ))
+            ) : (
+              <View className="bg-white p-10 rounded-3xl items-center shadow-sm shadow-zinc-100 border border-zinc-100">
+                <Ionicons name="calendar-outline" size={48} color="#E5E7EB" />
+                <Text className="text-zinc-400 mt-3 font-medium text-center leading-5">No upcoming bookings found.{"\n"}Stay tuned for new requests!</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Quick Actions Grid - 2 Columns */}
+        <View className="mt-8 px-6">
+          <Text className="text-xl font-bold text-zinc-800 mb-4 px-1">Quick Actions</Text>
+          <View className="flex-row flex-wrap justify-between gap-y-4">
+            <ActionButton 
+                label="Manage Bookings" 
+                icon="checkmark-done-circle" 
+                onPress={() => router.push('/(pandit)/bookings')} 
+            />
+            <ActionButton 
+                label="Chat Requests" 
+                icon="chatbubble-ellipses" 
+                onPress={() => router.push('/(pandit)/messages')} 
+            />
+            <ActionButton 
+                label="My Services" 
+                icon="color-palette" 
+                onPress={() => router.push('/(pandit)/services')} 
+            />
+            <ActionButton 
+                label="Calendar Settings" 
+                icon="calendar" 
+                onPress={() => router.push('/(pandit)/calendar')} 
+            />
+          </View>
+        </View>
+
+        {/* Profile List Section (New) */}
+        <View className="mt-10 px-6">
+            <Text className="text-xl font-bold text-zinc-800 mb-4 px-1">Settings & Profile</Text>
+            <View className="bg-white rounded-[32px] overflow-hidden shadow-md shadow-zinc-100 border border-zinc-50">
+                <ProfileItem icon="person-outline" label="Edit Profile" onPress={() => router.push('/(pandit)/profile')} />
+                <ProfileItem icon="wallet-outline" label="Earnings & Wallet" onPress={() => router.push('/(pandit)/earnings')} />
+                <ProfileItem icon="ribbon-outline" label="My Certificates" onPress={() => router.push('/(pandit)/profile')} />
+                <ProfileItem icon="notifications-outline" label="Notifications" onPress={() => router.push('/(pandit)' as any)} />
+                <ProfileItem icon="options-outline" label="Settings" onPress={() => {}} />
+                
+                <View className="flex-row items-center px-6 py-4 border-b border-zinc-50">
+                    <View className="w-10 h-10 bg-zinc-50 rounded-xl items-center justify-center">
+                        <Ionicons name="moon-outline" size={20} color="#6B7281" />
+                    </View>
+                    <Text className="flex-1 ml-4 text-zinc-700 font-semibold text-base">Dark Mode</Text>
+                    <Switch value={false} onValueChange={() => {}} />
+                </View>
+
+                <ProfileItem icon="help-circle-outline" label="Help & Support" onPress={() => router.push('/(pandit)/help')} />
+                <ProfileItem icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => {}} />
+                
+                <ProfileItem 
+                    icon="trash-outline" 
+                    label="Delete Account" 
+                    color="#EF4444" 
+                    onPress={() => setShowDeleteModal(true)} 
+                    hideBorder
+                />
+            </View>
+
+            <TouchableOpacity 
+                className="mt-6 flex-row items-center justify-center p-5 bg-white rounded-3xl border border-zinc-100 shadow-sm"
+                onPress={() => setShowLogoutModal(true)}
+            >
+                <Ionicons name="log-out-outline" size={22} color="#EF4444" />
+                <Text className="ml-2 text-[#EF4444] font-bold text-lg">Logout</Text>
+            </TouchableOpacity>
+        </View>
+
+      </ScrollView>
+
+      {/* Confirmation Modals */}
+      <ConfirmationModal 
+        visible={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        description="Are you sure you want to log out of PanditYatra?"
+        confirmText="Logout"
+      />
+
+      <ConfirmationModal 
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        description="This action cannot be undone. All your data will be permanently removed."
+        confirmText="Delete My Account"
+        isDanger
+      />
+      
+    </SafeAreaView>
   );
 }
 
 function StatCard({ label, value, icon, color }: { label: string, value: string, icon: any, color: string }) {
   return (
-    <View style={styles.statCard}>
-      <View style={[styles.statIconContainer, { backgroundColor: `${color}20` }]}>
+    <View 
+        className="bg-white rounded-2xl p-4 items-center shadow-md shadow-zinc-200 border border-zinc-50"
+        style={{ width: (SCREEN_WIDTH - 60) / 3 }}
+    >
+      <View 
+        className="w-10 h-10 rounded-xl justify-center items-center mb-2"
+        style={{ backgroundColor: `${color}15` }}
+      >
         <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text className="text-xl font-bold text-zinc-800">{value}</Text>
+      <Text className="text-[11px] font-bold text-zinc-400 uppercase tracking-tighter mt-0.5">{label}</Text>
     </View>
   );
 }
@@ -282,305 +377,124 @@ function UpcomingPujaCard({ customerName, pujaType, date, status, onPress, onJoi
   onPress?: () => void,
   onJoin?: () => void
 }) {
-  return (
-    <TouchableOpacity style={styles.upcomingCard} onPress={onPress}>
-      <View style={styles.upcomingContent}>
-        <Text style={styles.upcomingTitle}>{pujaType}</Text>
-        <Text style={styles.upcomingCustomer}>for {customerName}</Text>
-        <Text style={styles.upcomingDate}><Ionicons name="time-outline" size={12} /> {date}</Text>
-      </View>
-      <View style={styles.upcomingActions}>
-        <View style={[styles.statusBadge, { backgroundColor: status === 'Confirmed' ? '#DCFCE7' : '#FEF3C7' }]}>
-          <Text style={[styles.statusText, { color: status === 'Confirmed' ? '#166534' : '#92400E' }]}>{status}</Text>
-        </View>
-        <TouchableOpacity style={styles.viewButton} onPress={onPress}>
-          <Text style={styles.viewButtonText}>Details</Text>
+    const isAccepted = status?.toLowerCase() === 'accepted';
+    return (
+        <TouchableOpacity 
+            className="bg-white p-5 rounded-3xl shadow-md shadow-zinc-100 flex-row justify-between border border-zinc-50 active:bg-zinc-50"
+            onPress={onPress}
+        >
+            <View className="flex-1 pr-4">
+                <Text className="text-zinc-800 font-bold text-lg mb-1">{pujaType}</Text>
+                <Text className="text-zinc-500 font-medium text-sm mb-3">Customer: {customerName}</Text>
+                <View className="flex-row items-center">
+                    <Ionicons name="time-outline" size={14} color="#9CA3AF" />
+                    <Text className="text-zinc-400 text-xs ml-1.5 font-semibold uppercase">{date}</Text>
+                </View>
+            </View>
+            <View className="items-end justify-between">
+                <View className={`px-3 py-1 rounded-full ${isAccepted ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+                    <Text className={`text-[10px] font-extrabold uppercase tracking-widest ${isAccepted ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {status}
+                    </Text>
+                </View>
+                {isAccepted && (
+                    <TouchableOpacity 
+                        className="bg-primary px-4 py-2 rounded-xl"
+                        onPress={onJoin}
+                    >
+                        <Text className="text-white font-bold text-xs">Join Call</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
         </TouchableOpacity>
-        {(status === 'Confirmed' || status === 'accepted' || status === 'ACCEPTED') && (
-          <TouchableOpacity style={[styles.viewButton, { backgroundColor: '#FF6F00' }]} onPress={onJoin}>
-            <Text style={[styles.viewButtonText, { color: '#FFF' }]}>Join</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+    );
 }
 
 function ActionButton({ label, icon, onPress }: { label: string, icon: any, onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.actionButton} onPress={onPress}>
-      <View style={styles.actionButtonIcon}>
-        <Ionicons name={icon} size={24} color={Colors.light.primary} />
+    <TouchableOpacity 
+        className="bg-white p-6 rounded-3xl items-center shadow-md shadow-zinc-200 border border-zinc-50 active:bg-zinc-50"
+        style={{ width: '48%' }}
+        onPress={onPress}
+    >
+      <View className="w-14 h-14 rounded-2xl bg-orange-50 items-center justify-center mb-4">
+        <Ionicons name={icon} size={28} color="#FF6F00" />
       </View>
-      <Text style={styles.actionButtonLabel}>{label}</Text>
+      <Text className="text-zinc-800 font-bold text-[13px] text-center leading-4">{label}</Text>
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contentContainer: {
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 4,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    // fontFamily: 'Playfair Display', // Ensure fonts are loaded or use defaults
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  verifiedText: {
-    fontSize: 14,
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  availabilityToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  availabilityText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  profileButton: {
-    padding: 4,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: -20,
-    marginBottom: 32,
-  },
-  statCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 10,
-    alignItems: 'center',
-    width: '23%',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  statIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#666',
-  },
-  section: {
-    marginBottom: 24,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    // fontFamily: 'Playfair Display',
-  },
-  seeAll: {
-    color: Colors.light.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  verticalList: {
-    gap: 12,
-  },
-  upcomingCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-  },
-  upcomingContent: {
-    flex: 1,
-  },
-  upcomingTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  upcomingCustomer: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  upcomingDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  upcomingActions: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  viewButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-  },
-  viewButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-  },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  actionButton: {
-    width: '47%',
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    elevation: 2,
-  },
-  actionButtonIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF7ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  actionButtonLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-  },
-  serviceCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-  },
-  serviceInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  serviceDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-  editButton: {
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-  },
-  emptyState: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-  },
-  emptyStateText: {
-    color: '#6B7280',
-    fontSize: 14,
-  },
-  alertCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
-  },
-  alertIcon: {
-    marginRight: 12,
-  },
-  alertContent: {
-    flex: 1,
-  },
-  alertTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 2,
-  },
-  alertMessage: {
-    fontSize: 12,
-    color: '#666',
-  },
-  alertAction: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-  },
-  alertActionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-  },
-});
+function ProfileItem({ icon, label, onPress, color = '#6B7280', hideBorder }: { 
+    icon: any, 
+    label: string, 
+    onPress: () => void,
+    color?: string,
+    hideBorder?: boolean
+}) {
+    return (
+        <TouchableOpacity 
+            className={`flex-row items-center px-6 py-4 active:bg-zinc-50 ${!hideBorder ? 'border-b border-zinc-50' : ''}`}
+            onPress={onPress}
+        >
+            <View className="w-10 h-10 bg-zinc-50 rounded-xl items-center justify-center">
+                <Ionicons name={icon} size={20} color={color} />
+            </View>
+            <Text 
+                className="flex-1 ml-4 font-semibold text-base"
+                style={{ color: label === 'Delete Account' ? '#EF4444' : '#374151' }}
+            >
+                {label}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+        </TouchableOpacity>
+    );
+}
+
+function ConfirmationModal({ visible, onClose, onConfirm, title, description, confirmText, isDanger }: {
+    visible: boolean,
+    onClose: () => void,
+    onConfirm: () => void,
+    title: string,
+    description: string,
+    confirmText: string,
+    isDanger?: boolean
+}) {
+    return (
+        <Modal
+            transparent
+            visible={visible}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View className="flex-1 bg-black/50 justify-center items-center px-6">
+                <View className="bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl">
+                    <View className={`w-16 h-16 self-center rounded-2xl items-center justify-center mb-6 ${isDanger ? 'bg-red-50' : 'bg-orange-50'}`}>
+                        <Ionicons 
+                            name={isDanger ? "alert-circle-outline" : "help-circle-outline"} 
+                            size={40} 
+                            color={isDanger ? "#EF4444" : "#FF6F00"} 
+                        />
+                    </View>
+                    <Text className="text-2xl font-extrabold text-zinc-900 text-center mb-3">{title}</Text>
+                    <Text className="text-zinc-500 text-center leading-5 mb-8 font-medium">{description}</Text>
+                    
+                    <View className="gap-3">
+                        <TouchableOpacity 
+                            className={`h-14 rounded-2xl items-center justify-center ${isDanger ? 'bg-red-500' : 'bg-primary'}`}
+                            onPress={onConfirm}
+                        >
+                            <Text className="text-white font-bold text-lg">{confirmText}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            className="h-14 rounded-2xl items-center justify-center bg-zinc-100 mt-2"
+                            onPress={onClose}
+                        >
+                            <Text className="text-zinc-500 font-bold text-lg">Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}

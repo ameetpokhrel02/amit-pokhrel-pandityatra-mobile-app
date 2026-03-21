@@ -21,8 +21,9 @@ export const googleLogin = async (data: any) => {
   return res;
 };
 export const forgotPassword = (data: any) => publicApi.post('users/forgot-password/', data);
-export const requestPasswordResetOtp = forgotPassword; // Alias
+export const requestPasswordResetOTP = forgotPassword; // Fixed casing
 export const verifyForgotOTP = (data: any) => publicApi.post('users/forgot-password/verify-otp/', data);
+export const verifyOTP = loginOTP; // Added for general OTP verification
 export const resetPassword = (data: any) => publicApi.post('users/forgot-password/reset/', data);
 export const resetPasswordWithToken = resetPassword; // Alias
 export const getProfile = () => api.get('users/profile/');

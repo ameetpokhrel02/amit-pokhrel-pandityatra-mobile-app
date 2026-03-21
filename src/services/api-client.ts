@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import { useAuthStore } from '@/store/auth.store';
+// import { useAuthStore } from '@/store/auth.store'; // Removed to break require cycle
 
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
@@ -78,7 +78,9 @@ export const saveTokens = async (access: string, refresh: string, userData?: any
         await SecureStore.setItemAsync('refresh_token', refresh);
 
         if (userData) {
-            await useAuthStore.getState().login(userData, { access, refresh });
+            // Success: the store will pick up these tokens on its own synchronization
+            // or we can emit an event if needed. For now, we trust the sync.
+            // await useAuthStore.getState().login(userData, { access, refresh });
         }
 
         // Update default header for the current instance session
@@ -161,7 +163,9 @@ apiClient.interceptors.response.use(
             const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
             if (!refreshToken) {
-                useAuthStore.getState().logout();
+                // useAuthStore.getState().logout();
+                await SecureStore.deleteItemAsync('access_token');
+                await SecureStore.deleteItemAsync('refresh_token');
                 return Promise.reject(error);
             }
 
@@ -179,7 +183,9 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (err) {
                 processQueue(err, null);
-                useAuthStore.getState().logout();
+                // useAuthStore.getState().logout();
+                await SecureStore.deleteItemAsync('access_token');
+                await SecureStore.deleteItemAsync('refresh_token');
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;

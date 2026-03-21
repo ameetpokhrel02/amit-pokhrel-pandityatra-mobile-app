@@ -2,14 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
-  ActivityIndicator,
   TouchableOpacity,
   Dimensions,
+  StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -20,9 +20,9 @@ import * as Google from "expo-auth-session/providers/google";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { Colors } from "@/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
+import { useAuthStore } from "@/store/auth.store";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,24 +32,20 @@ const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
 const IOS_CLIENT_ID = EXTRA.iosClientId || "";
 const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
 
-const { width } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-type LoginMode = "otp" | "password";
-type IdentifierMode = "phone" | "email";
-type RoleMode = "customer" | "pandit";
+type AuthStep = "initial" | "email_login" | "phone_login";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const loginStore = useAuthStore();
 
-  const [role] = useState<RoleMode>("pandit");
-  const [loginMode, setLoginMode] = useState<LoginMode>("otp");
-  const [identifierMode, setIdentifierMode] = useState<IdentifierMode>("phone");
+  const [step, setStep] = useState<AuthStep>("initial");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [formattedPhone, setFormattedPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"selectMethod" | "form">("selectMethod");
   const [showPassword, setShowPassword] = useState(false);
 
   const redirectUri = useMemo(
@@ -81,12 +77,13 @@ export default function LoginScreen() {
 
       try {
         setLoading(true);
-        await googleLogin({ id_token: idToken }); 
-        const profileRes = await getProfile(); 
-        const profile: any = profileRes?.data ?? profileRes;
-        const roleValue = profile?.role ?? profile?.user?.role;
+        const res = await googleLogin({ id_token: idToken }); 
+        
+        const userData = res.data.user;
+        const tokens = { access: res.data.access, refresh: res.data.refresh };
+        await loginStore.login(userData, tokens);
 
-        if (roleValue === "pandit") router.replace("/(pandit)" as any);
+        if (userData.role === "pandit") router.replace("/(pandit)" as any);
         else router.replace("/(customer)" as any);
       } catch (e: any) {
         console.error(e);
@@ -125,14 +122,24 @@ export default function LoginScreen() {
         return;
       }
 
-      await loginPassword({ email, password });
+      const res = await loginPassword({ email, password });
+      
+      const tokens = { access: res.data.access, refresh: res.data.refresh };
+      const userData = res.data.user || { 
+        id: res.data.user_id, 
+        name: res.data.full_name, 
+        role: res.data.role,
+        email: email 
+      };
+      
+      console.log('[Login] Success. Updating store with role:', userData.role);
+      await loginStore.login(userData, tokens);
 
-      const profileRes = await getProfile();
-      const profile: any = profileRes?.data ?? profileRes;
-      const roleValue = profile?.role ?? profile?.user?.role;
-
-      if (roleValue === "pandit") router.replace("/(pandit)" as any);
-      else router.replace("/(customer)" as any);
+      if (userData.role === "pandit") {
+        router.replace("/(pandit)" as any);
+      } else {
+        router.replace("/(customer)" as any);
+      }
     } catch (e: any) {
       console.error(e);
       Alert.alert("Login failed", e?.message || "Invalid credentials");
@@ -146,15 +153,7 @@ export default function LoginScreen() {
       Alert.alert("Config Error", "Missing Google client id.");
       return;
     }
-    if (!googleRequest) {
-      Alert.alert("Wait", "Google request not ready. Try again.");
-      return;
-    }
     await googlePromptAsync();
-  };
-
-  const handleGuest = () => {
-    router.replace("/(customer)" as any);
   };
 
   const navToSignup = () => {
@@ -164,148 +163,131 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      className="flex-1 bg-zinc-50"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.backButtonTop} onPress={() => step === "form" ? setStep("selectMethod") : router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-
-        <View style={styles.card}>
-          <View style={styles.logoContainer}>
+      <StatusBar barStyle="dark-content" />
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center', minHeight: SCREEN_HEIGHT }} 
+        keyboardShouldPersistTaps="handled" 
+        bounces={false}
+      >
+        <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
+          <View className="items-center mb-8">
             <Image
               source={require("@/assets/images/pandit-logo.png")}
-              style={styles.logo}
+              className="w-[120px] h-[120px] mb-4"
               contentFit="contain"
             />
+            <Text className="text-[32px] font-[800] text-primary text-center">PanditYatra</Text>
+            <Text className="text-base text-zinc-500 text-center font-medium mt-1">Welcome back, Pandit Ji</Text>
           </View>
 
-          <Text style={styles.title}>PanditYatra</Text>
-          <Text style={styles.subtitle}>Welcome back, Pandit Ji</Text>
+          {step === "initial" && (
+            <View className="gap-4">
+              <TouchableOpacity
+                className="w-full h-14 bg-primary rounded-2xl flex-row items-center justify-center gap-3 shadow-lg shadow-primary/30 active:opacity-80"
+                onPress={() => setStep("phone_login")}
+              >
+                <Ionicons name="call" size={20} color="#FFFFFF" />
+                <Text className="text-white text-lg font-bold">Continue with Phone</Text>
+              </TouchableOpacity>
 
-          {/* MODE SELECTION */}
-          {step === "selectMethod" && (
-            <View style={styles.stepContainer}>
-              <Button
-                title="Continue with Phone"
-                onPress={() => {
-                  setLoginMode("otp");
-                  setIdentifierMode("phone");
-                  setStep("form");
-                }}
-                style={styles.fullWidthBtn}
-                leftIcon={<Ionicons name="call" size={20} color="#FFF" />}
-              />
+              <TouchableOpacity 
+                className="w-full h-14 border-2 border-primary rounded-2xl flex-row items-center justify-center gap-3 active:bg-primary/5" 
+                onPress={() => setStep("email_login")}
+              >
+                <Ionicons name="mail-outline" size={20} color="#FF6F00" />
+                <Text className="text-primary text-lg font-bold">Continue with Email</Text>
+              </TouchableOpacity>
 
-              <Button
-                title="Continue with Email"
-                variant="outline"
-                onPress={() => {
-                  setLoginMode("password");
-                  setIdentifierMode("email");
-                  setStep("form");
-                }}
-                style={styles.fullWidthBtn}
-                leftIcon={<Ionicons name="mail" size={20} color="#FF6F00" />}
-              />
-
-              <View style={styles.orRow}>
-                <View style={styles.orLine} />
-                <Text style={styles.orText}>OR</Text>
-                <View style={styles.orLine} />
+              <View className="flex-row items-center my-3">
+                <View className="flex-1 h-[1px] bg-zinc-200" />
+                <Text className="px-4 text-sm text-zinc-400 font-semibold">OR</Text>
+                <View className="flex-1 h-[1px] bg-zinc-200" />
               </View>
 
-              <Button
-                title="Continue with Google"
-                variant="outline"
+              <TouchableOpacity 
+                className={`w-full h-14 border border-zinc-200 rounded-2xl flex-row items-center justify-center gap-3 active:bg-zinc-50 ${loading ? 'opacity-50' : ''}`}
                 onPress={handleGooglePress}
-                style={styles.googleBtnStyle}
-                textStyle={{ color: '#374151' }}
-                leftIcon={<Ionicons name="logo-google" size={18} color="#4285F4" />}
-                disabled={!googleRequest || loading}
-              />
+                disabled={loading}
+              >
+                <Ionicons name="logo-google" size={18} color="#EA4335" />
+                <Text className="text-zinc-700 text-base font-semibold">Continue with Google</Text>
+              </TouchableOpacity>
 
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Don't have an account? </Text>
+              <View className="flex-row justify-center mt-2">
+                <Text className="text-zinc-500 text-[15px]">Don't have an account? </Text>
                 <TouchableOpacity onPress={navToSignup}>
-                  <Text style={styles.linkText}>Sign up</Text>
+                  <Text className="text-primary font-bold text-[15px]">Register as Pandit</Text>
                 </TouchableOpacity>
               </View>
-              
-              <TouchableOpacity style={styles.guestLink} onPress={handleGuest}>
-                <Text style={styles.guestText}>Explore as Guest →</Text>
+
+              <TouchableOpacity 
+                className="items-center mt-3" 
+                onPress={() => router.back()}
+              >
+                <Text className="text-zinc-500 text-[15px] font-semibold">← Change Role</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* STEP 3: LOGIN FORM */}
-          {step === "form" && (
-            <View style={styles.stepContainer}>
-              <Text style={styles.formTitle}>
-                {role === "pandit" ? "Pandit " : "Customer "}
-                {identifierMode === "phone" ? "Phone Login" : "Email Login"}
-              </Text>
-
-              {identifierMode === "phone" ? (
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={styles.inputLabel}>Phone Number</Text>
-                  <CustomPhoneInput
-                    value={phone}
-                    onChangeText={setPhone}
-                    onFormattedChange={setFormattedPhone}
-                  />
-                </View>
-              ) : (
-                <>
-                  <Input
-                    label="Email Address"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    leftIcon={<Ionicons name="mail-outline" size={20} color="#9CA3AF" />}
-                  />
-                  <Input
-                    label="Password"
-                    placeholder="Enter password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    leftIcon={<Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />}
-                    rightIcon={
-                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
-                        <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
-                      </TouchableOpacity>
-                    }
-                  />
-                  {loginMode === "password" && (
-                      <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/user/forgot-password' as any)}>
-                          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                      </TouchableOpacity>
-                  )}
-                </>
-              )}
-
-              <Button
-                title={
-                  loading
-                    ? "Please wait..."
-                    : loginMode === "otp"
-                    ? "Send OTP"
-                    : "Login"
-                }
-                onPress={loginMode === "otp" ? handleSendOtp : handlePasswordLogin}
-                style={styles.submitBtn}
-                disabled={loading}
+          {step === "email_login" && (
+            <View className="gap-4">
+              <Input
+                label="Email Address"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
-
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Don't have an account? </Text>
-                <TouchableOpacity onPress={navToSignup}>
-                  <Text style={styles.linkText}>Sign up</Text>
-                </TouchableOpacity>
+              <View>
+                <Input
+                  label="Password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  rightIcon={
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  }
+                />
               </View>
+              
+              <TouchableOpacity
+                className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-2 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
+                onPress={handlePasswordLogin}
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white text-lg font-bold">Login</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
+                <Text className="text-zinc-500 font-semibold">← Go Back</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {step === "phone_login" && (
+            <View className="gap-4">
+              <Text className="text-sm font-semibold text-zinc-700 mb-2">Phone Number</Text>
+              <CustomPhoneInput
+                value={phone}
+                onChangeText={setPhone}
+                onFormattedChange={setFormattedPhone}
+              />
+              <TouchableOpacity
+                className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-2 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
+                onPress={handleSendOtp}
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white text-lg font-bold">Send OTP</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
+                <Text className="text-zinc-500 font-semibold">← Go Back</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -313,158 +295,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  backButtonTop: {
-      position: 'absolute',
-      top: 50,
-      left: 20,
-      zIndex: 10,
-      padding: 8,
-      backgroundColor: '#FFF',
-      borderRadius: 20,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-  },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
-    paddingTop: 40,
-    paddingBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 4,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FF6F00", // Saffron
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#4B5563",
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  stepContainer: {
-    width: '100%',
-    gap: 16,
-  },
-  formTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: '#111827',
-      marginBottom: 8,
-      textAlign: 'center',
-  },
-  fullWidthBtn: {
-    width: "100%",
-    height: 54,
-    borderRadius: 12,
-  },
-  googleBtnStyle: {
-    width: "100%",
-    height: 54,
-    borderRadius: 12,
-    borderColor: '#E5E7EB',
-  },
-  submitBtn: {
-    width: "60%",
-    alignSelf: "center",
-    height: 54,
-    borderRadius: 12,
-    marginTop: 16,
-    shadowColor: '#FF6F00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  orRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  orText: {
-    marginHorizontal: 12,
-    color: "#9CA3AF",
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  guestLink: {
-    alignItems: "center",
-    marginTop: 8,
-    paddingTop: 8,
-  },
-  guestText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  footerText: {
-    color: "#6B7280",
-    fontSize: 15,
-  },
-  linkText: {
-    color: "#FF6F00",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  forgotPassword: {
-      alignSelf: 'flex-end',
-      marginTop: -8,
-      marginBottom: 16,
-  },
-  forgotPasswordText: {
-      color: '#6B7280',
-      fontSize: 13,
-      fontWeight: '500',
-  }
-});

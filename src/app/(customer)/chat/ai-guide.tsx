@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Keyboa
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
-import { quickChat, generalAiChat, fetchAiGuide } from '@/services/chat.service';
+import { sendAiChatMessage, getAiAssistantResponse } from '@/services/ai.service';
 
 interface Message {
   id: string;
@@ -33,8 +33,7 @@ export default function AIGuideScreen() {
     try {
       let initialText = 'Namaste! How can I help you today?';
       if (mode === 'guide') {
-        const guideText = await fetchAiGuide();
-        initialText = guideText || 'Namaste! I am your Ritual Guide. Ask me anything about pujas or samagri.';
+        initialText = 'Namaste! I am your Ritual Guide. Ask me anything about pujas or samagri.';
       } else {
         initialText = 'Hello! I am your General AI Assistant. You can ask me anything about Vedic culture or spirituality.';
       }
@@ -71,9 +70,10 @@ export default function AIGuideScreen() {
     try {
       let aiResponse = '';
       if (mode === 'guide') {
-        aiResponse = await quickChat(userMessage.text);
+        const res = await getAiAssistantResponse(userMessage.text);
+        aiResponse = res.response || res.message || res;
       } else {
-        aiResponse = await generalAiChat(userMessage.text);
+        aiResponse = await sendAiChatMessage(userMessage.text);
       }
       
       const aiMessage: Message = {

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { generateKundali } from '@/services/kundali.service';
 import { Image } from 'expo-image';
+import MapLocationPicker from '@/components/ui/MapLocationPicker';
 
 
 const { width } = Dimensions.get('window');
@@ -20,6 +21,8 @@ export default function KundaliScreen() {
     });
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any | null>(null);
+    const [birthLat, setBirthLat] = useState(27.7172);
+    const [birthLon, setBirthLon] = useState(85.3240);
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
 
@@ -33,11 +36,25 @@ export default function KundaliScreen() {
             setLoading(true);
             setResult(null);
 
+            // Convert DD/MM/YYYY to YYYY-MM-DD for the backend
+            let formattedDob = formData.dob;
+            const parts = formData.dob.split('/');
+            if (parts.length === 3) {
+                formattedDob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+
+            // Ensure time has HH:MM format
+            let formattedTime = formData.tob;
+            const timeParts = formData.tob.split(':');
+            if (timeParts.length >= 2) {
+                formattedTime = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+            }
+
             const payload = {
-                dob: formData.dob,
-                time: formData.tob,
-                lat: 27.7172,
-                lon: 85.324,
+                dob: formattedDob,
+                time: formattedTime,
+                lat: birthLat,
+                lon: birthLon,
                 timezone: 'Asia/Kathmandu',
             };
 
@@ -175,12 +192,17 @@ export default function KundaliScreen() {
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: isDark ? '#AAA' : '#666' }]}>Place of Birth</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: isDark ? '#333' : '#f9fafb', borderColor: isDark ? '#444' : '#e5e7eb', color: colors.text }]}
-                            placeholder="City, Country"
-                            placeholderTextColor={isDark ? '#AAA' : '#999'}
+                        <MapLocationPicker
                             value={formData.place}
-                            onChangeText={(t) => setFormData({ ...formData, place: t })}
+                            onSelect={(loc) => {
+                                setFormData({ ...formData, place: loc.address });
+                                setBirthLat(loc.latitude);
+                                setBirthLon(loc.longitude);
+                            }}
+                            placeholder="Select birth place on map"
+                            colors={colors}
+                            isDark={isDark}
+                            label="Select Birth Place"
                         />
                     </View>
 
