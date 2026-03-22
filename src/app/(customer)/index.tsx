@@ -225,7 +225,7 @@ export default function CustomerHomeScreen() {
           <HeaderActionBtn 
             icon="notifications-outline" 
             badgeCount={unreadCount} 
-            onPress={() => router.push('/(customer)/notifications' as any)}
+            onPress={() => router.push('/notifications')}
             colors={colors}
             isDark={isDark}
           />
@@ -273,7 +273,7 @@ export default function CustomerHomeScreen() {
                         <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
                         <TouchableOpacity 
                             style={styles.bannerBtn}
-                            onPress={() => router.push({ pathname: '/(customer)/services/list', params: { category: 1, title: 'Daily Rituals' } })}
+                            onPress={() => router.push('/(customer)/pandits')}
                         >
                             <Text style={[styles.bannerBtnText, { color: colors.primary }]}>Explore Now</Text>
                         </TouchableOpacity>
@@ -288,12 +288,12 @@ export default function CustomerHomeScreen() {
         {/* Quick Actions Grid */}
         <View style={styles.quickActionsWrap}>
           <View style={styles.quickActionsRow}>
-            <QuickActionItem title="Book Puja" icon="color-filter-outline" onPress={() => handleAuthAction('/(customer)/services/list', { category: 1, title: 'Daily Rituals' })} colors={colors} isDark={isDark} />
+            <QuickActionItem title="Book Puja" icon="color-filter-outline" onPress={() => handleAuthAction('/(customer)/pandits')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Find Pandit" icon="people-outline" onPress={() => router.push('/(customer)/pandits')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Shop Samagri" icon="basket-outline" onPress={() => router.push('/(customer)/shop')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Kundali" icon="sparkles-outline" onPress={() => handleAuthAction('/(customer)/kundali')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Panchang" icon="calendar-outline" onPress={() => router.push('/(customer)/panchang' as any)} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Ask AI" icon="chatbubbles-outline" onPress={() => handleAuthAction('/(customer)/chat')} colors={colors} isDark={isDark} />
+            <QuickActionItem title="Ask AI" icon="chatbubbles-outline" onPress={() => handleAuthAction('/chat')} colors={colors} isDark={isDark} />
           </View>
         </View>
 
@@ -303,7 +303,7 @@ export default function CustomerHomeScreen() {
         <View style={styles.sectionWrap}>
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Pujas</Text>
-                <TouchableOpacity onPress={() => router.push('/(customer)/services/list')}>
+                <TouchableOpacity onPress={() => router.push('/(customer)/pandits')}>
                     <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
                 </TouchableOpacity>
             </View>
@@ -454,7 +454,7 @@ function ServiceCard({ service, router, colors, isDark }: any) {
     return (
         <TouchableOpacity 
             style={[styles.serviceCard, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
-            onPress={() => router.push(`/(customer)/services/${service.id}`)}
+            onPress={() => router.push({ pathname: '/(customer)/pandits', params: { searchQuery: service.name } })}
         >
             <View style={styles.serviceImageWrap}>
                 <Image 

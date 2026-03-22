@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchProfile } from '@/services/auth.service';
+import { getImageUrl } from '@/utils/image';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -35,7 +36,8 @@ export default function ProfileScreen() {
           email: data.email,
           phone: data.phone_number,
           role: data.role,
-          photoUri: data.profile_image ? data.profile_image : null,
+          photoUri: data.profile_image || data.profile_pic || null,
+          profile_pic_url: data.profile_pic || data.profile_image || null,
           isPanditVerified: data.pandit_profile?.is_verified
         } as any);
       } catch (error) {
@@ -92,8 +94,11 @@ export default function ProfileScreen() {
         {/* Profile Header Section */}
         <View style={styles.profileSection}>
           <TouchableOpacity onPress={handleEditPress} style={styles.imageContainer}>
-            {user?.photoUri ? (
-              <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
+            {user?.profile_pic_url || user?.photoUri ? (
+              <Image 
+                source={{ uri: getImageUrl(user.profile_pic_url || user.photoUri) || undefined }} 
+                style={styles.profileImage} 
+              />
             ) : (
               <View style={[styles.placeholderImage, { backgroundColor: colors.primary }]}>
                 <Text style={styles.placeholderText}>{user?.name?.[0]?.toUpperCase() || 'P'}</Text>
@@ -106,10 +111,10 @@ export default function ProfileScreen() {
 
           <View style={styles.nameContainer}>
             <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Pandit Ji'}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: (user as any)?.isPanditVerified ? '#DCFCE7' : '#FEF3C7' }]}>
-              <Ionicons name={(user as any)?.isPanditVerified ? "checkmark-circle" : "time"} size={14} color={(user as any)?.isPanditVerified ? '#166534' : '#92400E'} />
-              <Text style={[styles.roleText, { color: (user as any)?.isPanditVerified ? '#166534' : '#92400E', marginLeft: 4 }]}>
-                {(user as any)?.isPanditVerified ? 'VERIFIED PANDIT' : 'PENDING VERIFICATION'}
+            <View style={[styles.roleBadge, { backgroundColor: user?.pandit_profile?.is_verified ? '#DCFCE7' : '#FEF3C7' }]}>
+              <Ionicons name={user?.pandit_profile?.is_verified ? "checkmark-circle" : "time"} size={14} color={user?.pandit_profile?.is_verified ? '#166534' : '#92400E'} />
+              <Text style={[styles.roleText, { color: user?.pandit_profile?.is_verified ? '#166534' : '#92400E', marginLeft: 4 }]}>
+                {user?.pandit_profile?.is_verified ? 'VERIFIED PANDIT' : 'PENDING VERIFICATION'}
               </Text>
             </View>
           </View>
@@ -124,27 +129,34 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <Text style={[styles.bioText, { color: colors.text }]}>
-            Professional Pandit with 10+ years of experience in Vedic rituals, Pujas, and Astrological consultations. Specialized in Shanti Puja and Marriage ceremonies.
+            {user?.pandit_profile?.bio || 'Professional Pandit dedicated to Vedic rituals and pujas.'}
           </Text>
         </View>
 
         {/* Professional Stats */}
         <View style={[styles.statsRow, { backgroundColor: colors.card }]}>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>4.8</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+                {user?.pandit_profile?.rating || user?.pandit_profile?.average_rating || '0.0'}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.text }]}>Rating</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>124</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+                {user?.pandit_profile?.review_count || 0}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.text }]}>Pujas</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>10y</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+                {user?.pandit_profile?.experience_years ? `${user.pandit_profile.experience_years}y` : 'New'}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.text }]}>Exp</Text>
           </View>
         </View>
+
 
         {/* Professional Menu */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
@@ -250,7 +262,7 @@ export default function ProfileScreen() {
       {/* Floating AI Guide Button */}
       <TouchableOpacity 
         style={[styles.floatingAiButton, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/(customer)/ai-assistant' as any)}
+        onPress={() => router.push('/chat/ai-guide?mode=ai' as any)}
       >
         <Ionicons name="chatbubble-ellipses" size={28} color="#FFF" />
       </TouchableOpacity>

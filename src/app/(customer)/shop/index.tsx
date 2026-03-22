@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Refreshed for routing
 import { 
   View, 
   Text, 
@@ -12,6 +12,7 @@ import {
   Dimensions, 
   Animated 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,19 +28,19 @@ const { width } = Dimensions.get('window');
 const BANNERS = [
   { 
     id: 1, 
-    image: require('../../../assets/images/hero_2.png'), 
+    image: require('../../../../assets/images/hero_2.png'), 
     title: 'Divine Shanti', 
     subtitle: 'Spiritual Essentials & Holistic Goods' 
   },
   { 
     id: 2, 
-    image: require('../../../assets/images/oils_products.png'), 
+    image: require('../../../../assets/images/oils_products.png'), 
     title: 'Authentic Oils', 
     subtitle: 'Pure & Energized Spiritual Oils' 
   },
   { 
     id: 3, 
-    image: require('../../../assets/images/hero_3.png'), 
+    image: require('../../../../assets/images/hero_3.png'), 
     title: 'Sacred Rituals', 
     subtitle: 'Complete Samagri for Every Occasion' 
   }
@@ -49,6 +50,7 @@ export default function ShopScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const { isAuthenticated, user } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const { totalItems, addToCart } = useCartStore();
   
   const [loading, setLoading] = useState(true);
@@ -145,46 +147,59 @@ export default function ShopScreen() {
 
   const userName = user?.name ? user.name.split(' ')[0] : 'Guest';
 
-  const renderProductItem = ({ item }: { item: SamagriItem }) => (
-    <View style={[styles.productCard, { backgroundColor: colors.card }]}>
-      <TouchableOpacity 
-        style={styles.productTouchable}
-        onPress={() => router.push(`/(customer)/shop/${item.id}`)}
-      >
-        <View style={[styles.imageWrapper, { backgroundColor: colors.background }]}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.productImg} contentFit="cover" />
-          ) : (
-            <Ionicons name="image-outline" size={40} color={colors.text + '20'} />
-          )}
-          <TouchableOpacity 
-            style={styles.wishlistBtn}
-            onPress={() => handleToggleWishlist(item.id)}
-          >
-            <Ionicons 
-              name={wishlist.includes(item.id) ? "heart" : "heart-outline"} 
-              size={20} 
-              color={wishlist.includes(item.id) ? colors.primary : colors.text} 
-            />
-          </TouchableOpacity>
-        </View>
+  const renderProductItem = ({ item }: { item: SamagriItem }) => {
+    const isOutOfStock = item.stock_quantity === 0;
 
-        <View style={styles.productInfo}>
-          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-          <View style={styles.priceRow}>
-            <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.price}</Text>
+    return (
+      <View style={[styles.productCard, { backgroundColor: colors.card, opacity: isOutOfStock ? 0.7 : 1 }]}>
+        <TouchableOpacity 
+          style={styles.productTouchable}
+          onPress={() => router.push(`/(customer)/shop/${item.id}`)}
+        >
+          <View style={[styles.imageWrapper, { backgroundColor: colors.background }]}>
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.productImg} contentFit="cover" />
+            ) : (
+              <Ionicons name="image-outline" size={40} color={colors.text + '20'} />
+            )}
+            
+            {isOutOfStock && (
+              <View style={styles.outOfStockOverlay}>
+                <Text style={styles.outOfStockText}>Restocking Soon</Text>
+              </View>
+            )}
+
+            <TouchableOpacity 
+              style={styles.wishlistBtn}
+              onPress={() => handleToggleWishlist(item.id)}
+            >
+              <Ionicons 
+                name={wishlist.includes(item.id) ? "heart" : "heart-outline"} 
+                size={20} 
+                color={wishlist.includes(item.id) ? colors.primary : colors.text} 
+              />
+            </TouchableOpacity>
           </View>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={[styles.addBtn, { backgroundColor: colors.primary }]}
-        onPress={() => addToCart({ ...item, id: String(item.id) } as any)}
-      >
-        <Ionicons name="add" size={20} color="#FFF" />
-      </TouchableOpacity>
-    </View>
-  );
+  
+          <View style={styles.productInfo}>
+            <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.priceRow}>
+              <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.price}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+  
+        {!isOutOfStock && (
+          <TouchableOpacity 
+            style={[styles.addBtn, { backgroundColor: colors.primary }]}
+            onPress={() => addToCart({ ...item, id: String(item.id) } as any)}
+          >
+            <Ionicons name="add" size={20} color="#FFF" />
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   const renderBannerItem = ({ item }: { item: any }) => (
     <View style={styles.bannerItem}>
@@ -212,14 +227,26 @@ export default function ShopScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border + '20', borderBottomWidth: 1 }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border + '20', borderBottomWidth: 1, backgroundColor: colors.card }]}>
         {!showSearch ? (
           <View style={styles.headerTitleRow}>
-            <View>
-              <Text style={[styles.welcomeText, { color: colors.text + '80' }]}>Sacred Market,</Text>
-              <Text style={[styles.userName, { color: colors.text }]}>{userName}</Text>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity 
+                style={styles.avatarBtn}
+                onPress={() => router.push('/(customer)/profile')}
+              >
+                <Image
+                  source={{ uri: user?.profile_pic_url || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                />
+              </TouchableOpacity>
+              <View>
+                <Text style={[styles.welcomeText, { color: colors.text + '80' }]}>Sacred Market,</Text>
+                <Text style={[styles.userName, { color: colors.text }]}>{user?.name?.split(' ')[0] || 'Amit'}</Text>
+              </View>
             </View>
             <View style={styles.headerIcons}>
               <TouchableOpacity 
@@ -360,11 +387,14 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 10 },
+  header: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 12 },
   headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatarBtn: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden', borderWidth: 1.5, borderColor: '#FF6F0020' },
+  avatarImage: { width: '100%', height: '100%' },
   welcomeText: { fontSize: 13, fontWeight: '500' },
   userName: { fontSize: 20, fontWeight: '800' },
-  headerIcons: { flexDirection: 'row', gap: 12 },
+  headerIcons: { flexDirection: 'row', gap: 10 },
   iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   badge: { position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF', paddingHorizontal: 4 },
   badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
@@ -402,6 +432,23 @@ const styles = StyleSheet.create({
   productPrice: { fontSize: 16, fontWeight: '900' },
   stockLabel: { fontSize: 10, color: '#EF4444', fontWeight: '700' },
   addBtn: { position: 'absolute', bottom: -5, right: -5, width: 40, height: 40, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#FAFAFA' },
+  outOfStockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  outOfStockText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
   emptyContainer: { alignItems: 'center', marginTop: 50, gap: 15 },
   emptyText: { fontSize: 15, fontWeight: '600' }
 });

@@ -2,6 +2,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 
+import { CustomTabBar } from '@/components/ui/CustomTabBar';
+
 export default function PanditTabLayout() {
   const { colors } = useTheme();
   const activeColor = colors.primary;
@@ -9,21 +11,11 @@ export default function PanditTabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} role="pandit" />}
       screenOptions={{
         tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: inactiveColor,
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: '#E5E5EA',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-        },
       }}
     >
       <Tabs.Screen
@@ -47,7 +39,7 @@ export default function PanditTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="services"
+        name="services/index"
         options={{
           title: 'Services',
           tabBarLabel: 'Services',
@@ -57,7 +49,7 @@ export default function PanditTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="chat/index"
         options={{
           title: 'Messages',
           tabBarLabel: 'Messages',
@@ -86,7 +78,6 @@ export default function PanditTabLayout() {
           name={screen}
           options={{
             href: null,
-            tabBarItemStyle: { display: 'none' }
           }}
         />
       ))}

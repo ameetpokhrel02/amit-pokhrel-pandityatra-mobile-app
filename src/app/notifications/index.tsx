@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '@/store/notification.store';
+import { useAuthStore } from '@/store/auth.store';
 import { Notification } from '@/services/notification.service';
 import dayjs from 'dayjs';
 import { Colors } from '@/theme/colors';
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllRead, deleteNotification } = useNotificationStore();
+  const { role } = useAuthStore();
+  const isPandit = role === 'pandit';
+  const { notifications, unreadCount, isLoading, fetchNotifications, markAsRead, markAllRead } = useNotificationStore();
 
   React.useEffect(() => {
     fetchNotifications();
@@ -23,9 +27,21 @@ export default function NotificationsScreen() {
     if (!item.is_read) {
       await markAsRead(item.id);
     }
-    // Handle navigation based on type if needed
-    if (item.type === 'BOOKING' && item.data?.booking_id) {
-        router.push(`/(customer)/bookings/${item.data.booking_id}`);
+    
+    const baseRoute = isPandit ? '/(pandit)' : '/(customer)';
+
+    if (item.data?.route) {
+        let targetRoute = item.data.route;
+        // Adjust route based on role if it's a generic customer path but user is Pandit
+        if (targetRoute.startsWith('/(customer)') && isPandit) {
+            targetRoute = targetRoute.replace('/(customer)', '/(pandit)');
+        }
+        router.push(targetRoute as any);
+    } else if (item.type === 'BOOKING' && item.data?.booking_id) {
+        router.push(`${baseRoute}/bookings/${item.data.booking_id}` as any);
+    } else {
+        // Fallback
+        router.replace('/notifications' as any);
     }
   };
 
@@ -151,7 +167,7 @@ const styles = StyleSheet.create({
   notificationRow: { 
     flexDirection: 'row', 
     backgroundColor: '#fff', 
-    paddingHorizontal: 20,
+    paddingHorizontal: 20, 
     paddingVertical: 18,
     alignItems: 'flex-start'
   },

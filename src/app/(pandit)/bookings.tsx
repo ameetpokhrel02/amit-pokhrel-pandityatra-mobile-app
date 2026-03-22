@@ -12,12 +12,12 @@ export default function BookingsScreen() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('PENDING');
 
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetchBookings();
+      const res = await fetchBookings({ status: activeTab });
       setBookings(res.data.results || res.data || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -34,24 +34,17 @@ export default function BookingsScreen() {
 
   useEffect(() => {
     loadBookings();
-  }, []);
+  }, [activeTab]);
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {
-      await updateBookingStatus(id, status);
-      Alert.alert('Success', `Booking ${status === 'confirmed' ? 'accepted' : 'declined'}.`);
+      await updateBookingStatus(id, { status });
+      Alert.alert('Success', `Booking ${status === 'ACCEPTED' ? 'accepted' : 'declined'}.`);
       loadBookings();
     } catch (error) {
       Alert.alert('Error', 'Failed to update booking status.');
     }
   };
-
-  const filteredBookings = bookings.filter(b => {
-    if (activeTab === 'pending') return b.status === 'pending';
-    if (activeTab === 'upcoming') return b.status === 'confirmed' || b.status === 'accepted';
-    if (activeTab === 'completed') return b.status === 'completed';
-    return true;
-  });
 
   const renderBookingItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
@@ -80,28 +73,28 @@ export default function BookingsScreen() {
         </View>
       </View>
 
-      {item.status === 'pending' && (
+      {item.status === 'PENDING' && (
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionButton, styles.declineButton]}
-            onPress={() => handleStatusUpdate(item.id, 'cancelled')}
+            onPress={() => handleStatusUpdate(item.id, 'CANCELLED')}
           >
             <Text style={styles.declineButtonText}>Decline</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.acceptButton]}
-            onPress={() => handleStatusUpdate(item.id, 'confirmed')}
+            onPress={() => handleStatusUpdate(item.id, 'ACCEPTED')}
           >
             <Text style={styles.acceptButtonText}>Accept</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {(item.status === 'confirmed' || item.status === 'accepted') && (
+      {(item.status === 'ACCEPTED' || item.status === 'CONFIRMED') && (
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionButton, styles.acceptButton, { backgroundColor: '#FF6F00' }]}
-            onPress={() => router.push(`/video/${item.id}`)}
+            onPress={() => router.push(`/video/${item.id}` as any)}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Ionicons name="videocam-outline" size={18} color="#FFF" />
@@ -111,11 +104,11 @@ export default function BookingsScreen() {
         </View>
       )}
 
-      {item.status === 'completed' && (
+      {item.status === 'COMPLETED' && (
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionButton, styles.acceptButton, { backgroundColor: '#FF6F00' }]}
-            onPress={() => router.push({ pathname: "/(pandit)/upload-recording", params: { bookingId: item.id } })}
+            onPress={() => router.push({ pathname: "/(pandit)/upload-recording", params: { bookingId: item.id } } as any)}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Ionicons name="cloud-upload-outline" size={18} color="#FFF" />
@@ -129,11 +122,11 @@ export default function BookingsScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#F59E0B';
-      case 'confirmed':
-      case 'accepted': return '#10B981';
-      case 'completed': return '#3B82F6';
-      case 'cancelled': return '#EF4444';
+      case 'PENDING': return '#F59E0B';
+      case 'CONFIRMED':
+      case 'ACCEPTED': return '#10B981';
+      case 'COMPLETED': return '#3B82F6';
+      case 'CANCELLED': return '#EF4444';
       default: return '#666';
     }
   };
@@ -145,14 +138,18 @@ export default function BookingsScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        {['pending', 'upcoming', 'completed'].map((tab) => (
+        {[
+          { id: 'PENDING', label: 'Pending' }, 
+          { id: 'ACCEPTED', label: 'Upcoming' }, 
+          { id: 'COMPLETED', label: 'Completed' }
+        ].map((tab) => (
           <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
+            key={tab.id}
+            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+            onPress={() => setActiveTab(tab.id)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
+              {tab.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -162,7 +159,7 @@ export default function BookingsScreen() {
         <ActivityIndicator size="large" color={Colors.light.primary} style={styles.loader} />
       ) : (
         <FlatList
-          data={filteredBookings}
+          data={bookings}
           renderItem={renderBookingItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
@@ -172,7 +169,7 @@ export default function BookingsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="document-text-outline" size={60} color="#DDD" />
-              <Text style={styles.emptyText}>No {activeTab} bookings found.</Text>
+              <Text style={styles.emptyText}>No {activeTab.toLowerCase()} bookings found.</Text>
             </View>
           }
         />

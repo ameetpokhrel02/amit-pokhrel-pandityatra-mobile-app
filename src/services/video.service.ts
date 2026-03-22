@@ -70,3 +70,18 @@ export async function uploadBookingRecording(bookingId: number, fileUri: string)
     });
     return response.data;
 }
+/**
+ * Fetch all video recordings for the logged-in user (Customer or Pandit)
+ */
+export async function fetchVideoRecordings() {
+    const response = await apiClient.get(`video/recordings/`);
+    return response.data;
+}
+
+/**
+ * Fetch a specific recording detail
+ */
+export async function fetchRecordingDetail(recordingId: number) {
+    const response = await apiClient.get(`video/recordings/${recordingId}/`);
+    return response.data;
+}

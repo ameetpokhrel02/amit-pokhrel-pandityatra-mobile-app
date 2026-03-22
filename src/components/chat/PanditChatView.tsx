@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, Alert, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GiftedChat, Bubble, IMessage, Send } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
+import { useUser } from '@/store/auth.store';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { useChatTimer } from '@/hooks/useChatTimer';
 
@@ -19,6 +21,7 @@ export const PanditChatView: React.FC<PanditChatViewProps> = ({
 }) => {
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
+    const { user } = useUser();
     const { messages: socketMessages, status, sendMessage } = useChatSocket(roomId);
     const { secondsLeft, formattedTime, isActive, startTimer, stopTimer, isExpired } = useChatTimer();
 
@@ -29,11 +32,11 @@ export const PanditChatView: React.FC<PanditChatViewProps> = ({
             text: m.text,
             createdAt: new Date(m.timestamp),
             user: {
-                _id: m.senderId === 'me' || m.senderId === 'u1' ? 'me' : 'pandit',
-                name: m.senderId === 'me' || m.senderId === 'u1' ? 'You' : (panditName || 'Pandit'),
+                _id: String(m.senderId) === String(user?.id) ? 'me' : 'pandit',
+                name: String(m.senderId) === String(user?.id) ? 'You' : (panditName || 'Pandit'),
             },
         })).reverse(); // GiftedChat expects newest first
-    }, [socketMessages, panditName]);
+    }, [socketMessages, panditName, user?.id]);
 
     useEffect(() => {
         // Start timer only for pre-booking
@@ -91,16 +94,32 @@ export const PanditChatView: React.FC<PanditChatViewProps> = ({
                 {!isPostBooking && (
                     <View 
                         className="flex-row items-center justify-center p-3 gap-2"
-                        style={{ backgroundColor: isExpired ? '#FEE2E2' : '#FFF7ED' }}
+                        style={{ 
+                            backgroundColor: isExpired 
+                                ? '#FEE2E2' 
+                                : secondsLeft < 120 // 2 minutes
+                                ? '#FEF2F2'
+                                : secondsLeft < 300 // 5 minutes
+                                ? '#FEFCE8'
+                                : '#FFF7ED' 
+                        }}
                     >
                         <Ionicons 
                             name="timer-outline" 
                             size={18} 
-                            color={isExpired ? '#EF4444' : '#F97316'} 
+                            color={
+                                isExpired || secondsLeft < 120 ? '#EF4444' 
+                                : secondsLeft < 300 ? '#EAB308' 
+                                : '#F97316'
+                            } 
                         />
                         <Text 
                             className="text-sm font-bold"
-                            style={{ color: isExpired ? '#EF4444' : '#C2410C' }}
+                            style={{ 
+                                color: isExpired || secondsLeft < 120 ? '#EF4444' 
+                                : secondsLeft < 300 ? '#A16207' 
+                                : '#C2410C' 
+                            }}
                             numberOfLines={1}
                         >
                             {isExpired 

@@ -45,10 +45,7 @@ export const deleteService = (id: number) => api.delete(`pandits/my-services/${i
 export interface MyService {
     id: number;
     puja: number;
-    puja_details: {
-        id: number;
-        name: string;
-    };
+    puja_details: any; // Now expected to contain 'image'
     custom_price: number;
     duration_minutes: number;
     is_active: boolean;

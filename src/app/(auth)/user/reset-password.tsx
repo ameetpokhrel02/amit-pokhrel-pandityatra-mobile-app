@@ -73,10 +73,12 @@ export default function ResetPasswordScreen() {
       >
         <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
           <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-orange-50 rounded-full items-center justify-center mb-4">
-              <Ionicons name="refresh-outline" size={40} color="#FF6F00" />
-            </View>
-            <Text className="text-[28px] font-[800] text-primary text-center">Reset Password</Text>
+            <Image
+              source={require("../../../../assets/images/pandit-logo.png")}
+              className="w-[140px] h-[140px] mb-2"
+              contentFit="contain"
+            />
+            <Text className="text-[20px] font-[800] text-primary text-center">Reset Password</Text>
             <Text className="text-zinc-500 text-center font-medium mt-2 leading-5 px-4">
               Enter the 6-digit code sent to{"\n"}
               <Text className="text-zinc-800 font-bold">{email}</Text>

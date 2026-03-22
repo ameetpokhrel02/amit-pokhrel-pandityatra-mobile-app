@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Modal, Alert, TextInput } from 'react-native';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+import localeData from 'dayjs/plugin/localeData';
+import calendarPlugin from 'dayjs/plugin/calendar';
+
+dayjs.extend(isBetween);
+dayjs.extend(customParseFormat);
+dayjs.extend(localizedFormat);
+dayjs.extend(localeData);
+dayjs.extend(calendarPlugin);
+
 import { Colors } from '@/theme/colors';
 import { fetchPanditCalendar, addAvailabilityBlock, deleteAvailabilityBlock } from '@/services/pandit.service';
 import { Ionicons } from '@expo/vector-icons';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Modal, Alert, TextInput } from 'react-native';
 
 export default function CalendarScreen() {
   const [date, setDate] = useState(dayjs());
@@ -229,21 +238,14 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
     backgroundColor: '#FFF',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#333' },
   calendarContainer: {
     backgroundColor: '#FFF',
     padding: 10,
@@ -255,27 +257,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
-  calendarHeader: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#333',
-  },
-  calendarText: {
-    fontSize: 14,
-  },
-  eventsSection: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4B5563',
-    marginBottom: 15,
-  },
-  eventsList: {
-    flex: 1,
-  },
+  calendarHeader: { fontWeight: 'bold', fontSize: 18, color: '#333' },
+  calendarText: { fontSize: 14 },
+  eventsSection: { flex: 1, paddingHorizontal: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#4B5563', marginBottom: 15 },
+  eventsList: { flex: 1 },
   eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -289,53 +275,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
-  eventIndicator: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-    marginRight: 15,
-  },
-  eventContent: {
-    flex: 1,
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  eventTime: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  detailButton: {
-    padding: 5,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 40,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  addButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-  },
-  addButtonText: {
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    padding: 8,
-  },
+  eventIndicator: { width: 4, height: 40, borderRadius: 2, marginRight: 15 },
+  eventContent: { flex: 1 },
+  eventTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
+  eventTime: { fontSize: 14, color: '#6B7280', marginTop: 2 },
+  detailButton: { padding: 5 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40 },
+  emptyText: { fontSize: 14, color: '#9CA3AF', marginTop: 10, marginBottom: 20 },
+  addButton: { paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 12 },
+  addButtonText: { color: Colors.light.primary, fontWeight: '600' },
+  deleteButton: { padding: 8 },
   fab: {
     position: 'absolute',
     right: 20,
@@ -351,74 +300,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 25,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    textAlign: 'center',
-  },
-  modalDate: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  formGroup: {
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginBottom: 5,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-  },
-  cancelBtnText: {
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  submitBtn: {
-    flex: 2,
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  submitBtnText: {
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#FFF', borderRadius: 20, padding: 25, elevation: 10 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 5, textAlign: 'center' },
+  modalDate: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 },
+  formGroup: { marginBottom: 15 },
+  label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 5 },
+  textInput: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 16 },
+  row: { flexDirection: 'row' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 10 },
+  cancelBtn: { flex: 1, padding: 15, borderRadius: 12, alignItems: 'center', backgroundColor: '#F3F4F6' },
+  cancelBtnText: { fontWeight: '600', color: '#4B5563' },
+  submitBtn: { flex: 2, padding: 15, borderRadius: 12, alignItems: 'center' },
+  submitBtnText: { fontWeight: 'bold', color: '#FFF' },
 });

@@ -246,7 +246,7 @@ export default function PanditProfileScreen() {
       >
         <TouchableOpacity 
           className="w-16 h-14 rounded-2xl border-1.5 border-primary items-center justify-center bg-orange-50/30"
-          onPress={() => router.push(`/(customer)/chat/${pandit.id}` as any)}
+          onPress={() => router.push(`/chat/${pandit.id}` as any)}
         >
           <Ionicons name="chatbubbles-outline" size={24} color="#FF6F00" />
           <Text className="text-[10px] font-black text-primary uppercase tracking-tighter mt-1">Chat</Text>

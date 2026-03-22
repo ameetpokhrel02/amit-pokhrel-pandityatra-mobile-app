@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; // Refreshed for routing
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
@@ -11,6 +12,7 @@ export default function BookingsScreen() {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { openChat } = useChat();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -27,16 +29,18 @@ export default function BookingsScreen() {
 
   useEffect(() => {
     let isMounted = true;
+    setLoading(true);
+    setError(null);
 
     const load = async () => {
       try {
-        const response = await listBookings();
+        const response = await listBookings({ status: selectedTab });
         if (isMounted) {
-          setBookings(response.data);
+          setBookings(Array.isArray(response?.data?.results) ? response.data.results : response?.data || []);
         }
       } catch (e) {
         if (isMounted) {
-          setError('Unable to load bookings');
+          setError(`Unable to load ${selectedTab.toLowerCase()} bookings`);
         }
       } finally {
         if (isMounted) {
@@ -49,7 +53,7 @@ export default function BookingsScreen() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedTab]);
 
   const renderItem = ({ item }: { item: Booking }) => {
     const statusColor =
@@ -143,9 +147,9 @@ export default function BookingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: '#FF6F00' }]}>
-        <Text style={[styles.title, { color: '#FFF' }]}>My Bookings</Text>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border + '20', borderBottomWidth: 1 }]}>
+        <Text style={[styles.title, { color: colors.text }]}>My Bookings</Text>
       </View>
 
       {/* Tabs */}
@@ -182,7 +186,7 @@ export default function BookingsScreen() {
         </View>
       ) : (
         <FlatList
-          data={bookings.filter(b => b.status === selectedTab)}
+          data={bookings}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           contentContainerStyle={bookings.length === 0 ? styles.emptyContent : styles.listContent}
@@ -190,7 +194,7 @@ export default function BookingsScreen() {
             <View style={styles.center}>
               <Ionicons
                 name="calendar-outline"
-                size={40}
+                size={60}
                 color={isDark ? '#4B5563' : '#D1D5DB'}
               />
               <Text
@@ -198,10 +202,11 @@ export default function BookingsScreen() {
                   styles.emptyText,
                   {
                     color: isDark ? '#9CA3AF' : '#6B7280',
+                    marginTop: 16,
                   },
                 ]}
               >
-                No bookings yet
+                No {selectedTab.toLowerCase()} bookings found
               </Text>
             </View>
           }
@@ -216,15 +221,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingBottom: 20,
+    paddingTop: 12,
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   tabContainer: {
     flexDirection: 'row',

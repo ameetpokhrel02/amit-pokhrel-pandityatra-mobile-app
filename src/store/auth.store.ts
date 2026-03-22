@@ -11,6 +11,18 @@ interface User {
   role: 'customer' | 'user' | 'pandit' | 'admin' | 'guest' | undefined;
   profile_pic_url?: string;
   photoUri?: string; // Compatibility
+  pandit_profile?: {
+    bio?: string;
+    expertise?: string;
+    experience_years?: number;
+    is_verified?: boolean;
+    average_rating?: string;
+    rating?: string;
+    review_count?: number;
+    upcoming_bookings?: number;
+    pending_bookings?: number;
+    total_earnings?: number;
+  };
 }
 
 interface AuthState {
@@ -146,6 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role: newRole,
           profile_pic_url: userData.profile_pic || userData.profile_image || userData.profile_pic_url,
           photoUri: userData.profile_image || userData.profile_pic_url, // Compatibility
+          pandit_profile: userData.pandit_profile,
         };
 
         console.log('[AuthStore] Profile synced:', { id: mappedUser.id, role: mappedUser.role });

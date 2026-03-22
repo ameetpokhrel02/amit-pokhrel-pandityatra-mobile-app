@@ -127,6 +127,7 @@ export interface SamagriItem {
     image: string;
     description?: string;
     category?: number | SamagriCategory;
+    stock_quantity?: number;
 }
 
 // Recommender APIs (Placeholder) moved or removed

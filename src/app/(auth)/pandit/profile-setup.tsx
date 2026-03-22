@@ -104,6 +104,9 @@ export default function PanditProfileSetupScreen() {
             style={[styles.container, { backgroundColor: colors.background }]}
         >
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                    <Image source={require("../../../../assets/images/pandit-logo.png")} style={{ width: 140, height: 140 }} contentFit="contain" />
+                </View>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Professional Details</Text>
                 <Text style={[styles.headerSubtitle, { color: colors.icon }]}>Tell us more about your sacred expertise</Text>
 

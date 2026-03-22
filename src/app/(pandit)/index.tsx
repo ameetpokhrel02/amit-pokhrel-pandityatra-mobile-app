@@ -1,3 +1,4 @@
+// Version: 1.0.1 - Fixed JSX Syntax
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -7,28 +8,28 @@ import {
   Switch, 
   ActivityIndicator, 
   RefreshControl, 
-  SafeAreaView, 
   StatusBar,
   Dimensions,
   Modal,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
 import { fetchProfile } from '@/services/auth.service';
 import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
-import { fetchNotifications, markNotificationAsRead, Notification } from '@/services/notification.service';
-import { listBookings } from '@/services/booking.service';
 import { useAuthStore } from '@/store/auth.store';
+import { useNotificationStore } from '@/store/notification.store';
 import dayjs from 'dayjs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PanditDashboardScreen() {
   const router = useRouter();
-  const authStore = useAuthStore();
+  const { user, logout: storeLogout } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -40,18 +41,16 @@ export default function PanditDashboardScreen() {
     earnings: '₹0',
     rating: '0.0'
   });
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
-
+  const { unreadCount, fetchNotifications: fetchStoreNotifications } = useNotificationStore();
+  
   // Modals
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      if (!refreshing) setLoading(true);
       const profileRes = await fetchProfile();
-      const profileData = profileRes.data;
+      const profileData = profileRes.data || profileRes;
       setProfile(profileData);
 
       if (profileData.pandit_profile) {
@@ -60,30 +59,25 @@ export default function PanditDashboardScreen() {
           pending: profileData.pandit_profile.pending_bookings?.toString() || '0',
           upcoming: profileData.pandit_profile.upcoming_bookings?.toString() || '0',
           earnings: `₹${profileData.pandit_profile.total_earnings || 0}`,
-          rating: profileData.pandit_profile.rating ? profileData.pandit_profile.rating.toFixed(1) : '0.0'
+          rating: (profileData.pandit_profile.average_rating || profileData.pandit_profile.rating || 0).toFixed(1)
         });
       }
 
       const servicesRes = await fetchPanditMyServices();
-      setMyServices(servicesRes.data);
+      setMyServices(servicesRes.data || []);
 
-      const notificationsData = await fetchNotifications();
-      setNotifications(notificationsData);
-
-      const bookingsRes = await listBookings({ status: 'ACCEPTED', limit: 3 });
-      setRecentBookings(bookingsRes.data.results || bookingsRes.data || []);
-
+      await fetchStoreNotifications();
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
+    fetchData();
   };
 
   useEffect(() => {
@@ -100,234 +94,187 @@ export default function PanditDashboardScreen() {
     }
   };
 
-  const handleMarkAsRead = async (id: number) => {
-    try {
-      await markNotificationAsRead(id);
-      setNotifications(notifications.filter(n => n.id !== id));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
   const handleLogout = async () => {
-    await authStore.logout();
-    router.replace('/(auth)/user/login');
+    await storeLogout();
+    router.replace('/(auth)/user/login' as any);
   };
 
-  const handleDeleteAccount = async () => {
-    // API logic for delete would go here
-    Alert.alert("Account Deleted", "Your account has been scheduled for deletion.");
-    await authStore.logout();
-    router.replace('/(auth)/user/login');
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING!";
+    if (hour < 17) return "GOOD AFTERNOON!";
+    return "GOOD EVENING!";
   };
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 items-center justify-center bg-zinc-50">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' }}>
         <ActivityIndicator size="large" color="#FF6F00" />
-        <Text className="mt-4 text-zinc-500 font-medium">Loading Dashboard...</Text>
+        <Text style={{ marginTop: 16, color: '#6B7280', fontWeight: '500' }}>Loading Dashboard...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-zinc-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       <StatusBar barStyle="light-content" backgroundColor="#FF6F00" />
       
-      {/* Scrollable Content */}
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF6F00" />
         }
       >
         {/* Header - Saffron Theme */}
-        <View className="bg-primary pt-12 pb-24 px-6 rounded-b-[40px] shadow-lg shadow-primary/40">
-          <View className="flex-row justify-between items-center">
-            <View className="flex-1">
-              <Text className="text-white/80 text-lg font-medium">Namaste,</Text>
-              <Text className="text-white text-3xl font-extrabold tracking-tight">
-                {profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!
-              </Text>
-              <View className="flex-row items-center mt-3 gap-3">
-                <View className="bg-white/20 flex-row items-center px-3 py-1.5 rounded-full border border-white/30">
-                  <Ionicons name="checkmark-circle" size={16} color="#FFD700" />
-                  <Text className="text-white text-[13px] font-bold ml-1.5 uppercase tracking-wider">Verified</Text>
-                </View>
-                <View className="flex-row items-center gap-2">
-                  <Text className={`text-[13px] font-bold ${isAvailable ? 'text-white' : 'text-white/60'}`}>
-                    {isAvailable ? 'ONLINE' : 'OFFLINE'}
-                  </Text>
-                  <Switch
-                    value={isAvailable}
-                    onValueChange={handleToggleAvailability}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#FFD700' }}
-                    thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
+        <View style={{ backgroundColor: '#FF6F00', paddingTop: 20, paddingBottom: 60, paddingHorizontal: 24, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <TouchableOpacity 
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 2, borderRadius: 999, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', marginRight: 16 }}
+                  onPress={() => router.push('/(pandit)/profile')}
+              >
+                {user?.profile_pic_url || profile?.profile_image || profile?.profile_pic ? (
+                  <Image
+                    source={{ uri: getImageUrl(user?.profile_pic_url || profile?.profile_image || profile?.profile_pic) || undefined }}
+                    style={{ width: 52, height: 52, borderRadius: 26 }}
+                    contentFit="cover"
                   />
-                </View>
+                ) : (
+                  <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="person" size={24} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 'bold', letterSpacing: 1, marginBottom: 2 }}>{getTimeBasedGreeting()}</Text>
+                <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '800' }}>
+                  Namaste, {user?.name?.split(' ')[0] || profile?.full_name?.split(' ')[0] || 'Pandit Ji'}!
+                </Text>
               </View>
             </View>
+
             <TouchableOpacity 
-                className="bg-white/20 p-1 rounded-full border-2 border-white/50"
-                onPress={() => router.push('/(pandit)/profile')}
+              style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 10, borderRadius: 16 }}
+              onPress={() => router.push('/notifications' as any)}
             >
-              {profile?.profile_pic ? (
-                <Image
-                  source={{ uri: getImageUrl(profile.profile_pic) || undefined }}
-                  className="w-16 h-16 rounded-full"
-                  contentFit="cover"
-                />
-              ) : (
-                <View className="w-16 h-16 rounded-full bg-white/10 items-center justify-center">
-                  <Ionicons name="person" size={40} color="#FFF" />
+              <Ionicons name="notifications-outline" size={24} color="#FFF" />
+              {unreadCount > 0 && (
+                <View style={{ position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, backgroundColor: '#EF4444', borderRadius: 9, borderWidth: 2, borderColor: '#FF6F00', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 }}>
+                  <Text style={{ color: '#FFF', fontSize: 9, fontWeight: 'bold' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Stats Grid - 3 Columns (Instruction followed: 3 equal cards) */}
-        <View className="-mt-14 px-6">
-          <View className="flex-row justify-between gap-3">
-             <StatCard 
-               label="Pending" 
-               value={stats.pending} 
-               icon="time" 
-               color="#FF6F00" 
-             />
-             <StatCard 
-               label="Upcoming" 
-               value={stats.upcoming} 
-               icon="calendar" 
-               color="#3B82F6" 
-             />
-             <StatCard 
-               label="Reviews" 
-               value={stats.rating} 
-               icon="star" 
-               color="#FFD700" 
-             />
+          <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}>
+              <Ionicons name="checkmark-circle" size={16} color="#FFD700" />
+              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold', marginLeft: 6, textTransform: 'uppercase' }}>Verified</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: isAvailable ? '#FFF' : 'rgba(255,255,255,0.6)' }}>
+                {isAvailable ? 'ONLINE' : 'OFFLINE'}
+              </Text>
+              <Switch
+                value={isAvailable}
+                onValueChange={handleToggleAvailability}
+                trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#FFD700' }}
+                thumbColor={isAvailable ? '#fff' : '#f4f3f4'}
+              />
+            </View>
           </View>
         </View>
 
-        <View className="px-6 mt-8">
-            {/* Wallet Quick Summary */}
+        {/* Stats Grid */}
+        <View style={{ marginTop: -40, paddingHorizontal: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+             <StatCard label="Pending" value={stats.pending} icon="time" color="#FF6F00" />
+             <StatCard label="Upcoming" value={stats.upcoming} icon="calendar" color="#3B82F6" />
+             <StatCard label="Reviews" value={stats.rating} icon="star" color="#FFD700" />
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, marginTop: 32 }}>
             <TouchableOpacity 
-                className="bg-white p-5 rounded-3xl flex-row items-center shadow-md shadow-zinc-200"
+                style={{ backgroundColor: '#FFF', padding: 20, borderRadius: 24, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4 }}
                 onPress={() => router.push('/(pandit)/earnings')}
             >
-                <View className="w-12 h-12 bg-emerald-50 rounded-2xl items-center justify-center">
+                <View style={{ width: 48, height: 48, backgroundColor: '#ECFDF5', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="wallet-outline" size={24} color="#10B981" />
                 </View>
-                <View className="ml-4 flex-1">
-                    <Text className="text-zinc-400 text-sm font-semibold uppercase tracking-wider">Total Earnings</Text>
-                    <Text className="text-zinc-800 text-2xl font-bold">{stats.earnings}</Text>
+                <View style={{ marginLeft: 16, flex: 1 }}>
+                    <Text style={{ color: '#9CA3AF', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>Total Earnings</Text>
+                    <Text style={{ color: '#1F2937', fontSize: 24, fontWeight: 'bold' }}>{stats.earnings}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
             </TouchableOpacity>
         </View>
 
-        {/* Upcoming Bookings Section */}
-        <View className="mt-8 px-6">
-          <View className="flex-row justify-between items-end mb-4 px-1">
-            <Text className="text-xl font-bold text-zinc-800">Upcoming Pujas</Text>
-            <TouchableOpacity onPress={() => router.push('/(pandit)/bookings')}>
-              <Text className="text-primary font-bold text-sm">View All</Text>
+        {/* My Services Section */}
+        <View style={{ marginTop: 32 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 28 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937' }}>My Services</Text>
+            <TouchableOpacity onPress={() => router.push('/(pandit)/services/index' as any)}>
+              <Text style={{ color: '#FF6F00', fontWeight: 'bold', fontSize: 14 }}>Manage All</Text>
             </TouchableOpacity>
           </View>
-
-          <View className="gap-4">
-            {recentBookings.length > 0 ? (
-              recentBookings.map((booking) => (
-                <UpcomingPujaCard
-                  key={booking.id}
-                  customerName={booking.user_full_name || 'Customer'}
-                  pujaType={booking.service_name || 'Puja'}
-                  date={dayjs(booking.booking_date).format('DD MMM, hh:mm A')}
-                  status={booking.status}
-                  onPress={() => router.push({ pathname: '/(pandit)/bookings', params: { id: booking.id } } as any)}
-                  onJoin={() => router.push(`/video/${booking.id}`)}
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+            {myServices.map((service, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={{ backgroundColor: '#FFF', borderRadius: 24, width: 220, overflow: 'hidden', borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+                onPress={() => router.push('/(pandit)/services/index' as any)}
+              >
+                <Image
+                  source={{ uri: getImageUrl(service.puja_details?.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }}
+                  style={{ width: '100%', height: 120 }}
+                  contentFit="cover"
                 />
-              ))
-            ) : (
-              <View className="bg-white p-10 rounded-3xl items-center shadow-sm shadow-zinc-100 border border-zinc-100">
-                <Ionicons name="calendar-outline" size={48} color="#E5E7EB" />
-                <Text className="text-zinc-400 mt-3 font-medium text-center leading-5">No upcoming bookings found.{"\n"}Stay tuned for new requests!</Text>
+                <View style={{ padding: 16 }}>
+                  <Text style={{ color: '#1F2937', fontWeight: '800', fontSize: 15, marginBottom: 4 }} numberOfLines={1}>
+                    {service.puja_details?.name}
+                  </Text>
+                  <Text style={{ color: '#FF6F00', fontWeight: '900', fontSize: 18, marginBottom: 12 }}>₹{service.custom_price || service.price}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}>
+                    <Ionicons name="time-outline" size={12} color="#6B7280" />
+                    <Text style={{ color: '#6B7280', fontSize: 11, fontWeight: 'bold', marginLeft: 4 }}>{service.duration_minutes}M</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {myServices.length === 0 && (
+              <View style={{ width: SCREEN_WIDTH - 48, backgroundColor: '#FFF', padding: 40, borderRadius: 24, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#D1D5DB' }}>
+                <Ionicons name="sparkles-outline" size={32} color="#D1D5DB" />
+                <Text style={{ color: '#9CA3AF', fontWeight: '500', marginTop: 12 }}>No services added yet.</Text>
+                <TouchableOpacity 
+                  style={{ marginTop: 16, backgroundColor: '#FF6F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 }}
+                  onPress={() => router.push('/(pandit)/services/index' as any)}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add First Service</Text>
+                </TouchableOpacity>
               </View>
             )}
-          </View>
+          </ScrollView>
         </View>
 
-        {/* Quick Actions Grid - 2 Columns */}
-        <View className="mt-8 px-6">
-          <Text className="text-xl font-bold text-zinc-800 mb-4 px-1">Quick Actions</Text>
-          <View className="flex-row flex-wrap justify-between gap-y-4">
-            <ActionButton 
-                label="Manage Bookings" 
-                icon="checkmark-done-circle" 
-                onPress={() => router.push('/(pandit)/bookings')} 
-            />
-            <ActionButton 
-                label="Chat Requests" 
-                icon="chatbubble-ellipses" 
-                onPress={() => router.push('/(pandit)/messages')} 
-            />
-            <ActionButton 
-                label="My Services" 
-                icon="color-palette" 
-                onPress={() => router.push('/(pandit)/services')} 
-            />
-            <ActionButton 
-                label="Calendar Settings" 
-                icon="calendar" 
-                onPress={() => router.push('/(pandit)/calendar')} 
-            />
+        {/* Quick Actions */}
+        <View style={{ marginTop: 32, paddingHorizontal: 24 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1F2937', marginBottom: 16 }}>Quick Actions</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 16 }}>
+            <QuickActionItem label="Manage Bookings" icon="calendar" color="#4F46E5" onPress={() => router.push('/(pandit)/bookings')} />
+            <QuickActionItem label="View Calendar" icon="time" color="#0EA5E9" onPress={() => router.push('/(pandit)/calendar')} />
+            <QuickActionItem label="Earnings Stats" icon="stats-chart" color="#10B981" onPress={() => router.push('/(pandit)/earnings')} />
+            <QuickActionItem label="Edit Profile" icon="person-circle" color="#F59E0B" onPress={() => router.push('/(pandit)/profile')} />
           </View>
-        </View>
-
-        {/* Profile List Section (New) */}
-        <View className="mt-10 px-6">
-            <Text className="text-xl font-bold text-zinc-800 mb-4 px-1">Settings & Profile</Text>
-            <View className="bg-white rounded-[32px] overflow-hidden shadow-md shadow-zinc-100 border border-zinc-50">
-                <ProfileItem icon="person-outline" label="Edit Profile" onPress={() => router.push('/(pandit)/profile')} />
-                <ProfileItem icon="wallet-outline" label="Earnings & Wallet" onPress={() => router.push('/(pandit)/earnings')} />
-                <ProfileItem icon="ribbon-outline" label="My Certificates" onPress={() => router.push('/(pandit)/profile')} />
-                <ProfileItem icon="notifications-outline" label="Notifications" onPress={() => router.push('/(pandit)' as any)} />
-                <ProfileItem icon="options-outline" label="Settings" onPress={() => {}} />
-                
-                <View className="flex-row items-center px-6 py-4 border-b border-zinc-50">
-                    <View className="w-10 h-10 bg-zinc-50 rounded-xl items-center justify-center">
-                        <Ionicons name="moon-outline" size={20} color="#6B7281" />
-                    </View>
-                    <Text className="flex-1 ml-4 text-zinc-700 font-semibold text-base">Dark Mode</Text>
-                    <Switch value={false} onValueChange={() => {}} />
-                </View>
-
-                <ProfileItem icon="help-circle-outline" label="Help & Support" onPress={() => router.push('/(pandit)/help')} />
-                <ProfileItem icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => {}} />
-                
-                <ProfileItem 
-                    icon="trash-outline" 
-                    label="Delete Account" 
-                    color="#EF4444" 
-                    onPress={() => setShowDeleteModal(true)} 
-                    hideBorder
-                />
-            </View>
-
-            <TouchableOpacity 
-                className="mt-6 flex-row items-center justify-center p-5 bg-white rounded-3xl border border-zinc-100 shadow-sm"
-                onPress={() => setShowLogoutModal(true)}
-            >
-                <Ionicons name="log-out-outline" size={22} color="#EF4444" />
-                <Text className="ml-2 text-[#EF4444] font-bold text-lg">Logout</Text>
-            </TouchableOpacity>
         </View>
 
       </ScrollView>
 
-      {/* Confirmation Modals */}
+      {/* Logout Confirmation */}
       <ConfirmationModal 
         visible={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
@@ -336,119 +283,34 @@ export default function PanditDashboardScreen() {
         description="Are you sure you want to log out of PanditYatra?"
         confirmText="Logout"
       />
-
-      <ConfirmationModal 
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteAccount}
-        title="Delete Account"
-        description="This action cannot be undone. All your data will be permanently removed."
-        confirmText="Delete My Account"
-        isDanger
-      />
-      
     </SafeAreaView>
   );
 }
 
 function StatCard({ label, value, icon, color }: { label: string, value: string, icon: any, color: string }) {
   return (
-    <View 
-        className="bg-white rounded-2xl p-4 items-center shadow-md shadow-zinc-200 border border-zinc-50"
-        style={{ width: (SCREEN_WIDTH - 60) / 3 }}
-    >
-      <View 
-        className="w-10 h-10 rounded-xl justify-center items-center mb-2"
-        style={{ backgroundColor: `${color}15` }}
-      >
-        <Ionicons name={icon} size={20} color={color} />
+    <View style={{ flex: 1, backgroundColor: '#FFF', borderRadius: 20, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+      <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: `${color}15`, justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+        <Ionicons name={icon} size={18} color={color} />
       </View>
-      <Text className="text-xl font-bold text-zinc-800">{value}</Text>
-      <Text className="text-[11px] font-bold text-zinc-400 uppercase tracking-tighter mt-0.5">{label}</Text>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>{value}</Text>
+      <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#9CA3AF', textTransform: 'uppercase', marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
 
-function UpcomingPujaCard({ customerName, pujaType, date, status, onPress, onJoin }: { 
-  customerName: string, 
-  pujaType: string, 
-  date: string, 
-  status: string,
-  onPress?: () => void,
-  onJoin?: () => void
-}) {
-    const isAccepted = status?.toLowerCase() === 'accepted';
-    return (
-        <TouchableOpacity 
-            className="bg-white p-5 rounded-3xl shadow-md shadow-zinc-100 flex-row justify-between border border-zinc-50 active:bg-zinc-50"
-            onPress={onPress}
-        >
-            <View className="flex-1 pr-4">
-                <Text className="text-zinc-800 font-bold text-lg mb-1">{pujaType}</Text>
-                <Text className="text-zinc-500 font-medium text-sm mb-3">Customer: {customerName}</Text>
-                <View className="flex-row items-center">
-                    <Ionicons name="time-outline" size={14} color="#9CA3AF" />
-                    <Text className="text-zinc-400 text-xs ml-1.5 font-semibold uppercase">{date}</Text>
-                </View>
-            </View>
-            <View className="items-end justify-between">
-                <View className={`px-3 py-1 rounded-full ${isAccepted ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                    <Text className={`text-[10px] font-extrabold uppercase tracking-widest ${isAccepted ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {status}
-                    </Text>
-                </View>
-                {isAccepted && (
-                    <TouchableOpacity 
-                        className="bg-primary px-4 py-2 rounded-xl"
-                        onPress={onJoin}
-                    >
-                        <Text className="text-white font-bold text-xs">Join Call</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
-}
-
-function ActionButton({ label, icon, onPress }: { label: string, icon: any, onPress: () => void }) {
+function QuickActionItem({ label, icon, color, onPress }: { label: string, icon: any, color: string, onPress: () => void }) {
   return (
     <TouchableOpacity 
-        className="bg-white p-6 rounded-3xl items-center shadow-md shadow-zinc-200 border border-zinc-50 active:bg-zinc-50"
-        style={{ width: '48%' }}
-        onPress={onPress}
+      style={{ width: (SCREEN_WIDTH - 64) / 2, backgroundColor: '#FFF', padding: 20, borderRadius: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
+      onPress={onPress}
     >
-      <View className="w-14 h-14 rounded-2xl bg-orange-50 items-center justify-center mb-4">
-        <Ionicons name={icon} size={28} color="#FF6F00" />
+      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${color}10`, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
-      <Text className="text-zinc-800 font-bold text-[13px] text-center leading-4">{label}</Text>
+      <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 13 }}>{label}</Text>
     </TouchableOpacity>
   );
-}
-
-function ProfileItem({ icon, label, onPress, color = '#6B7280', hideBorder }: { 
-    icon: any, 
-    label: string, 
-    onPress: () => void,
-    color?: string,
-    hideBorder?: boolean
-}) {
-    return (
-        <TouchableOpacity 
-            className={`flex-row items-center px-6 py-4 active:bg-zinc-50 ${!hideBorder ? 'border-b border-zinc-50' : ''}`}
-            onPress={onPress}
-        >
-            <View className="w-10 h-10 bg-zinc-50 rounded-xl items-center justify-center">
-                <Ionicons name={icon} size={20} color={color} />
-            </View>
-            <Text 
-                className="flex-1 ml-4 font-semibold text-base"
-                style={{ color: label === 'Delete Account' ? '#EF4444' : '#374151' }}
-            >
-                {label}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
-        </TouchableOpacity>
-    );
 }
 
 function ConfirmationModal({ visible, onClose, onConfirm, title, description, confirmText, isDanger }: {
@@ -461,36 +323,26 @@ function ConfirmationModal({ visible, onClose, onConfirm, title, description, co
     isDanger?: boolean
 }) {
     return (
-        <Modal
-            transparent
-            visible={visible}
-            animationType="fade"
-            onRequestClose={onClose}
-        >
-            <View className="flex-1 bg-black/50 justify-center items-center px-6">
-                <View className="bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl">
-                    <View className={`w-16 h-16 self-center rounded-2xl items-center justify-center mb-6 ${isDanger ? 'bg-red-50' : 'bg-orange-50'}`}>
-                        <Ionicons 
-                            name={isDanger ? "alert-circle-outline" : "help-circle-outline"} 
-                            size={40} 
-                            color={isDanger ? "#EF4444" : "#FF6F00"} 
-                        />
+        <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
+                <View style={{ backgroundColor: '#FFF', width: '100%', maxWidth: 340, borderRadius: 32, padding: 32, alignItems: 'center' }}>
+                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: isDanger ? '#FEF2F2' : '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+                        <Ionicons name={isDanger ? "alert-circle" : "exit"} size={32} color={isDanger ? "#EF4444" : "#FF6F00"} />
                     </View>
-                    <Text className="text-2xl font-extrabold text-zinc-900 text-center mb-3">{title}</Text>
-                    <Text className="text-zinc-500 text-center leading-5 mb-8 font-medium">{description}</Text>
-                    
-                    <View className="gap-3">
+                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827', marginBottom: 12 }}>{title}</Text>
+                    <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 32, lineHeight: 20 }}>{description}</Text>
+                    <View style={{ width: '100%', gap: 12 }}>
                         <TouchableOpacity 
-                            className={`h-14 rounded-2xl items-center justify-center ${isDanger ? 'bg-red-500' : 'bg-primary'}`}
-                            onPress={onConfirm}
+                          style={{ width: '100%', height: 56, backgroundColor: isDanger ? '#EF4444' : '#FF6F00', borderRadius: 16, justifyContent: 'center', alignItems: 'center' }} 
+                          onPress={onConfirm}
                         >
-                            <Text className="text-white font-bold text-lg">{confirmText}</Text>
+                            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{confirmText}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                            className="h-14 rounded-2xl items-center justify-center bg-zinc-100 mt-2"
-                            onPress={onClose}
+                          style={{ width: '100%', height: 56, backgroundColor: '#F3F4F6', borderRadius: 16, justifyContent: 'center', alignItems: 'center' }} 
+                          onPress={onClose}
                         >
-                            <Text className="text-zinc-500 font-bold text-lg">Cancel</Text>
+                            <Text style={{ color: '#6B7280', fontSize: 16, fontWeight: '600' }}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -8,11 +8,14 @@ import { ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function ChatListScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
+  const { role, user } = useAuthStore();
   const isDark = theme === 'dark';
+  const isPandit = role === 'pandit';
   const [chats, setChats] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,12 +35,13 @@ export default function ChatListScreen() {
   };
 
   const renderItem = ({ item }: { item: ChatRoom }) => {
-    const otherParticipant = item.participants.find(p => p.role === 'pandit');
+    // Find the participant that is NOT me
+    const otherParticipant = item.participants.find(p => String(p.id) !== String(user?.id)) || item.participants[0];
 
     return (
       <TouchableOpacity
         style={[styles.chatItem, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}
-        onPress={() => router.push(`/(customer)/chat/${item.id}` as any)}
+        onPress={() => router.push(`/chat/${item.id}` as any)}
       >
         <View style={styles.avatarContainer}>
           {otherParticipant?.avatar ? (
@@ -73,22 +77,24 @@ export default function ChatListScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#f0f0f0' }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Chat</Text>
       </View>
 
-      <TouchableOpacity
-        style={[styles.aiGuideCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
-        onPress={() => router.push('/(customer)/chat/ai-guide')}
-      >
-        <View style={[styles.aiIcon, { backgroundColor: colors.primary }]}>
-          <Ionicons name="sparkles" size={24} color="#FFF" />
-        </View>
-        <View style={styles.aiContent}>
-          <Text style={[styles.aiTitle, { color: colors.text }]}>AI Ritual Guide</Text>
-          <Text style={[styles.aiSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Ask anything about pujas & rituals</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-      </TouchableOpacity>
+      {!isPandit && (
+        <TouchableOpacity
+          style={[styles.aiGuideCard, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
+          onPress={() => router.push('/chat/ai-guide?mode=ai' as any)}
+        >
+          <View style={[styles.aiIcon, { backgroundColor: colors.primary }]}>
+            <Ionicons name="sparkles" size={24} color="#FFF" />
+          </View>
+          <View style={styles.aiContent}>
+            <Text style={[styles.aiTitle, { color: colors.text }]}>AI Ritual Guide</Text>
+            <Text style={[styles.aiSubtitle, { color: isDark ? '#AAA' : '#666' }]}>Ask anything about pujas & rituals</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+        </TouchableOpacity>
+      )}
 
       <FlatList
         data={chats}

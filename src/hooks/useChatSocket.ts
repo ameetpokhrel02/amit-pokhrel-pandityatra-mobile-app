@@ -64,7 +64,7 @@ export function useChatSocket(roomId: string | number | undefined) {
                             chatId: String(roomId),
                             senderId: String(data.sender || data.sender_id || ''),
                             text: data.content || data.message || '',
-                            type: data.message_type || 'text',
+                            type: String(data.message_type || 'text').toLowerCase() as "text" | "system" | "ai_suggestion",
                             timestamp: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
                             isRead: false,
                         };

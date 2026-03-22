@@ -180,11 +180,10 @@ export default function LoginScreen() {
         <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
           <View className="items-center mb-8">
             <Image
-              source={require("@/assets/images/pandit-logo.png")}
-              className="w-[120px] h-[120px] mb-4"
+              source={require("../../../../assets/images/pandit-logo.png")}
+              className="w-[140px] h-[140px] mb-2"
               contentFit="contain"
             />
-            <Text className="text-[32px] font-[800] text-primary text-center">PanditYatra</Text>
             <Text className="text-base text-zinc-500 text-center font-medium mt-1">Connecting Faith with Excellence</Text>
           </View>
 

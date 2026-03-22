@@ -150,12 +150,11 @@ export default function CustomerRegister() {
         <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center my-10">
           <View className="items-center mb-8">
             <Image
-              source={require("@/assets/images/pandit-logo.png")}
-              className="w-[120px] h-[120px] mb-4"
+              source={require("../../../../assets/images/pandit-logo.png")}
+              className="w-[140px] h-[140px] mb-2"
               contentFit="contain"
             />
-            <Text className="text-[28px] font-[800] text-primary text-center">Create Account</Text>
-            <Text className="text-[15px] text-zinc-500 text-center font-medium mt-1">Join PanditYatra as a Customer</Text>
+            <Text className="text-base text-zinc-500 text-center font-medium mt-1">Create a New Account</Text>
           </View>
 
           <View className="gap-4">

@@ -26,7 +26,7 @@ export default function PaymentFailureScreen() {
 
       <TouchableOpacity 
         style={styles.secondaryButton}
-        onPress={() => router.replace('/(customer)/chat/ai-guide')}
+        onPress={() => router.replace('/chat/ai-guide?mode=ai' as any)}
       >
         <Text style={styles.secondaryButtonText}>Contact Support</Text>
       </TouchableOpacity>

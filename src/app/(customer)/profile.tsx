@@ -186,18 +186,24 @@ export default function ProfileScreen() {
             "My Reviews History", 
             () => router.push('/(customer)/reviews/history' as any)
           )}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem(
+            "videocam-outline", 
+            "My Puja Recordings", 
+            () => router.push('/(customer)/recordings' as any)
+          )}
         </View>
 
         {/* Settings */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Settings</Text>
           
-          {renderSettingItem("notifications-outline", "Notifications", () => router.push('/(customer)/notifications' as any))}
+          {renderSettingItem("notifications-outline", "Notifications", () => router.push('/notifications'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Ionicons name="language" size={24} color={colors.text} />
+              <Ionicons name="language-outline" size={24} color={colors.text} />
               <Text style={[styles.label, { color: colors.text }]}>Language</Text>
             </View>
             <TouchableOpacity onPress={toggleLanguage} style={styles.langButton}>
@@ -246,7 +252,7 @@ export default function ProfileScreen() {
 
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Ionicons name={isDark ? "moon" : "sunny"} size={24} color={colors.text} />
+              <Ionicons name={isDark ? "moon-outline" : "sunny-outline"} size={24} color={colors.text} />
               <Text style={[styles.label, { color: colors.text }]}>Dark Mode</Text>
             </View>
             <Switch
@@ -286,7 +292,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 140 }} />
 
         <LogoutModal
           visible={showLogoutModal}
@@ -304,7 +310,7 @@ export default function ProfileScreen() {
       {/* Floating AI Guide Button */}
       <TouchableOpacity 
         style={[styles.floatingAiButton, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/(customer)/ai-assistant' as any)}
+        onPress={() => router.push('/chat/ai-guide?mode=ai' as any)}
       >
         <Ionicons name="chatbubble-ellipses" size={28} color="#FFF" />
       </TouchableOpacity>

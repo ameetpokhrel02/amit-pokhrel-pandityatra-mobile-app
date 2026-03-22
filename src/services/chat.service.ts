@@ -7,10 +7,10 @@ function mapChatMessage(apiMsg: any): ChatMessage {
   if (!apiMsg) return {} as ChatMessage;
   return {
     id: String(apiMsg.id || ''),
-    chatId: String(apiMsg.room || apiMsg.chat_id || ''),
-    senderId: String(apiMsg.sender || apiMsg.sender_id || ''),
+    chatId: String(apiMsg.chat_room || apiMsg.room || apiMsg.chat_id || ''),
+    senderId: String(apiMsg.sender_obj?.id || apiMsg.sender || apiMsg.sender_id || ''),
     text: apiMsg.content || apiMsg.text || '',
-    type: (apiMsg.type as any) || 'text',
+    type: (apiMsg.message_type?.toLowerCase() as any) || (apiMsg.type as any) || 'text',
     timestamp: new Date(apiMsg.created_at || apiMsg.timestamp || Date.now()).getTime(),
     isRead: apiMsg.is_read || apiMsg.read || false,
     metadata: apiMsg.metadata,
@@ -20,17 +20,58 @@ function mapChatMessage(apiMsg: any): ChatMessage {
 // Helper to map API ChatRoom to Frontend ChatRoom
 function mapChatRoom(apiRoom: any): ChatRoom {
   if (!apiRoom) return {} as ChatRoom;
+
+  const participants: ChatUser[] = [];
+  
+  // Map Customer
+  if (apiRoom.customer) {
+    participants.push({
+      id: String(apiRoom.customer.id || ''),
+      name: apiRoom.customer.full_name || apiRoom.customer.username || 'Customer',
+      avatar: apiRoom.customer.profile_pic,
+      role: 'customer'
+    });
+  }
+  
+  // Map Pandit
+  const panditUser = apiRoom.pandit?.user;
+  if (panditUser) {
+    participants.push({
+      id: String(panditUser.id || ''),
+      name: panditUser.full_name || panditUser.username || 'Pandit',
+      avatar: panditUser.profile_pic,
+      role: 'pandit'
+    });
+  }
+
+  // Fallback for legacy/other participants array
+  if (apiRoom.participants && Array.isArray(apiRoom.participants)) {
+    apiRoom.participants.forEach((p: any) => {
+      if (!participants.find(existing => existing.id === String(p.id))) {
+        participants.push({
+          id: String(p.id || ''),
+          name: p.full_name || p.name || p.username || 'User',
+          avatar: p.profile_pic || p.profile_pic_url || p.avatar,
+          role: p.role || 'user',
+        });
+      }
+    });
+  }
+
   return {
     id: String(apiRoom.id || ''),
-    participants: (apiRoom.participants || []).map((p: any) => ({
-      id: String(p.id || ''),
-      name: p.full_name || p.name || 'User',
-      avatar: p.profile_pic_url || p.avatar,
-      role: p.role || 'user',
-    })),
-    lastMessage: apiRoom.last_message_details ? mapChatMessage(apiRoom.last_message_details) : undefined,
-    unreadCount: apiRoom.unread_count || 0,
-    status: apiRoom.status || 'active',
+    participants,
+    lastMessage: apiRoom.last_message_details ? mapChatMessage(apiRoom.last_message_details) : (apiRoom.last_message ? {
+        id: `last-${apiRoom.id}`,
+        chatId: String(apiRoom.id),
+        senderId: '',
+        text: apiRoom.last_message,
+        type: 'text',
+        timestamp: new Date(apiRoom.last_message_time || Date.now()).getTime(),
+        isRead: false
+    } as ChatMessage : undefined),
+    unreadCount: typeof apiRoom.unread_count === 'string' ? parseInt(apiRoom.unread_count) : (apiRoom.unread_count || 0),
+    status: apiRoom.is_active !== false ? 'active' : 'archived',
   };
 }
 

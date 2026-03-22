@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { generateKundali } from '@/services/kundali.service';
+import { calculateLocalKundali } from '@/services/local-kundali.service';
 import { Image } from 'expo-image';
 import MapLocationPicker from '@/components/ui/MapLocationPicker';
 
@@ -23,6 +24,7 @@ export default function KundaliScreen() {
     const [result, setResult] = useState<any | null>(null);
     const [birthLat, setBirthLat] = useState(27.7172);
     const [birthLon, setBirthLon] = useState(85.3240);
+    const [offlineMode, setOfflineMode] = useState(false);
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
 
@@ -58,8 +60,30 @@ export default function KundaliScreen() {
                 timezone: 'Asia/Kathmandu',
             };
 
-            const res = await generateKundali(payload);
-            setResult(res);
+            if (offlineMode) {
+                const localRes = calculateLocalKundali({
+                    dob: formattedDob,
+                    time: formattedTime,
+                    lat: birthLat,
+                    lon: birthLon
+                });
+                setResult(localRes);
+                return;
+            }
+
+            try {
+                const res = await generateKundali(payload);
+                setResult(res);
+            } catch (apiErr) {
+                console.warn('API Failed, falling back to Local Engine');
+                const localRes = calculateLocalKundali({
+                    dob: formattedDob,
+                    time: formattedTime,
+                    lat: birthLat,
+                    lon: birthLon
+                });
+                setResult(localRes);
+            }
         } catch (e) {
             console.error(e);
             Alert.alert('Error', 'Unable to generate Kundali. Please try again.');
@@ -206,7 +230,24 @@ export default function KundaliScreen() {
                         />
                     </View>
 
-                    <TouchableOpacity style={styles.generateButton} onPress={handleGenerate} disabled={loading}>
+                    {/* Offline Mode Toggle */}
+                    <View style={styles.offlineToggleRow}>
+                        <View>
+                            <Text style={[styles.offlineLabel, { color: colors.text }]}>Private Offline Mode</Text>
+                            <Text style={styles.offlineSublabel}>100% On-device WASM Logic</Text>
+                        </View>
+                        <TouchableOpacity 
+                            onPress={() => setOfflineMode(!offlineMode)}
+                            style={[
+                                styles.toggleSwitch, 
+                                { backgroundColor: offlineMode ? colors.primary : '#E5E7EB' }
+                            ]}
+                        >
+                            <View style={[styles.toggleThumb, { left: offlineMode ? 22 : 2 }]} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity style={[styles.generateButton, { backgroundColor: colors.primary }]} onPress={handleGenerate} disabled={loading}>
                         {loading ? (
                             <ActivityIndicator color="#FFF" />
                         ) : (
@@ -529,5 +570,42 @@ const styles = StyleSheet.create({
         marginLeft: 12,
         fontSize: 15,
         fontWeight: '500',
+    },
+    offlineToggleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#EEE',
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    offlineLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    offlineSublabel: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+    toggleSwitch: {
+        width: 50,
+        height: 28,
+        borderRadius: 14,
+        padding: 2,
+        justifyContent: 'center',
+    },
+    toggleThumb: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#FFF',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
 });

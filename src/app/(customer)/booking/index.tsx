@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Refreshed for routing
+ // Refreshed for routing
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
+import calendar from 'dayjs/plugin/calendar';
+import localeData from 'dayjs/plugin/localeData';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+
+dayjs.extend(calendar);
+dayjs.extend(localeData);
+dayjs.extend(localizedFormat);
+
 import { useTheme } from '@/store/ThemeContext';
 import { getPanditSummary } from '@/services/pandit.service';
 import { createBooking, availableSlots as fetchAvailableSlots } from '@/services/booking.service';
@@ -24,6 +33,7 @@ export default function BookingScreen() {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+  const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(0);
   const [pandit, setPandit] = useState<Pandit | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -218,7 +228,7 @@ export default function BookingScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -508,7 +518,7 @@ export default function BookingScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

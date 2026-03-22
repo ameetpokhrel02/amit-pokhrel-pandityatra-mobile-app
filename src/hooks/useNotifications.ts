@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Platform, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { registerPushToken } from '@/services/notification.service';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -10,6 +11,7 @@ import { useAuthStore } from '@/store/auth.store';
  */
 export function useNotifications() {
   const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -53,7 +55,6 @@ export function useNotifications() {
 
     setupNotifications();
 
-    // Listen for foreground messages
     const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
       console.log('[Notifications] Foreground Message:', JSON.stringify(remoteMessage));
       Alert.alert(
@@ -65,8 +66,14 @@ export function useNotifications() {
     // Listen for background message clicks
     messaging().onNotificationOpenedApp((remoteMessage: any) => {
       console.log('[Notifications] Notification caused app to open from background:', remoteMessage.data);
+      if (remoteMessage.data?.route) {
+          const targetRoute = remoteMessage.data.route.includes('admin') ? '/notifications' : remoteMessage.data.route;
+          router.push(targetRoute as any);
+      } else {
+          router.push('/notifications' as any);
+      }
     });
 
     return unsubscribe;
-  }, [isAuthenticated]);
+  }, [isAuthenticated, router]);
 }

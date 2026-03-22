@@ -4,6 +4,7 @@ import { Colors } from '@/theme/colors';
 import { View, Text } from 'react-native';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
+import { CustomTabBar } from '@/components/ui/CustomTabBar';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
 function ShopIcon({ color, focused }: { color: string, focused: boolean }) {
@@ -32,22 +33,11 @@ function LayoutContent() {
   return (
     <View className="flex-1">
       <Tabs
+        tabBar={(props) => <CustomTabBar {...props} role="customer" />}
         screenOptions={{
           tabBarActiveTintColor: activeColor,
           tabBarInactiveTintColor: inactiveColor,
           headerShown: false,
-          tabBarStyle: {
-            backgroundColor: colors.background,
-            borderTopColor: isDark ? '#333' : '#E5E5EA',
-            height: 75,
-            paddingBottom: 20,
-            paddingTop: 8,
-            elevation: 8,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-          },
         }}
       >
         <Tabs.Screen
@@ -71,7 +61,7 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="bookings"
+          name="bookings/index"
           options={{
             title: 'Bookings',
             tabBarLabel: 'Bookings',
@@ -81,7 +71,7 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
-          name="shop"
+          name="shop/index"
           options={{
             title: 'Shop',
             tabBarLabel: 'Shop',
@@ -103,14 +93,36 @@ function LayoutContent() {
         
         {/* Hidden Screens - Standardizing with href: null for a clean layout */}
         {[
-          'bookings/[id]', 'booking/index', 'booking', 'bookings.tsx', 'booking.tsx',
-          'chat/ai-guide', 'chat/index', 'bookings/samagri-recommendations', 'cart', 'shop/[id]',
-          'kundali', 'edit-profile', 'checkout', 'panchang', 'services/index', 'chat/[id]', 
-          'pandit/[id]', 'payments', 'services/list', 'services/[id]', 'shop/ai-recommend', 
-          'reviews/pending', 'reviews/history', 'reviews/platform-feedback', 'bookings/review',
-          'notifications', 'kundali-history', 'shop/orders', 'shop/order/[id]',
-          'booking-confirmation', 'invoice', 'help', 'help-contact', 'wishlist', 'preferences',
-          'ai-assistant', 'chat/dual-chat'
+          'ai-assistant',
+          'booking-confirmation',
+          'cart',
+          'checkout',
+          'edit-profile',
+          'help-contact',
+          'help',
+          'invoice',
+          'kundali-history',
+          'kundali',
+          'panchang',
+          'preferences',
+          'recordings',
+          'video-player',
+          'wishlist',
+          'booking',
+          'booking/index',
+          'booking/date-time',
+          'bookings/[id]',
+          'bookings/samagri-recommendations',
+          'bookings/review',
+          'pandit/[id]',
+          'payments',
+          'reviews/pending',
+          'reviews/history',
+          'reviews/platform-feedback',
+          'shop/ai-recommend',
+          'shop/[id]',
+          'shop/orders',
+          'shop/order/[id]'
         ].map(screen => (
           <Tabs.Screen
             key={screen}

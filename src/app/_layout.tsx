@@ -8,6 +8,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import '@/i18n'; // Initialize i18n
 import '../../global.css'; // Import NativeWind styles
 import { StripeProvider } from '@stripe/stripe-react-native';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -19,6 +21,10 @@ export default function RootLayout() {
   const router = useRouter();
 
   const [isNavigationReady, setIsNavigationReady] = useState(false);
+  
+  const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
+  });
 
   useEffect(() => {
     initialize();
@@ -31,10 +37,10 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && isNavigationReady) {
+    if (!isLoading && isNavigationReady && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync();
     }
-  }, [isLoading, isNavigationReady]);
+  }, [isLoading, isNavigationReady, fontsLoaded, fontError]);
 
   // Handle centralized redirection
   useEffect(() => {
@@ -110,7 +116,8 @@ export default function RootLayout() {
   
           {/* Shared screens (Explicitly registered groups) */}
           <Stack.Screen name="video" />
-          <Stack.Screen name="admin/index" options={{ title: 'Admin Dashboard' }} />
+          <Stack.Screen name="notifications/index" />
+          <Stack.Screen name="chat" />
         </Stack>
       </ThemeProvider>
     </StripeProvider>

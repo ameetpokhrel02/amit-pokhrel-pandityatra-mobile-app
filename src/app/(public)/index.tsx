@@ -33,8 +33,6 @@ export default function SplashScreen() {
                     
                     if (role === 'pandit') {
                         router.replace('/(pandit)');
-                    } else if (role === 'admin') {
-                        router.replace('/(customer)'); // Fallback or admin route
                     } else if (role === 'guest') {
                         router.replace('/(customer)');
                     } else {
