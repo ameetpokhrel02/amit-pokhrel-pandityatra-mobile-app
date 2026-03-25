@@ -8,28 +8,28 @@ interface User {
   name: string;
   phone: string;
   email?: string;
-  role: 'customer' | 'user' | 'pandit' | 'admin' | 'guest' | undefined;
+  role: 'customer' | 'pandit' | 'admin' | 'guest';
   profile_pic_url?: string;
-  photoUri?: string; // Compatibility
+  photoUri?: string | null;
   pandit_profile?: {
-    bio?: string;
-    expertise?: string;
-    experience_years?: number;
-    is_verified?: boolean;
-    average_rating?: string;
+    id: number;
+    bio: string;
+    is_verified: boolean;
+    is_available: boolean;
+    average_rating: string;
+    review_count: number;
+    experience_years: number;
     rating?: string;
-    review_count?: number;
-    upcoming_bookings?: number;
-    pending_bookings?: number;
-    total_earnings?: number;
+    skills?: string[];
   };
 }
+
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  role: 'customer' | 'user' | 'pandit' | 'admin' | 'guest' | undefined;
+  role: 'customer' | 'pandit' | 'admin' | 'guest';
   
   // Actions
   setUser: (user: User | null) => void;
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  role: undefined,
+  role: 'guest',
 
   setUser: (user) => set({ user }),
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
@@ -57,10 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.setItemAsync('access_token', tokens.access);
       await SecureStore.setItemAsync('refresh_token', tokens.refresh);
       await SecureStore.setItemAsync('user', JSON.stringify(userData));
-      if (userData.role) {
-        await SecureStore.setItemAsync('role', userData.role);
-      }
-
+      await SecureStore.setItemAsync('role', userData.role);
       
       set({ 
         user: userData, 
@@ -68,6 +65,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         role: userData.role,
         isLoading: false 
       });
+
+      // Fetch full profile immediately to ensure all data (like pandit_profile) is loaded
+      await get().syncProfile();
     } catch (error) {
       console.error('Error during login store update:', error);
     }
@@ -83,134 +83,85 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ 
         user: null, 
         isAuthenticated: false, 
-        role: undefined,
+        role: 'guest',
         isLoading: false 
       });
       
-      router.replace('/(public)/role-selection' as any);
+      router.replace('/(public)/role-selection');
     } catch (error) {
       console.error('Error during logout:', error);
     }
   },
 
   initialize: async () => {
-    console.log('[AuthStore] Initializing...');
     try {
       const accessToken = await SecureStore.getItemAsync('access_token');
       const userStr = await SecureStore.getItemAsync('user');
       const roleStr = await SecureStore.getItemAsync('role');
       
-      console.log('[AuthStore] Storage check:', { hasToken: !!accessToken, hasUser: !!userStr, role: roleStr });
-
       if (accessToken && userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          let initialRole = (roleStr as any) || userData.role || 'customer';
-          if (initialRole === 'user') initialRole = 'customer';
-          
-          set({ 
-            user: userData, 
-            isAuthenticated: true, 
-            role: initialRole,
-            isLoading: false 
-          });
-          console.log('[AuthStore] Initialization success. Syncing profile...');
-          get().syncProfile();
-        } catch (e) {
-          console.error('[AuthStore] Failed to parse user data:', e);
-          set({ isLoading: false, role: undefined, isAuthenticated: false, user: null });
-        }
-      } else if (roleStr === 'guest') {
-        console.log('[AuthStore] Clearing persistent Guest session so Welcome screen shows.');
-        await SecureStore.deleteItemAsync('role');
-        set({ isLoading: false, role: undefined, isAuthenticated: false, user: null });
+        set({ 
+          user: JSON.parse(userStr), 
+          isAuthenticated: true, 
+          role: (roleStr as any) || 'customer',
+          isLoading: false 
+        });
+        // Sync profile in background after immediate UI update
+        get().syncProfile();
       } else {
-        console.log('[AuthStore] No session found.');
-        set({ isLoading: false, role: undefined, isAuthenticated: false, user: null });
+        set({ isLoading: false, role: 'guest' });
       }
     } catch (error) {
-      console.error('[AuthStore] Error during auth initialization:', error);
-      set({ isLoading: false, role: undefined, isAuthenticated: false });
+      console.error('Error during auth initialization:', error);
+      set({ isLoading: false, role: 'guest' });
     }
-  },
-  continueAsGuest: async () => {
-    console.log('[AuthStore] Setting role to Guest for current session.');
-    set({ role: 'guest', isAuthenticated: false, user: null });
   },
   syncProfile: async () => {
     try {
-      const currentRole = get().role;
-      console.log(`[AuthStore] Syncing profile with backend (Current Role: ${currentRole})...`);
-      
       const response = await fetchProfile();
-      const userData = response?.data || response;
-      
+      const userData = response.data || response;
       if (userData) {
-        // If we are already a pandit, and the backend returns a pandit profile, or if the role remains pandit
-        let newRole = (userData.role?.toLowerCase() as any) || currentRole || 'customer';
-        if (newRole === 'user') newRole = 'customer';
-        
+        // Map backend profile response to store User type
         const mappedUser: User = {
-          id: String(userData.id),
-          name: userData.full_name || userData.name || '',
-          phone: userData.phone_number || userData.phone || '',
-          email: userData.email || '',
-          role: newRole,
-          profile_pic_url: userData.profile_pic || userData.profile_image || userData.profile_pic_url,
-          photoUri: userData.profile_image || userData.profile_pic_url, // Compatibility
+          id: userData.id?.toString() || '',
+          name: userData.full_name || userData.name,
+          phone: userData.phone_number || userData.phone,
+          email: userData.email,
+          role: userData.role || 'customer',
+          profile_pic_url: userData.profile_pic_url || userData.profile_image || userData.profile_pic,
           pandit_profile: userData.pandit_profile,
         };
 
-        console.log('[AuthStore] Profile synced:', { id: mappedUser.id, role: mappedUser.role });
+        // PREVENT ROLE SWITCHING:
+        // Use the current session role if it's already a valid logged-in role.
+        // This prevents the app from auto-switching a Customer to a Pandit dashboard
+        // just because the backend says they have a Pandit role.
+        const currentRole = get().role;
+        const finalRole = (currentRole === 'customer' || currentRole === 'pandit') 
+          ? currentRole 
+          : (mappedUser.role || 'customer');
 
         await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
-        if (mappedUser.role) {
-          await SecureStore.setItemAsync('role', mappedUser.role);
-        }
+        await SecureStore.setItemAsync('role', finalRole);
         
-        set({ 
-            user: mappedUser, 
-            role: mappedUser.role,
-            isAuthenticated: true,
-            isLoading: false
-        });
+        set({ user: mappedUser, role: finalRole });
+        console.log('[Auth Store] Profile synced. Current Role:', finalRole, 'Backend Role:', mappedUser.role);
       }
     } catch (error: any) {
-      console.error('[AuthStore] Profile sync failed:', error.message);
-      if (error.response?.status === 401 || error.response?.status === 400) {
-        console.log('[AuthStore] Session invalid, logging out.');
-        get().logout();
-      }
-      set({ isLoading: false });
+      console.error('Profile sync failed:', error.message);
+    }
+  },
+  continueAsGuest: async () => {
+    try {
+      await SecureStore.setItemAsync('role', 'guest');
+      set({ 
+        user: null, 
+        isAuthenticated: false, 
+        role: 'guest',
+        isLoading: false 
+      });
+    } catch (error) {
+      console.error('Error during continueAsGuest:', error);
     }
   },
 }));
-
-// Compatibility hooks
-export const useAuth = () => {
-    const store = useAuthStore();
-    return {
-        user: store.user,
-        role: store.role,
-        isAuthenticated: store.isAuthenticated,
-        isLoading: store.isLoading,
-        login: store.login,
-        logout: store.logout,
-    };
-};
-
-export const useUser = () => {
-    const store = useAuthStore();
-    return {
-        user: store.user,
-        updateUser: async (data: any) => {
-            // If it's a metadata update, just use state
-            if (store.user) {
-                store.setUser({ ...store.user, ...data });
-            }
-            // Trigger sync if we want to hit backend
-            await store.syncProfile();
-        },
-        logout: store.logout,
-    };
-};

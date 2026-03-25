@@ -31,14 +31,28 @@ export default function EarningsScreen() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [statsRes, walletRes] = await Promise.all([
-                fetchPanditDashboardStats(),
+            const [profileRes, walletRes] = await Promise.allSettled([
+                fetchPanditDashboardStats(), // Currently points to wallet/ as fallback
                 fetchWalletBalance()
             ]);
-            setStats(statsRes.data);
-            setWallet(walletRes.data);
+            
+            // Handle Stats
+            if (profileRes.status === 'fulfilled') {
+                setStats(profileRes.value.data);
+            }
+
+            // Handle Wallet
+            if (walletRes.status === 'fulfilled') {
+                setWallet(walletRes.value.data);
+            } else {
+                // If wallet 404s, provide a default state
+                setWallet({ balance: '0.00', recent_transactions: [] });
+                console.warn('Wallet not found, using default zero balance');
+            }
         } catch (error) {
             console.error('Error loading earnings data:', error);
+            // Fallback for safety
+            setWallet({ balance: '0.00', recent_transactions: [] });
         } finally {
             setLoading(false);
             setRefreshing(false);

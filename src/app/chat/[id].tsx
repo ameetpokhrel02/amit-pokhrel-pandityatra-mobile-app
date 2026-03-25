@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Colors } from '@/theme/colors';
-import { fetchChatRoomMessages, sendMessage, getAISuggestion, fetchChatRooms } from '@/services/chat.service';
+import { fetchChatRoomMessages, getAISuggestion, fetchChatRooms } from '@/services/chat.service';
 import { ChatMessage, ChatRoom } from '@/types/chat';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
@@ -12,28 +13,80 @@ import { useAuthStore } from '@/store/auth.store';
 import { getImageUrl } from '@/utils/image';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { sendAiChatMessage } from '@/services/ai.service';
+import { useCartStore } from '@/store/cart.store';
+import { TypingIndicator } from '@/components/chat/TypingIndicator';
+
+// Product Card for Chat
+const ChatProductCard = ({ product, colors, isDark }: { product: any, colors: any, isDark: boolean }) => {
+  const addToCart = useCartStore(state => state.addToCart);
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: String(product.id),
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      description: product.description
+    } as any);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  return (
+    <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#F0F0F0' }]}>
+      <Image 
+        source={{ uri: getImageUrl(product.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }} 
+        style={styles.productImage} 
+        contentFit="cover"
+      />
+      <View style={styles.productInfo}>
+        <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{product.name}</Text>
+        <Text style={[styles.productPrice, { color: colors.primary }]}>Rs. {product.price}</Text>
+        <TouchableOpacity 
+          style={[styles.addToCartButton, { backgroundColor: added ? '#4CAF50' : colors.primary }]}
+          onPress={handleAddToCart}
+        >
+          <Ionicons name={added ? "checkmark" : "cart-outline"} size={14} color="#FFF" />
+          <Text style={styles.addToCartText}>{added ? 'ADDED' : 'ADD TO CART'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 export default function ChatRoomScreen() {
   const { id, mode } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const isAiMode = mode === 'ai' || id === 'ai-guide';
   const router = useRouter();
   const { colors, theme } = useTheme();
   const { user, role } = useAuthStore();
   const isDark = theme === 'dark';
   const isPandit = role === 'pandit';
-  const { messages: socketMessages, status, manualRefresh } = useChatSocket(!isAiMode && typeof id === 'string' ? id : undefined);
+  
+  // Real-time Socket Setup
+  const { 
+    messages: socketMessages, 
+    status, 
+    isTyping: socketIsTyping, 
+    sendMessage: sendSocketMessage,
+    manualRefresh 
+  } = useChatSocket(!isAiMode && typeof id === 'string' ? id : undefined);
+
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(!isAiMode);
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [aiSuggestion, setAiSuggestion] = useState<ChatMessage | null>(null);
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const messages = isAiMode ? localMessages : socketMessages;
+  const otherParticipant = room?.participants.find(p => String(p.id) !== String(user?.id));
 
   useEffect(() => {
     if (isAiMode) {
-      // AI Guide initial message
       setLocalMessages([{
         id: 'ai-initial',
         chatId: 'ai-guide',
@@ -51,14 +104,12 @@ export default function ChatRoomScreen() {
   const loadRoomDetails = async () => {
     if (typeof id !== 'string' || isAiMode) return;
     try {
-      // Fetch room details to get the participant name
       const rooms = await fetchChatRooms();
       const currentRoom = rooms.find(r => String(r.id) === String(id));
       if (currentRoom) {
         setRoom(currentRoom);
       }
 
-      // Check for AI suggestion based on last message (only for customers)
       if (!isPandit && socketMessages.length > 0) {
         const lastMsg = socketMessages[socketMessages.length - 1];
         if (lastMsg.senderId !== String(user?.id)) {
@@ -88,33 +139,38 @@ export default function ChatRoomScreen() {
       };
       setLocalMessages(prev => [...prev, userMsg]);
       setInputText('');
+      
+      setIsAiTyping(true);
+      try {
+        const response = await sendAiChatMessage(text);
+        if (response) {
+            const aiMsg: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                chatId: 'ai-guide',
+                senderId: 'ai',
+                text: response.text || response.response || response.message || 'I am processing your request...',
+                type: 'text',
+                timestamp: Date.now(),
+                isRead: true,
+                products: response.products || []
+            };
+            setLocalMessages(prev => [...prev, aiMsg]);
+        }
+      } catch (err) {
+        console.error('AI Chat Error:', err);
+      } finally {
+        setIsAiTyping(false);
+      }
+    } else {
+      if (typeof id !== 'string') return;
+      setInputText('');
+      setAiSuggestion(null);
 
       try {
-        const aiRes = await sendAiChatMessage(text);
-        const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          chatId: 'ai-guide',
-          senderId: 'ai',
-          text: aiRes.response || aiRes.message || 'I am sorry, I am having trouble processing your request.',
-          type: 'text',
-          timestamp: Date.now(),
-          isRead: true
-        };
-        setLocalMessages(prev => [...prev, aiMsg]);
-      } catch (e) {
-        console.error('AI chat failed', e);
+        await sendSocketMessage(text);
+      } catch (error) {
+        console.error('Failed to send', error);
       }
-      return;
-    }
-
-    if (typeof id !== 'string') return;
-    setInputText('');
-    setAiSuggestion(null);
-
-    try {
-      await sendMessage(id, text);
-    } catch (error) {
-      console.error('Failed to send', error);
     }
   };
 
@@ -128,40 +184,87 @@ export default function ChatRoomScreen() {
       );
     }
 
-    // Check if it's 'my' message. 
     const isMe = String(item.senderId) === String(user?.id);
+    const isAi = String(item.senderId) === 'ai';
 
     return (
-      <View style={[
-        styles.messageBubble,
-        isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: isDark ? '#333' : '#F0F0F0', borderBottomLeftRadius: 4 },
-        isMe ? styles.myMessage : styles.theirMessage
-      ]}>
-        <Text style={[
-          styles.messageText,
-          isMe ? styles.myMessageText : { color: colors.text }
+      <View style={{ marginBottom: 16 }}>
+        <View style={[
+          isMe ? styles.myMessageContainer : styles.theirMessageContainer,
+          { flexDirection: 'row', alignItems: 'flex-end' }
         ]}>
-          {item.text}
-        </Text>
-        <Text style={[
-          styles.timestamp,
-          isMe ? styles.myTimestamp : { color: isDark ? '#AAA' : '#999' }
-        ]}>
-          {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+          {!isMe && (
+            <View style={[styles.messageAvatar, { backgroundColor: isAi ? '#FFF' : '#F0F0F0', borderWidth: isAi ? 1 : 0, borderColor: colors.primary + '30' }]}>
+              {isAi ? (
+                <MaterialCommunityIcons name="robot-outline" size={16} color={colors.primary} />
+              ) : (
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.text }}>
+                  {otherParticipant?.name?.charAt(0) || 'P'}
+                </Text>
+              )}
+            </View>
+          )}
+
+          <View style={[
+            styles.messageBubble,
+            isMe ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: isDark ? '#333' : '#F0F0F0', borderBottomLeftRadius: 4 },
+            isMe ? styles.myMessage : styles.theirMessage
+          ]}>
+            <Text style={[styles.messageText, isMe ? styles.myMessageText : { color: colors.text }]}>
+              {item.text}
+            </Text>
+            <Text style={[styles.timestamp, isMe ? styles.myTimestamp : { color: isDark ? '#AAA' : '#999' }]}>
+              {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+
+          {isMe && (
+            <View style={[styles.messageAvatar, { backgroundColor: colors.primary }]}>
+              {user?.profile_pic_url ? (
+                <Image source={{ uri: getImageUrl(user.profile_pic_url) || undefined }} style={styles.messageAvatarImage} />
+              ) : (
+                <Ionicons name="person" size={14} color="#FFF" />
+              )}
+            </View>
+          )}
+        </View>
+        
+        {item.products && item.products.length > 0 && (
+          <View style={[styles.productListContainer, { marginLeft: !isMe ? 44 : -16 }]}>
+             <FlatList
+               data={item.products}
+               horizontal
+               showsHorizontalScrollIndicator={false}
+               renderItem={({ item: prod }) => (
+                 <ChatProductCard product={prod} colors={colors} isDark={isDark} />
+               )}
+               keyExtractor={(prod, index) => `${prod.product_id || prod.id || index}`}
+               contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+             />
+          </View>
+        )}
       </View>
     );
   };
 
-  const otherParticipant = room?.participants.find(p => String(p.id) !== String(user?.id));
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#f0f0f0' }]}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={[
+        styles.header, 
+        { 
+          backgroundColor: colors.card, 
+          borderBottomColor: isDark ? '#333' : '#f0f0f0',
+          paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : 8)
+        }
+      ]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol name="chevron.left" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -193,9 +296,11 @@ export default function ChatRoomScreen() {
             </Text>
             <View style={styles.headerSubtitleRow}>
               {!isAiMode && otherParticipant && (
-                <Text style={[styles.roleBadge, { color: colors.primary }]}>
-                  {otherParticipant.role === 'pandit' ? 'Pandit' : 'Customer'}
-                </Text>
+                <View style={[styles.roleBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>
+                    {otherParticipant.role === 'pandit' ? 'Pandit' : 'Customer'}
+                  </Text>
+                </View>
               )}
               {!isAiMode && (
                 <View style={styles.statusRow}>
@@ -210,6 +315,12 @@ export default function ChatRoomScreen() {
               )}
             </View>
           </View>
+
+          {!isAiMode && (
+            <TouchableOpacity onPress={manualRefresh} style={styles.refreshIcon}>
+              <Ionicons name="refresh" size={20} color={colors.text} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -218,63 +329,79 @@ export default function ChatRoomScreen() {
         data={messages}
         renderItem={renderMessage}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 20 }]}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        ListFooterComponent={isAiTyping || socketIsTyping ? <TypingIndicator /> : null}
       />
 
-      {!isPandit && aiSuggestion && (
-        <View style={[styles.suggestionContainer, { backgroundColor: isDark ? '#332' : '#FFF9F0', borderTopColor: isDark ? '#443' : '#FFE0B2' }]}>
-          <View style={styles.suggestionHeader}>
-            <IconSymbol name="sparkles" size={16} color={colors.primary} />
-            <Text style={[styles.suggestionTitle, { color: colors.primary }]}>AI Suggestion</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {!isPandit && aiSuggestion && (
+          <View style={[styles.suggestionContainer, { backgroundColor: isDark ? '#332' : '#FFF9F0', borderTopColor: isDark ? '#443' : '#FFE0B2' }]}>
+            <View style={styles.suggestionHeader}>
+              <IconSymbol name="sparkles" size={16} color={colors.primary} />
+              <Text style={[styles.suggestionTitle, { color: colors.primary }]}>AI Suggestion</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.suggestionBubble, { backgroundColor: colors.card, borderColor: isDark ? '#443' : '#FFE0B2' }]}
+              onPress={() => handleSend(aiSuggestion.text.replace('Suggested: ', '').replace(/"/g, ''))}
+            >
+              <Text style={[styles.suggestionText, { color: colors.text }]}>
+                {aiSuggestion.text.replace('Suggested: ', '').replace(/"/g, '')}
+              </Text>
+              <IconSymbol name="arrow.up.circle.fill" size={24} color={colors.primary} />
+            </TouchableOpacity>
           </View>
+        )}
+
+        <View style={[
+          styles.inputContainer, 
+          { 
+            backgroundColor: colors.card, 
+            borderTopColor: isDark ? '#333' : '#f0f0f0',
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 16,
+            paddingTop: 12
+          }
+        ]}>
+          <TextInput
+            style={[styles.input, { backgroundColor: isDark ? '#333' : '#F5F5F5', color: colors.text }]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Type a message..."
+            placeholderTextColor={isDark ? '#AAA' : '#999'}
+            multiline
+          />
           <TouchableOpacity
-            style={[styles.suggestionBubble, { backgroundColor: colors.card, borderColor: isDark ? '#443' : '#FFE0B2' }]}
-            onPress={() => handleSend(aiSuggestion.text.replace('Suggested: ', '').replace(/"/g, ''))}
+            style={[styles.sendButton, { backgroundColor: colors.primary }, !inputText.trim() && styles.sendButtonDisabled]}
+            onPress={() => handleSend()}
+            disabled={!inputText.trim()}
           >
-            <Text style={[styles.suggestionText, { color: colors.text }]}>
-              {aiSuggestion.text.replace('Suggested: ', '').replace(/"/g, '')}
-            </Text>
-            <IconSymbol name="arrow.up.circle.fill" size={24} color={colors.primary} />
+            <IconSymbol name="paperplane.fill" size={20} color="white" />
           </TouchableOpacity>
         </View>
-      )}
-
-      <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#f0f0f0' }]}>
-        <TextInput
-          style={[styles.input, { backgroundColor: isDark ? '#333' : '#F5F5F5', color: colors.text }]}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Type a message..."
-          placeholderTextColor={isDark ? '#AAA' : '#999'}
-          multiline
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: colors.primary }, !inputText.trim() && styles.sendButtonDisabled]}
-          onPress={() => handleSend()}
-          disabled={!inputText.trim()}
-        >
-          <IconSymbol name="paperplane.fill" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
     paddingBottom: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   backButton: {
-    marginRight: 16,
+    marginRight: 12,
+    padding: 8,
+    marginLeft: -8,
   },
   headerInfo: {
     flex: 1,
@@ -288,17 +415,13 @@ const styles = StyleSheet.create({
   headerSubtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 4,
     gap: 8,
   },
   roleBadge: {
-    fontSize: 12,
-    fontWeight: '700',
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 4,
-    textTransform: 'uppercase',
   },
   statusRow: {
     flexDirection: 'row',
@@ -308,9 +431,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
@@ -325,22 +448,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  verifiedText: {
-    fontSize: 12,
-    marginLeft: 4,
-    fontWeight: '500',
   },
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   systemMessageContainer: {
     flexDirection: 'row',
@@ -361,7 +478,7 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     padding: 12,
     borderRadius: 16,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   myMessage: {
     alignSelf: 'flex-end',
@@ -383,6 +500,20 @@ const styles = StyleSheet.create({
   },
   myTimestamp: {
     color: 'rgba(255,255,255,0.7)',
+  },
+  messageAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+    marginBottom: 4,
+  },
+  messageAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
   },
   suggestionContainer: {
     padding: 16,
@@ -406,11 +537,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   suggestionText: {
     flex: 1,
@@ -421,7 +547,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
+    paddingHorizontal: 20,
     borderTopWidth: 1,
   },
   input: {
@@ -453,5 +579,67 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  refreshIcon: {
+    padding: 8,
+  },
+  myMessageContainer: {
+    alignSelf: 'flex-end',
+    maxWidth: '85%',
+    marginBottom: 8,
+  },
+  theirMessageContainer: {
+    alignSelf: 'flex-start',
+    maxWidth: '85%',
+  },
+  productListContainer: {
+    width: Dimensions.get('window').width,
+    marginLeft: -16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  productCard: {
+    width: 160,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignSelf: 'flex-start',
+    marginVertical: 4,
+  },
+  productImage: {
+    width: '100%',
+    height: 100,
+  },
+  productInfo: {
+    padding: 12,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  productPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  addToCartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  addToCartText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

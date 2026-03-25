@@ -1,36 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Modal, Alert, TextInput } from 'react-native';
-import DateTimePicker from 'react-native-ui-datepicker';
+import { Calendar } from 'react-native-calendars';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
-import localeData from 'dayjs/plugin/localeData';
-import calendarPlugin from 'dayjs/plugin/calendar';
-
-dayjs.extend(isBetween);
-dayjs.extend(customParseFormat);
-dayjs.extend(localizedFormat);
-dayjs.extend(localeData);
-dayjs.extend(calendarPlugin);
-
 import { Colors } from '@/theme/colors';
 import { fetchPanditCalendar, addAvailabilityBlock, deleteAvailabilityBlock } from '@/services/pandit.service';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function CalendarScreen() {
-  const [date, setDate] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newBlock, setNewBlock] = useState({ title: '', startTime: '09:00', endTime: '10:00' });
+  const [isStartTimePickerVisible, setStartTimePickerVisibility] = useState(false);
+  const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
+  
+  const [newBlock, setNewBlock] = useState({ 
+    title: '', 
+    startTime: dayjs().set('hour', 9).set('minute', 0),
+    endTime: dayjs().set('hour', 10).set('minute', 0)
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchCalendarData = async () => {
     try {
       setLoading(true);
       const data = await fetchPanditCalendar();
-      setEvents(data);
+      setEvents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching calendar:', error);
     } finally {
@@ -42,6 +38,31 @@ export default function CalendarScreen() {
     fetchCalendarData();
   }, []);
 
+  const markedDates = useMemo(() => {
+    const marks: any = {};
+    events.forEach(event => {
+      const dateKey = dayjs(event.start_time || event.start).format('YYYY-MM-DD');
+      if (!marks[dateKey]) {
+        marks[dateKey] = { marked: true, dotColor: Colors.light.primary };
+      }
+    });
+    
+    // Add selection highlight
+    marks[selectedDate] = {
+      ...(marks[selectedDate] || {}),
+      selected: true,
+      selectedColor: Colors.light.primary,
+    };
+    
+    return marks;
+  }, [events, selectedDate]);
+
+  const selectedDateEvents = useMemo(() => {
+    return events.filter(event =>
+      dayjs(event.start_time || event.start).isSame(selectedDate, 'day')
+    ).sort((a, b) => dayjs(a.start_time || a.start).diff(dayjs(b.start_time || b.start)));
+  }, [events, selectedDate]);
+
   const handleCreateBlock = async () => {
     if (!newBlock.title) {
       Alert.alert('Error', 'Please enter a title for the block');
@@ -50,20 +71,27 @@ export default function CalendarScreen() {
 
     try {
       setSubmitting(true);
-      const start = date.hour(parseInt(newBlock.startTime.split(':')[0])).minute(parseInt(newBlock.startTime.split(':')[1])).format();
-      const end = date.hour(parseInt(newBlock.endTime.split(':')[0])).minute(parseInt(newBlock.endTime.split(':')[1])).format();
+      const baseDate = dayjs(selectedDate);
+      const start = baseDate.hour(newBlock.startTime.hour()).minute(newBlock.startTime.minute()).toISOString();
+      const end = baseDate.hour(newBlock.endTime.hour()).minute(newBlock.endTime.minute()).toISOString();
       
       await addAvailabilityBlock({
         title: newBlock.title,
         start_time: start,
-        end_time: end
+        end_time: end,
+        type: 'block'
       });
       
       Alert.alert('Success', 'Availability block added');
       setShowAddModal(false);
-      setNewBlock({ title: '', startTime: '09:00', endTime: '10:00' });
+      setNewBlock({ 
+        title: '', 
+        startTime: dayjs().set('hour', 9).set('minute', 0),
+        endTime: dayjs().set('hour', 10).set('minute', 0)
+      });
       fetchCalendarData();
     } catch (error) {
+      console.error('Add block error:', error);
       Alert.alert('Error', 'Failed to add block');
     } finally {
       setSubmitting(false);
@@ -92,102 +120,114 @@ export default function CalendarScreen() {
     );
   };
 
-  const selectedDateEvents = events.filter(event =>
-    dayjs(event.start).isSame(date, 'day')
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Schedule</Text>
+        <Text style={styles.headerTitle}>Calendar</Text>
+        <Text style={styles.headerSubtitle}>Manage your availability and schedule</Text>
       </View>
 
-      <View style={styles.calendarContainer}>
-        <DateTimePicker
-          date={date}
-          onChange={(params: any) => {
-            if (params.date) setDate(dayjs(params.date));
-          }}
-          mode="single"
-          // @ts-ignore
-          headerTextStyle={styles.calendarHeader}
-          // @ts-ignore
-          calendarTextStyle={styles.calendarText}
-          // @ts-ignore
-          selectedItemColor={Colors.light.primary}
-          todayTextStyle={{ color: Colors.light.primary, fontWeight: 'bold' }}
-        />
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.calendarCard}>
+          <Calendar
+            current={selectedDate}
+            onDayPress={day => setSelectedDate(day.dateString)}
+            markedDates={markedDates}
+            theme={{
+              selectedDayBackgroundColor: Colors.light.primary,
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: Colors.light.primary,
+              arrowColor: Colors.light.primary,
+              dotColor: Colors.light.primary,
+              monthTextColor: '#333',
+              textMonthFontWeight: 'bold',
+              textDayHeaderFontWeight: '600',
+              calendarBackground: 'transparent',
+            }}
+          />
+        </View>
 
-      <View style={styles.eventsSection}>
-        <Text style={styles.sectionTitle}>
-          Events for {date.format('DD MMM, YYYY')}
-        </Text>
+        <View style={styles.eventsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {dayjs(selectedDate).format('DD MMMM, YYYY')}
+            </Text>
+            <TouchableOpacity 
+              style={styles.textAddButton}
+              onPress={() => setShowAddModal(true)}
+            >
+              <Ionicons name="add-circle" size={24} color={Colors.light.primary} />
+              <Text style={styles.textAddButtonLabel}>Block Time</Text>
+            </TouchableOpacity>
+          </View>
 
-        {loading ? (
-          <ActivityIndicator size="small" color={Colors.light.primary} style={{ marginTop: 20 }} />
-        ) : (
-          <ScrollView style={styles.eventsList}>
-            {selectedDateEvents.length > 0 ? (
-              selectedDateEvents.map((event) => (
-                <View key={event.id} style={styles.eventCard}>
-                  <View style={[styles.eventIndicator, { backgroundColor: event.type === 'booking' ? '#3B82F6' : '#EF4444' }]} />
-                  <View style={styles.eventContent}>
-                    <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.eventTime}>
-                      {dayjs(event.start).format('hh:mm A')} - {dayjs(event.end).format('hh:mm A')}
-                    </Text>
+          {loading ? (
+            <ActivityIndicator size="large" color={Colors.light.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.eventsList}>
+              {selectedDateEvents.length > 0 ? (
+                selectedDateEvents.map((event) => (
+                  <View key={event.id} style={styles.eventCard}>
+                    <View style={[
+                      styles.eventIndicator, 
+                      { backgroundColor: event.type === 'booking' ? '#3B82F6' : '#EF4444' }
+                    ]} />
+                    <View style={styles.eventContent}>
+                      <Text style={styles.eventTitle}>{event.title}</Text>
+                      <Text style={styles.eventTime}>
+                        {dayjs(event.start_time || event.start).format('hh:mm A')} - {dayjs(event.end_time || event.end).format('hh:mm A')}
+                      </Text>
+                      {event.type === 'booking' && (
+                        <View style={styles.bookingBadge}>
+                          <Text style={styles.bookingBadgeText}>Puja Booking</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {event.type !== 'booking' && (
+                      <TouchableOpacity 
+                        style={styles.deleteButton} 
+                        onPress={() => handleDeleteBlock(event.id)}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                   {event.type === 'booking' ? (
-                    <TouchableOpacity style={styles.detailButton}>
-                      <Ionicons name="chevron-forward" size={20} color="#CCC" />
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.deleteButton} 
-                      onPress={() => handleDeleteBlock(event.id)}
-                    >
-                      <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                    </TouchableOpacity>
-                  )}
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="calendar-outline" size={48} color="#E5E7EB" />
+                  <Text style={styles.emptyText}>No events or blocks for this day</Text>
                 </View>
-              ))
-            ) : (
-               <View style={styles.emptyContainer}>
-                <Ionicons name="calendar-outline" size={40} color="#DDD" />
-                <Text style={styles.emptyText}>No events scheduled for this day.</Text>
-                <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-                  <Text style={styles.addButtonText}>+ Block Time</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </ScrollView>
-        )}
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: Colors.light.primary }]}
-        onPress={() => setShowAddModal(true)}
-      >
-        <Ionicons name="add" size={30} color="#FFF" />
-      </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+        <View style={{ height: 100 }} />
+      </ScrollView>
 
       <Modal
         visible={showAddModal}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Availability Block</Text>
-            <Text style={styles.modalDate}>{date.format('DD MMM, YYYY')}</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Block Time Slot</Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.modalDate}>{dayjs(selectedDate).format('dddd, DD MMM YYYY')}</Text>
             
             <View style={styles.formGroup}>
               <Text style={styles.label}>Title / Reason</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g. Family Function, Personal"
+                placeholder="e.g. Personal Maintenance, Travel"
                 value={newBlock.title}
                 onChangeText={(text) => setNewBlock({ ...newBlock, title: text })}
               />
@@ -196,121 +236,169 @@ export default function CalendarScreen() {
             <View style={styles.row}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Start Time</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="09:00"
-                  value={newBlock.startTime}
-                  onChangeText={(text) => setNewBlock({ ...newBlock, startTime: text })}
-                />
+                <TouchableOpacity 
+                  style={styles.timePickerButton}
+                  onPress={() => setStartTimePickerVisibility(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={Colors.light.primary} />
+                  <Text style={styles.timeValue}>{newBlock.startTime.format('hh:mm A')}</Text>
+                </TouchableOpacity>
               </View>
+
               <View style={[styles.formGroup, { flex: 1, marginLeft: 15 }]}>
                 <Text style={styles.label}>End Time</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="10:00"
-                  value={newBlock.endTime}
-                  onChangeText={(text) => setNewBlock({ ...newBlock, endTime: text })}
-                />
+                <TouchableOpacity 
+                  style={styles.timePickerButton}
+                  onPress={() => setEndTimePickerVisibility(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={Colors.light.primary} />
+                  <Text style={styles.timeValue}>{newBlock.endTime.format('hh:mm A')}</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAddModal(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.submitBtn, { backgroundColor: Colors.light.primary }]} 
-                onPress={handleCreateBlock}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>Create Block</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.submitBtn, { backgroundColor: Colors.light.primary }]} 
+              onPress={handleCreateBlock}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.submitBtnText}>Confirm Block</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      <DateTimePickerModal
+        isVisible={isStartTimePickerVisible}
+        mode="time"
+        date={newBlock.startTime.toDate()}
+        onConfirm={(date) => {
+          setNewBlock({ ...newBlock, startTime: dayjs(date) });
+          setStartTimePickerVisibility(false);
+        }}
+        onCancel={() => setStartTimePickerVisibility(false)}
+      />
+
+      <DateTimePickerModal
+        isVisible={isEndTimePickerVisible}
+        mode="time"
+        date={newBlock.endTime.toDate()}
+        onConfirm={(date) => {
+          setNewBlock({ ...newBlock, endTime: dayjs(date) });
+          setEndTimePickerVisibility(false);
+        }}
+        onCancel={() => setEndTimePickerVisibility(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 25,
     backgroundColor: '#FFF',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  calendarContainer: {
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#111827' },
+  headerSubtitle: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  calendarCard: {
     backgroundColor: '#FFF',
+    margin: 20,
+    borderRadius: 25,
     padding: 10,
-    margin: 15,
-    borderRadius: 20,
-    elevation: 4,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 8,
   },
-  calendarHeader: { fontWeight: 'bold', fontSize: 18, color: '#333' },
-  calendarText: { fontSize: 14 },
   eventsSection: { flex: 1, paddingHorizontal: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#4B5563', marginBottom: 15 },
-  eventsList: { flex: 1 },
+  sectionHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: 20 
+  },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
+  textAddButton: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  textAddButtonLabel: { color: Colors.light.primary, fontWeight: '600', fontSize: 14 },
+  eventsList: { gap: 12 },
   eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF',
-    padding: 15,
-    borderRadius: 15,
-    marginBottom: 10,
+    padding: 16,
+    borderRadius: 18,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
-  eventIndicator: { width: 4, height: 40, borderRadius: 2, marginRight: 15 },
+  eventIndicator: { width: 4, height: 35, borderRadius: 2, marginRight: 16 },
   eventContent: { flex: 1 },
-  eventTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937' },
-  eventTime: { fontSize: 14, color: '#6B7280', marginTop: 2 },
-  detailButton: { padding: 5 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40 },
-  emptyText: { fontSize: 14, color: '#9CA3AF', marginTop: 10, marginBottom: 20 },
-  addButton: { paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#F3F4F6', borderRadius: 12 },
-  addButtonText: { color: Colors.light.primary, fontWeight: '600' },
-  deleteButton: { padding: 8 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 30,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  eventTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  eventTime: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  bookingBadge: { 
+    backgroundColor: '#EBF5FF', 
+    alignSelf: 'flex-start', 
+    paddingHorizontal: 8, 
+    paddingVertical: 2, 
+    borderRadius: 6,
+    marginTop: 6
   },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#FFF', borderRadius: 20, padding: 25, elevation: 10 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 5, textAlign: 'center' },
-  modalDate: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 },
-  formGroup: { marginBottom: 15 },
-  label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 5 },
-  textInput: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 16 },
+  bookingBadgeText: { color: '#2563EB', fontSize: 11, fontWeight: '700' },
+  deleteButton: { padding: 8, backgroundColor: '#FEF2F2', borderRadius: 10 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 40, opacity: 0.5 },
+  emptyText: { fontSize: 14, color: '#6B7280', marginTop: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { 
+    backgroundColor: '#FFF', 
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
+    padding: 25,
+    paddingBottom: 40
+  },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: 10 
+  },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
+  modalDate: { fontSize: 15, color: Colors.light.primary, fontWeight: '600', marginBottom: 25 },
+  formGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  textInput: { 
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    borderRadius: 15, 
+    padding: 15, 
+    fontSize: 16,
+    color: '#111827'
+  },
+  timePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 15,
+    padding: 15,
+    gap: 10
+  },
+  timeValue: { fontSize: 16, color: '#111827', fontWeight: '500' },
   row: { flexDirection: 'row' },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 10 },
-  cancelBtn: { flex: 1, padding: 15, borderRadius: 12, alignItems: 'center', backgroundColor: '#F3F4F6' },
-  cancelBtnText: { fontWeight: '600', color: '#4B5563' },
-  submitBtn: { flex: 2, padding: 15, borderRadius: 12, alignItems: 'center' },
-  submitBtnText: { fontWeight: 'bold', color: '#FFF' },
+  submitBtn: { padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 10 },
+  submitBtnText: { fontWeight: '700', color: '#FFF', fontSize: 16 },
 });
+

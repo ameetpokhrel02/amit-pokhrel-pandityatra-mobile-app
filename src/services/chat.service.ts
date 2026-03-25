@@ -13,6 +13,7 @@ function mapChatMessage(apiMsg: any): ChatMessage {
     type: (apiMsg.message_type?.toLowerCase() as any) || (apiMsg.type as any) || 'text',
     timestamp: new Date(apiMsg.created_at || apiMsg.timestamp || Date.now()).getTime(),
     isRead: apiMsg.is_read || apiMsg.read || false,
+    products: apiMsg.products || [], // Added
     metadata: apiMsg.metadata,
   };
 }
@@ -68,7 +69,8 @@ function mapChatRoom(apiRoom: any): ChatRoom {
         text: apiRoom.last_message,
         type: 'text',
         timestamp: new Date(apiRoom.last_message_time || Date.now()).getTime(),
-        isRead: false
+        isRead: false,
+        products: apiRoom.products || [], // Added
     } as ChatMessage : undefined),
     unreadCount: typeof apiRoom.unread_count === 'string' ? parseInt(apiRoom.unread_count) : (apiRoom.unread_count || 0),
     status: apiRoom.is_active !== false ? 'active' : 'archived',

@@ -30,6 +30,14 @@ export default function VideoPlayerScreen() {
   });
 
   const [downloading, setDownloading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  
+  // Use player.status safely
+  const playerStatus = player.status;
+
+  player.addListener('playingChange', (event) => {
+    setIsPlaying(event.isPlaying);
+  });
 
   const handleShare = async () => {
     try {

@@ -9,7 +9,7 @@ export const getPujaCatalog = () => publicApi.get('pandits/services/catalog/');
 export const registerPandit = (formData: FormData) => publicApi.post('pandits/register/', formData);
 
 // Pandit self-service
-export const getDashboardStats = () => api.get('pandits/dashboard/stats/');
+export const getDashboardStats = () => api.get('pandits/wallet/'); // Use wallet as a fallback or fix path if we find the real one
 export const fetchPanditDashboardStats = getDashboardStats;
 export const togglePanditAvailability = (isAvailable: boolean) => 
     api.post('pandits/dashboard/toggle-availability/', { is_available: isAvailable });

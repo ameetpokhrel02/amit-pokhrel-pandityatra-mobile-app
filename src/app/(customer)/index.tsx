@@ -14,7 +14,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCartStore } from '@/store/cart.store';
@@ -92,7 +92,6 @@ export default function CustomerHomeScreen() {
       setSamagriCategories(samagriCategoriesRes);
 
       if (isAuthenticated && user) {
-        syncProfile();
         fetchStoreNotifications();
         
         try {
@@ -259,6 +258,17 @@ export default function CustomerHomeScreen() {
             onMomentumScrollEnd={(event) => {
               currentIndexRef.current = Math.floor(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
             }}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH,
+              offset: SCREEN_WIDTH * index,
+              index,
+            })}
+            onScrollToIndexFailed={(info) => {
+              const wait = new Promise(resolve => setTimeout(resolve, 500));
+              wait.then(() => {
+                flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
+              });
+            }}
             renderItem={({ item }) => (
               <View style={{ width: SCREEN_WIDTH, paddingHorizontal: 20, height: 200 }}>
                 <View style={[styles.bannerWrapper, { backgroundColor: isDark ? '#2A2A2A' : '#F4F4F5' }]}>
@@ -293,7 +303,7 @@ export default function CustomerHomeScreen() {
             <QuickActionItem title="Shop Samagri" icon="basket-outline" onPress={() => router.push('/(customer)/shop')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Kundali" icon="sparkles-outline" onPress={() => handleAuthAction('/(customer)/kundali')} colors={colors} isDark={isDark} />
             <QuickActionItem title="Panchang" icon="calendar-outline" onPress={() => router.push('/(customer)/panchang' as any)} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Ask AI" icon="chatbubbles-outline" onPress={() => handleAuthAction('/chat')} colors={colors} isDark={isDark} />
+            <QuickActionItem title="Ask AI" icon="robot-ai" onPress={() => handleAuthAction('/chat/ai-guide', { mode: 'ai' })} colors={colors} isDark={isDark} />
           </View>
         </View>
 
@@ -443,7 +453,11 @@ function QuickActionItem({ title, icon, onPress, colors, isDark }: { title: stri
         onPress={onPress}
     >
       <View style={[styles.quickActionIcon, { backgroundColor: isDark ? '#3B2200' : '#FFF7ED' }]}>
-        <Ionicons name={icon} size={26} color={colors.primary} />
+        {icon === 'robot-ai' ? (
+          <MaterialCommunityIcons name="robot-outline" size={26} color={colors.primary} />
+        ) : (
+          <Ionicons name={icon} size={26} color={colors.primary} />
+        )}
       </View>
       <Text style={[styles.quickActionText, { color: colors.text }]} numberOfLines={1}>{title}</Text>
     </TouchableOpacity>
@@ -537,8 +551,8 @@ const styles = StyleSheet.create({
   bannerBtnText: { fontWeight: '900', fontSize: 12, textTransform: 'uppercase' },
   quickActionsWrap: { paddingHorizontal: 24, marginBottom: 24 },
   quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
-  quickAction: { padding: 20, borderRadius: 32, alignItems: 'center', borderWidth: 1, width: (SCREEN_WIDTH - 64) / 3 },
-  quickActionIcon: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  quickAction: { padding: 14, borderRadius: 28, alignItems: 'center', borderWidth: 1, width: (SCREEN_WIDTH - 64) / 3 },
+  quickActionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   quickActionText: { fontWeight: '700', fontSize: 10, textAlign: 'center', textTransform: 'uppercase', letterSpacing: -0.5 },
   sectionWrap: { paddingHorizontal: 24, marginTop: 32 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 },

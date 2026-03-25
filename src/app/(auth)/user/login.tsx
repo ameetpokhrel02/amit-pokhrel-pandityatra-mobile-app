@@ -14,9 +14,21 @@ import {
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import * as WebBrowser from "expo-web-browser";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
+import { isExpoGo } from "@/utils/expo-go";
+
+// Conditionally import GoogleSignin to prevent crashing in Expo Go
+let GoogleSignin: any = null;
+let statusCodes: any = {};
+try {
+  if (!isExpoGo()) {
+    const GoogleAuth = require("@react-native-google-signin/google-signin");
+    GoogleSignin = GoogleAuth.GoogleSignin;
+    statusCodes = GoogleAuth.statusCodes;
+  }
+} catch (e) {
+  console.warn("Google Sign-In native module not found.");
+}
+
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
@@ -24,13 +36,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 
-WebBrowser.maybeCompleteAuthSession();
+// WebBrowser.maybeCompleteAuthSession();
 
 const EXTRA = (Constants.expoConfig?.extra as any) || {};
 const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
 const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
 const IOS_CLIENT_ID = EXTRA.iosClientId || "";
 const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
+
+if (GoogleSignin) {
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID || undefined,
+    // We use the iOS client ID here (or from GoogleService-Info.plist if provided)
+    iosClientId: IOS_CLIENT_ID || undefined,
+    // We don't necessarily need androidClientId here unless we are doing something specific, as it's typically picked up from google-services.json
+  });
+}
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -48,54 +70,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const redirectUri = useMemo(
-    () => AuthSession.makeRedirectUri({}),
-    []
-  );
 
-  const [googleRequest, googleResponse, googlePromptAsync] =
-    Google.useIdTokenAuthRequest({
-      clientId: GOOGLE_CLIENT_ID || undefined,
-      androidClientId: ANDROID_CLIENT_ID || undefined,
-      iosClientId: IOS_CLIENT_ID || undefined,
-      webClientId: WEB_CLIENT_ID || undefined,
-      redirectUri,
-      scopes: ["profile", "email"],
-    });
-
-  useEffect(() => {
-    const handleGoogle = async () => {
-      if (googleResponse?.type !== "success") return;
-
-      const idToken =
-        (googleResponse.authentication as any)?.idToken ||
-        (googleResponse.params as any)?.id_token;
-      if (!idToken) {
-        Alert.alert("Google Sign-In", "No id_token returned from Google.");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const res = await googleLogin({ id_token: idToken }); 
-        
-        // Fix for store update
-        const userData = res.data.user;
-        const tokens = { access: res.data.access, refresh: res.data.refresh };
-        await loginStore.login(userData, tokens);
-
-        if (userData.role === "pandit") router.replace("/(pandit)" as any);
-        else router.replace("/(customer)" as any);
-      } catch (e: any) {
-        console.error(e);
-        Alert.alert("Google Sign-In failed", e?.message || "Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleGoogle();
-  }, [googleResponse, router]);
 
   const handleSendOtp = async () => {
     try {
@@ -151,15 +126,64 @@ export default function LoginScreen() {
   };
 
   const handleGooglePress = async () => {
-    if (!GOOGLE_CLIENT_ID) {
+    if (!GOOGLE_CLIENT_ID && !WEB_CLIENT_ID) {
       Alert.alert("Config Error", "Missing Google client id.");
       return;
     }
-    if (!googleRequest) {
-      Alert.alert("Wait", "Google request not ready. Try again.");
+    
+    if (isExpoGo()) {
+      Alert.alert(
+        "Expo Go Limited", 
+        "Google Sign-In is not available in Expo Go. Please use Email/Phone login or use a native development build (npx expo run:android)."
+      );
+      setLoading(false);
       return;
     }
-    await googlePromptAsync();
+
+    if (!GoogleSignin) {
+      Alert.alert("Error", "Google Sign-In module is not available.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+
+      
+      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+      if (!idToken) {
+         Alert.alert("Google Sign-In", "No id_token returned from Google.");
+         return;
+      }
+
+      const res = await googleLogin({ id_token: idToken }); 
+        
+      // Fix for store update
+      const userData = res.data.user;
+      const tokens = { access: res.data.access, refresh: res.data.refresh };
+      await loginStore.login(userData, tokens);
+
+      if (userData.role === "pandit") router.replace("/(pandit)" as any);
+      else router.replace("/(customer)" as any);
+      
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        // play services not available or outdated
+        Alert.alert("Error", "Play services are not available or are outdated.");
+      } else {
+        // some other error happened
+        Alert.alert("Google Sign-In failed", error.message || "Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const navToSignup = () => {
@@ -303,3 +327,4 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
+

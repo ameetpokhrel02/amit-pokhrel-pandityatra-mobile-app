@@ -9,6 +9,8 @@ export function useChatSocket(roomId: string | number | undefined) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [status, setStatus] = useState<ConnectionStatus>('disconnected');
     const [error, setError] = useState<string | null>(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<any>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<any>(null);
 
@@ -67,6 +69,7 @@ export function useChatSocket(roomId: string | number | undefined) {
                             type: String(data.message_type || 'text').toLowerCase() as "text" | "system" | "ai_suggestion",
                             timestamp: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
                             isRead: false,
+                            products: data.products || [], // Added
                         };
 
                         setMessages(prev => {
@@ -74,6 +77,10 @@ export function useChatSocket(roomId: string | number | undefined) {
                             if (prev.find(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
                         });
+                    } else if (data.type === 'typing') {
+                        setIsTyping(true);
+                        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                        typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
                     }
                 } catch (e) {
                     console.error('[ChatSocket] Error parsing message:', e);
@@ -132,5 +139,5 @@ export function useChatSocket(roomId: string | number | undefined) {
         return false;
     }, []);
 
-    return { messages, status, error, manualRefresh, sendMessage };
+    return { messages, status, error, isTyping, manualRefresh, sendMessage };
 }

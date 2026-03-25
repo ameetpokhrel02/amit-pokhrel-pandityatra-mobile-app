@@ -56,20 +56,20 @@ export default function OnboardingScreen() {
     const skip = async () => {
         try {
             await AsyncStorage.setItem('onboarding_seen', 'true');
-            router.replace('/auth/login' as any);
+            router.replace('/(public)/role-selection');
         } catch (error) {
             console.error('Error saving onboarding state:', error);
-            router.replace('/auth/login' as any);
+            router.replace('/(public)/role-selection');
         }
     };
 
     const getStarted = async () => {
         try {
             await AsyncStorage.setItem('onboarding_seen', 'true');
-            router.replace('/auth/login' as any);
+            router.replace('/(public)/role-selection');
         } catch (error) {
             console.error('Error saving onboarding state:', error);
-            router.replace('/auth/login' as any);
+            router.replace('/(public)/role-selection');
         }
     };
 

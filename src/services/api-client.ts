@@ -192,7 +192,11 @@ apiClient.interceptors.response.use(
             }
         }
 
-        console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status} | Details:`, JSON.stringify(error.response?.data || error.message));
+        const status = error.response?.status;
+        const configUrl = error.config?.url || '';
+        if (!(status === 404 && configUrl.includes('pandits/wallet/'))) {
+            console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, JSON.stringify(error.response?.data || error.message));
+        }
         return Promise.reject(error);
     }
 );

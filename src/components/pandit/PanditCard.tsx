@@ -85,12 +85,12 @@ export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, 
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.bookButton, !pandit.isAvailable && styles.bookButtonDisabled]} 
+              style={[styles.bookButton, !(pandit.isAvailable ?? (pandit as any).is_available ?? true) && styles.bookButtonDisabled]} 
               onPress={onBook}
-              disabled={!pandit.isAvailable}
+              disabled={!(pandit.isAvailable ?? (pandit as any).is_available ?? true)}
             >
               <Text style={styles.bookButtonText}>
-                {pandit.isAvailable ? 'Book Now' : 'Busy'}
+                {(pandit.isAvailable ?? (pandit as any).is_available ?? true) ? 'Book Now' : 'Busy'}
               </Text>
             </TouchableOpacity>
           </View>

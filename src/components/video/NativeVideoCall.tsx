@@ -55,21 +55,11 @@ try {
   };
 }
 
-const {
-  RTCPeerConnection,
-  RTCView,
-  mediaDevices,
-  RTCSessionDescription,
-  RTCIceCandidate,
-  MediaStream,
-} = WebRTC;
-import * as SecureStore from 'expo-secure-store';
+const { RTCView } = WebRTC;
 import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
 import { Image } from 'expo-image';
 import { ChatMessage } from '@/types/chat';
-import { startVideoRoom, endVideoRoom, joinVideoRoom } from '@/services/video.service';
-import { API_BASE_URL } from '@/services/api-client';
 import { BlurView } from 'expo-blur';
 import Animated, { 
   useSharedValue, 
@@ -77,6 +67,7 @@ import Animated, {
   withSpring, 
 } from 'react-native-reanimated';
 
+import { useVideoCall } from '@/store/VideoCallContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface NativeVideoCallProps {
@@ -88,252 +79,84 @@ interface NativeVideoCallProps {
   isPandit?: boolean;
 }
 
-const configuration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
-};
+const configuration = {}; // Moved to context
 
 export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
   bookingId,
   userName,
   onLeave,
-  peerName = 'Pandit Ji',
-  peerAvatar,
-  isPandit = false,
+  peerName: propPeerName,
+  peerAvatar: propPeerAvatar,
+  isPandit: propIsPandit = false,
 }) => {
   const { colors } = useTheme();
-  
-  // WebRTC States
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const pc = useRef<RTCPeerConnection | null>(null);
-  const socket = useRef<WebSocket | null>(null);
-  
+  const { 
+    localStream, 
+    remoteStream, 
+    isConnecting, 
+    messages, 
+    unreadCount,
+    isMicOn,
+    isVideoOn,
+    isFrontCamera,
+    startCall,
+    endCall,
+    toggleMic,
+    toggleVideo,
+    flipCamera,
+    sendMessage,
+    clearUnread,
+    isCallActive,
+    activeBookingId,
+    peerName,
+    peerAvatar,
+    isPandit: callIsPandit
+  } = useVideoCall();
+
   // UI States
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [showChat, setShowChat] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [connecting, setConnecting] = useState(true);
 
   const flatListRef = useRef<FlatList>(null);
   const chatAnim = useSharedValue(SCREEN_WIDTH);
 
   useEffect(() => {
-    startCall();
-    return () => {
-      cleanup();
-    };
-  }, []);
-
-  const cleanup = () => {
-    if (socket.current) socket.current.close();
-    if (pc.current) pc.current.close();
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+    // If no call is active or a different booking, start it
+    if (!isCallActive || activeBookingId !== bookingId) {
+      startCall(bookingId, userName, propIsPandit, propPeerName, propPeerAvatar);
     }
-  };
-
-  const startCall = async () => {
-    try {
-      // 1. Notify Backend API
-      if (isPandit) {
-        try {
-           await startVideoRoom(bookingId);
-           console.log('[NativeVideo] API: Started Video Room');
-        } catch (e: any) {
-           console.log('[NativeVideo] API: Room start note:', e.message);
-        }
-      } else {
-        try {
-           await joinVideoRoom(bookingId);
-           console.log('[NativeVideo] API: Joined Video Room');
-        } catch (e: any) {
-           console.log('[NativeVideo] API: Room join note:', e.message);
-        }
-      }
-
-      // 2. Get Local Stream
-      const stream = await mediaDevices.getUserMedia({
-        audio: true,
-        video: {
-          facingMode: isFrontCamera ? 'user' : 'environment',
-        },
-      }) as MediaStream;
-      setLocalStream(stream);
-
-      // 3. Initialize PeerConnection
-      const peer = new RTCPeerConnection(configuration);
-      pc.current = peer;
-
-      stream.getTracks().forEach(track => peer.addTrack(track, stream));
-
-      (peer as any).addEventListener('track', (event: any) => {
-        if (event.streams && event.streams[0]) {
-          setRemoteStream(event.streams[0]);
-        }
-      });
-
-      (peer as any).addEventListener('icecandidate', (event: any) => {
-        if (event.candidate && socket.current) {
-          socket.current.send(JSON.stringify({
-            type: 'ice-candidate',
-            candidate: event.candidate,
-          }));
-        }
-      });
-
-      // 3. Connect Signaling
-      const token = await SecureStore.getItemAsync('access_token');
-      
-      // Correctly derive WS URL from API_BASE_URL
-      // API_BASE_URL: http://192.168.1.83:8000/api/
-      // Target WS: ws://192.168.1.83:8000/ws/video/{bookingId}/?token=<JWT>
-      const wsBase = API_BASE_URL.replace('http', 'ws').replace('/api/', '');
-      const fullUrl = `${wsBase}/ws/video/${bookingId}/?token=${token}`;
-      
-      console.log('[NativeVideo] Connecting to Signaling:', fullUrl);
-      socket.current = new WebSocket(fullUrl);
-
-      socket.current.onopen = () => {
-        console.log('[NativeVideo] Signaling Connected');
-        setConnecting(false);
-      };
-
-      socket.current.onmessage = async (e) => {
-        const data = JSON.parse(e.data);
-        console.log('[NativeVideo] Received:', data.type);
-
-        switch (data.type) {
-          case 'offer':
-            console.log('[NativeVideo] Handling Offer');
-            await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
-            const answer = await peer.createAnswer();
-            await peer.setLocalDescription(answer);
-            socket.current?.send(JSON.stringify({ type: 'answer', sdp: answer }));
-            break;
-          case 'answer':
-            console.log('[NativeVideo] Handling Answer');
-            await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
-            break;
-          case 'ice-candidate':
-            await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
-            break;
-          case 'participant-joined':
-            if (isPandit) {
-                 // Pandit usually initiates the offer if they are the "Host"
-                 const offer = await peer.createOffer();
-                 await peer.setLocalDescription(offer);
-                 socket.current?.send(json({ type: 'offer', sdp: offer }));
-            }
-            break;
-          case 'chat':
-            onChatMessage(data);
-            break;
-          case 'chat-history':
-            setMessages(data.messages.map(mapHistoryMessage));
-            break;
-        }
-      };
-
-    } catch (err) {
-      console.error('[NativeVideo] Error starting call:', err);
-      Alert.alert('Camera Error', 'Could not access camera or microphone.');
-      onLeave();
-    }
-  };
+  }, [bookingId, isCallActive, activeBookingId]);
 
   const handleEndCall = async () => {
-      try {
-          if (isPandit) {
-              await endVideoRoom(bookingId);
-              console.log('[NativeVideo] API: Ended Video Room');
-          }
-      } catch (err) {
-          console.error('[NativeVideo] API Error ending room:', err);
-      } finally {
-          onLeave();
-      }
+    await endCall();
+    onLeave();
   };
-
-  const json = (obj: any) => JSON.stringify(obj);
-
-  const onChatMessage = (data: any) => {
-    const newMessage: ChatMessage = {
-      id: data.chat_id || Math.random().toString(),
-      chatId: bookingId.toString(),
-      senderId: data.sender === 'user' ? 'customer' : 'pandit',
-      text: data.message,
-      type: 'text',
-      timestamp: Date.now(),
-      isRead: true,
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    if (!showChat) setUnreadCount((c) => c + 1);
-  };
-
-  const mapHistoryMessage = (m: any): ChatMessage => ({
-      id: m.chat_id,
-      chatId: bookingId.toString(),
-      senderId: m.sender === 'user' ? 'customer' : 'pandit',
-      text: m.message,
-      type: 'text',
-      timestamp: new Date(m.timestamp).getTime(),
-      isRead: true,
-  });
 
   const handleSendMessage = () => {
-    if (!inputText.trim() || !socket.current) return;
-    socket.current.send(JSON.stringify({ type: 'chat', message: inputText }));
+    if (!inputText.trim()) return;
+    sendMessage(inputText);
     setInputText('');
-  };
-
-  // UI Actions
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOn(videoTrack.enabled);
-      }
-    }
-  };
-
-  const toggleMic = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMicOn(audioTrack.enabled);
-      }
-    }
-  };
-
-  const flipCamera = () => {
-    if (localStream) {
-      localStream.getVideoTracks().forEach(track => {
-         // @ts-ignore
-         track._switchCamera();
-      });
-      setIsFrontCamera(!isFrontCamera);
-    }
   };
 
   const toggleChat = () => {
     const nextValue = !showChat;
     setShowChat(nextValue);
     chatAnim.value = nextValue ? withSpring(0) : withSpring(SCREEN_WIDTH);
-    if (nextValue) setUnreadCount(0);
+    if (nextValue) clearUnread();
   };
 
   const animatedChatStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: chatAnim.value }],
   }));
+
+  if (isConnecting && !isCallActive) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: 'white', marginTop: 20 }}>Initializing Call...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -354,7 +177,7 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
               style={styles.remotePlaceholderAvatar}
             />
             <Text style={styles.remotePlaceholderText}>
-              {connecting ? 'Connecting...' : `${peerName} is joining...`}
+              {isConnecting ? 'Connecting...' : `${peerName} is joining...`}
             </Text>
           </View>
         )}
@@ -373,6 +196,11 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
               style={styles.peerAvatarSmall}
             />
             <Text style={styles.peerNameText}>{peerName}</Text>
+            {callIsPandit && (
+              <View style={styles.hostBadge}>
+                <Text style={styles.hostBadgeText}>HOST</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.headerActions}>
@@ -425,12 +253,13 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
               <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
               {unreadCount > 0 && <View style={styles.chatBadge} />}
             </TouchableOpacity>
-
+  
             <TouchableOpacity 
               onPress={handleEndCall} 
               style={[styles.controlBtn, styles.endCallBtn]}
             >
               <Ionicons name="call" size={24} color="white" />
+              {callIsPandit && <Text style={styles.endCallText}>End for All</Text>}
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -451,8 +280,8 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
             data={messages}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <View style={[styles.msgRow, (item.senderId === 'customer' && !isPandit) || (item.senderId === 'pandit' && isPandit) ? styles.msgMe : styles.msgThem]}>
-                <View style={[styles.msgBubble, ((item.senderId === 'customer' && !isPandit) || (item.senderId === 'pandit' && isPandit)) ? { backgroundColor: colors.primary } : { backgroundColor: '#333' }]}>
+              <View style={[styles.msgRow, (item.senderId === 'customer' && !callIsPandit) || (item.senderId === 'pandit' && callIsPandit) ? styles.msgMe : styles.msgThem]}>
+                <View style={[styles.msgBubble, ((item.senderId === 'customer' && !callIsPandit) || (item.senderId === 'pandit' && callIsPandit)) ? { backgroundColor: colors.primary } : { backgroundColor: '#333' }]}>
                   <Text style={styles.msgText}>{item.text}</Text>
                 </View>
               </View>
@@ -625,9 +454,9 @@ const styles = StyleSheet.create({
   chatDrawer: {
     position: 'absolute',
     top: 100,
-    bottom: 100,
+    bottom: 120, // Increased from 100 to clear the bottom controls bar
     right: 0,
-    width: SCREEN_WIDTH * 0.75,
+    width: SCREEN_WIDTH * 0.85, // Slightly wider for better readability
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,
     overflow: 'hidden',
@@ -688,5 +517,26 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  hostBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  hostBadgeText: {
+    color: '#000',
+    fontSize: 8,
+    fontWeight: '900',
+  },
+  endCallText: {
+    position: 'absolute',
+    bottom: -15,
+    fontSize: 8,
+    color: '#EF4444',
+    fontWeight: 'bold',
+    width: 60,
+    textAlign: 'center',
   },
 });

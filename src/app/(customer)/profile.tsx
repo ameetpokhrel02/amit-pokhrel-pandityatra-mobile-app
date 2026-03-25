@@ -5,7 +5,7 @@ import { LogoutModal } from '@/components/ui/LogoutModal';
 import { DeleteAccountModal } from '@/components/ui/DeleteAccountModal';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
-import { useAuthStore, useUser } from '@/store/auth.store';
+import { useAuthStore } from '@/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,9 +19,8 @@ import { useCurrencyStore } from '@/store/currency.store';
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, setMode, colors } = useTheme();
-  const { user, updateUser, logout } = useUser();
+  const { user, logout, isAuthenticated, syncProfile } = useAuthStore();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated } = useAuthStore();
   const isDark = theme === 'dark';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -43,21 +42,13 @@ export default function ProfileScreen() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [profileResponse, bookingsResponse] = await Promise.all([
-          getProfile(),
-          listBookings()
-        ]);
-        const profileData = profileResponse?.data || profileResponse;
+        // Use store's syncProfile for user data
+        await syncProfile();
+        
+        // Use bookings for pending review count
+        const bookingsResponse = await listBookings();
         const bookingsRaw = bookingsResponse?.data || bookingsResponse;
         const bookingsData = Array.isArray(bookingsRaw) ? bookingsRaw : (bookingsRaw?.results || []);
-
-        updateUser({
-          name: profileData.full_name,
-          email: profileData.email,
-          phone: profileData.phone_number,
-          role: profileData.role,
-          photoUri: getImageUrl(profileData.profile_image),
-        } as any);
 
         const pending = bookingsData.filter((b: any) => b.status === 'COMPLETED' && !b.is_reviewed);
         setPendingReviewCount(pending.length);
@@ -67,6 +58,7 @@ export default function ProfileScreen() {
         setLoading(false);
       }
     };
+
     loadData();
   }, [isAuthenticated]);
 
@@ -130,8 +122,8 @@ export default function ProfileScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <TouchableOpacity onPress={handleEditPress} style={styles.imageContainer}>
-            {user?.photoUri ? (
-              <Image source={{ uri: user.photoUri }} style={styles.profileImage} />
+            {user?.profile_pic_url ? (
+              <Image source={{ uri: user.profile_pic_url }} style={styles.profileImage} />
             ) : (
               <View style={[styles.placeholderImage, { backgroundColor: colors.primary }]}>
                 <Text style={styles.placeholderText}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>

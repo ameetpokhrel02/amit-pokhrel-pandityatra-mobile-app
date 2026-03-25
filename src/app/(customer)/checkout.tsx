@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
@@ -16,6 +16,7 @@ export default function ShopCheckoutScreen() {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCartStore();
   const { colors, theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
 
   const [formData, setFormData] = useState({
@@ -50,17 +51,17 @@ export default function ShopCheckoutScreen() {
       };
 
       const response = await checkoutSamagri(payload);
-      
+
       const targetUrl = response.payment_url || response.checkout_url;
 
       if (targetUrl) {
-          const esewaData = response.form_data || response.formData;
-          if (selectedMethod === 'esewa' && esewaData) {
-              const formFields = Object.keys(esewaData)
-                  .map(key => `<input type="hidden" name="${key}" value="${String(esewaData[key]).replace(/"/g, '&quot;')}" />`)
-                  .join('');
-              
-              const htmlContent = `
+        const esewaData = response.form_data || response.formData;
+        if (selectedMethod === 'esewa' && esewaData) {
+          const formFields = Object.keys(esewaData)
+            .map(key => `<input type="hidden" name="${key}" value="${String(esewaData[key]).replace(/"/g, '&quot;')}" />`)
+            .join('');
+
+          const htmlContent = `
                   <html>
                       <head>
                           <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -76,43 +77,44 @@ export default function ShopCheckoutScreen() {
                       </body>
                    </html>
               `;
-              setFormHtml(htmlContent);
-              setPaymentUrl('');
-          } else {
-              setPaymentUrl(targetUrl);
-              setFormHtml('');
-          }
-          setShowWebView(true);
+          setFormHtml(htmlContent);
+          setPaymentUrl('');
+        } else {
+          setPaymentUrl(targetUrl);
+          setFormHtml('');
+        }
+        setShowWebView(true);
       } else if (selectedMethod === 'stripe') {
-           if (!response.client_secret) {
-               throw new Error('Stripe client secret missing');
-           }
+        if (!response.client_secret) {
+          throw new Error('Stripe client secret missing');
+        }
 
-           const { error: initError } = await initPaymentSheet({
-               paymentIntentClientSecret: response.client_secret,
-               merchantDisplayName: 'PanditYatra Shop',
-           });
+        const { error: initError } = await initPaymentSheet({
+          paymentIntentClientSecret: response.client_secret,
+          merchantDisplayName: 'PanditYatra Shop',
+        });
 
-           if (initError) {
-               Alert.alert('Error', initError.message);
-               return;
-           }
+        if (initError) {
+          Alert.alert('Error', initError.message);
+          return;
+        }
 
-           const { error: presentError } = await presentPaymentSheet();
-           if (presentError) {
-               if (presentError.code !== 'Canceled') {
-                   Alert.alert('Error', presentError.message);
-               }
-           } else {
-               clearCart();
-               router.replace('/(customer)/bookings');
-               Alert.alert('Success', 'Order placed successfully!');
-           }
+        const { error: presentError } = await presentPaymentSheet();
+        if (presentError) {
+          if (presentError.code !== 'Canceled') {
+            Alert.alert('Error', presentError.message);
+          }
+        } else {
+          clearCart();
+          router.replace('/(customer)/bookings');
+          Alert.alert('Success', 'Order placed successfully!');
+        }
       } else {
         // This was previously alerting 'Success' even if URL was missing!
         console.error('[Checkout] Missing payment URL in response:', response);
         Alert.alert('Payment Error', 'Failed to retrieve payment gateway URL. Please try again.');
-      }    } catch (error: any) {
+      }
+    } catch (error: any) {
       console.error('Checkout failed:', error);
       Alert.alert('Error', error.message || 'Failed to process checkout');
     } finally {
@@ -172,7 +174,14 @@ export default function ShopCheckoutScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#F3F4F6' }]}>
+      <View style={[
+        styles.header,
+        {
+          backgroundColor: colors.card,
+          borderBottomColor: isDark ? '#333' : '#F3F4F6',
+          paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : 8)
+        }
+      ]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back-outline" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -220,7 +229,7 @@ export default function ShopCheckoutScreen() {
                 onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
               />
             </View>
-            
+
             <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#E5E7EB' }]}>
               <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Shipping Address *</Text>
               <TextInput
@@ -254,27 +263,27 @@ export default function ShopCheckoutScreen() {
           >
             <View style={styles.methodInfo}>
               <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
-                <Image 
-                  source={require('@/assets/images/khalti.png')} 
-                  style={{ width: '100%', height: '100%' }} 
-                  resizeMode="contain" 
+                <Image
+                  source={require('@/assets/images/khalti.png')}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
                 />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
             </View>
             <Ionicons name={selectedMethod === 'khalti' ? "radio-button-on" : "radio-button-off"} size={24} color={selectedMethod === 'khalti' ? colors.primary : '#AAA'} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.methodCard, { backgroundColor: colors.card, marginTop: 12 }, selectedMethod === 'esewa' && { borderColor: colors.primary, borderWidth: 1 }]}
             onPress={() => setSelectedMethod('esewa')}
           >
             <View style={styles.methodInfo}>
               <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
-                <Image 
-                  source={require('@/assets/images/eswa.jpg')} 
-                  style={{ width: '100%', height: '100%' }} 
-                  resizeMode="contain" 
+                <Image
+                  source={require('@/assets/images/eswa.jpg')}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
                 />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>eSewa</Text>
@@ -314,11 +323,21 @@ export default function ShopCheckoutScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: isDark ? '#333' : '#EEE' }]}>
+      <View style={[
+        styles.footer,
+        {
+          backgroundColor: colors.card,
+          borderTopColor: isDark ? '#333' : '#EEE',
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24,
+          paddingTop: 16
+        }
+      ]}>
         <Button
           title={loading ? "Processing..." : `Pay NPR ${total}`}
           onPress={handleCheckout}
           isLoading={loading}
+          style={{ height: 56, borderRadius: 16 }}
+          textStyle={{ fontSize: 18, fontWeight: '800' }}
         />
       </View>
     </View>
@@ -334,7 +353,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
@@ -436,8 +454,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    padding: 20,
-    paddingBottom: 34,
+    paddingHorizontal: 20,
     borderTopWidth: 1,
   },
 });

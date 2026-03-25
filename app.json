@@ -62,22 +62,25 @@
         }
       ],
       "expo-video",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.741720641739-r771p005vit95lmbmnvjocdqggcfvk2f"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": false
     },
     "extra": {
-      "expoPublicGoogleClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",
+      "expoPublicGoogleClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
       "androidClientId": "741720641739-kat0ucp7uqnud1kfnuehrjhaid017hes.apps.googleusercontent.com",
-      "webClientId": "41836230258-6uc1on3m9c4va73ltdpg8b121rj68d3n.apps.googleusercontent.com",
+      "webClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
       "iosClientId": "741720641739-r771p005vit95lmbmnvjocdqggcfvk2f.apps.googleusercontent.com",
       "eas": {
-        "projectId": "09230ecd-edac-4390-a27a-0afd616923c7",
-        "plugins": [
-          "@react-native-google-signin/google-signin"
-        ]
+        "projectId": "09230ecd-edac-4390-a27a-0afd616923c7"
       }
     }
   }

@@ -108,7 +108,6 @@ function LayoutContent() {
           'recordings',
           'video-player',
           'wishlist',
-          'booking',
           'booking/index',
           'booking/date-time',
           'bookings/[id]',
@@ -129,11 +128,11 @@ function LayoutContent() {
             name={screen}
             options={{
               href: null,
+              tabBarStyle: { display: 'none' },
             }}
           />
         ))}
       </Tabs>
-      <FloatingChatButton />
     </View>
   );
 }

@@ -13,6 +13,7 @@ export interface ChatMessage {
   type: 'text' | 'system' | 'ai_suggestion';
   timestamp: number;
   isRead: boolean;
+  products?: any[]; // Array of SamagriItem or similar
   metadata?: {
     suggestionAction?: string; // e.g., 'book_now', 'confirm_date'
   };

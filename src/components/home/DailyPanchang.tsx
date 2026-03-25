@@ -89,11 +89,18 @@ export const DailyPanchang = () => {
 
   return (
     <View style={styles.container}>
-      {/* Top Month Label */}
-      <View style={styles.monthHeader}>
-        <Ionicons name="menu-outline" size={24} color={colors.text} />
-        <Text style={[styles.monthText, { color: colors.text }]}>{monthName}</Text>
-        <Ionicons name="chevron-down" size={16} color={colors.text} style={{ marginLeft: 4 }} />
+      {/* Top Header Section */}
+      <View style={styles.headerRow}>
+        <View style={styles.monthSelector}>
+          <Text style={[styles.monthText, { color: colors.text }]}>{monthName}</Text>
+          <Ionicons name="chevron-down" size={18} color="#FF6F00" style={{ marginLeft: 6 }} />
+        </View>
+        <TouchableOpacity 
+          style={[styles.calendarBtn, { backgroundColor: isDark ? '#2D3748' : '#FFF7ED' }]}
+          onPress={() => router.push('/(customer)/panchang' as any)}
+        >
+          <Ionicons name="calendar" size={20} color="#FF6F00" />
+        </TouchableOpacity>
       </View>
 
       {/* Week Slider */}
@@ -112,27 +119,25 @@ export const DailyPanchang = () => {
             return (
               <TouchableOpacity 
                 key={index} 
-                style={styles.dateBlock}
+                style={[
+                  styles.dateBlock,
+                  isSelected && [styles.selectedDateBlock, { borderColor: '#FF6F00' }]
+                ]}
                 onPress={() => setSelectedDate(dateItem)}
+                activeOpacity={0.7}
               >
                 <Text style={[
                   styles.dayLabel, 
-                  isSelected ? { color: '#FF6F00' } : { color: isDark ? '#999' : '#A0AEC0' }
+                  isSelected ? { color: '#FF6F00' } : { color: isDark ? '#A0AEC0' : '#718096' }
                 ]}>
                   {dayLabel}
                 </Text>
-                <View style={[
-                  styles.dateCircle, 
-                  isSelected && { backgroundColor: '#FF6F00' }
+                <Text style={[
+                  styles.dateNum,
+                  isSelected ? { color: '#1A202C' } : { color: isDark ? '#E2E8F0' : '#2D3748' }
                 ]}>
-                  <Text style={[
-                    styles.dateNum,
-                    isSelected ? { color: '#FFF' } : { color: isDark ? '#FFF' : '#4A5568' }
-                  ]}>
-                    {dateNum}
-                  </Text>
-                </View>
-                {isSelected && <View style={styles.activeDot} />}
+                  {dateNum}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -143,87 +148,84 @@ export const DailyPanchang = () => {
       <View style={[
         styles.panchangCard, 
         { 
-          backgroundColor: isDark ? colors.card : '#FFF',
-          borderColor: isDark ? '#333' : '#E2E8F0',
-          borderWidth: isDark ? 1 : 0,
+          backgroundColor: isDark ? '#1A202C' : '#FFF',
+          shadowColor: '#000',
         }
       ]}>
         {/* Card Header */}
         <View style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, { color: isDark ? '#FFF' : '#1A202C' }]}>
-            {displayDateStr}  <Text style={{ color: '#FF6F00' }}>{nepaliDateStr}</Text>
-          </Text>
-          <Text style={[styles.cardSubtitle, { color: isDark ? '#A0AEC0' : '#4A5568' }]}>
+          <View style={styles.dateInfoMain}>
+            <Text style={[styles.displayDate, { color: isDark ? '#FFF' : '#1A202C' }]}>
+              {displayDateStr}
+            </Text>
+            <View style={styles.nepaliDateBadge}>
+              <Text style={styles.nepaliDateText}>{nepaliDateStr}</Text>
+            </View>
+          </View>
+          <Text style={[styles.cardSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>
             {tithiStr} • {nakshatraStr}
           </Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#FF6F00" style={{ marginVertical: 30 }} />
+          <View style={{ height: 120, justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color="#FF6F00" />
+          </View>
         ) : (
-          <>
-            {/* Sun & Moon Boxes */}
-            <View style={styles.astronomyRow}>
-              {/* Sunrise Box */}
-              <View style={[styles.astroBox, { backgroundColor: isDark ? '#2D3748' : '#FEFCBF' }]}>
-                {isDay ? (
-                  <Ionicons name="sunny" size={24} color="#D69E2E" />
-                ) : (
-                  <Ionicons name="partly-sunny" size={24} color="#D69E2E" />
-                )}
-                <View style={styles.astroTextContainer}>
-                  <Text style={[styles.astroLabel, { color: isDark ? '#A0AEC0' : '#744210' }]}>Sunrise / Sunset</Text>
-                  <Text style={[styles.astroTime, { color: isDark ? '#FFF' : '#744210' }]}>
-                    {data?.sunrise || '05:30'} - {data?.sunset || '18:30'}
-                  </Text>
-                </View>
-              </View>
+          <View style={styles.statsContainer}>
+            {/* Sunrise / Sunset Row */}
+            <View style={styles.infoRow}>
+               <View style={[styles.infoBox, { backgroundColor: isDark ? '#2D3748' : '#FFFBEB' }]}>
+                  <View style={[styles.iconWrap, { backgroundColor: '#FEF3C7' }]}>
+                    <Ionicons name="sunny" size={20} color="#D97706" />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabel}>Sunrise / Sunset</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#FFF' : '#78350F' }]}>
+                      {data?.sunrise || '05:30'} - {data?.sunset || '18:30'}
+                    </Text>
+                  </View>
+               </View>
 
-              {/* Moon Box */}
-              <View style={[styles.astroBox, { backgroundColor: isDark ? '#1A202C' : '#EDF2F7' }]}>
-                {isDay ? (
-                  <Ionicons name="moon-outline" size={24} color="#4A5568" />
-                ) : (
-                  <Ionicons name="moon" size={24} color="#718096" />
-                )}
-                <View style={styles.astroTextContainer}>
-                  <Text style={[styles.astroLabel, { color: isDark ? '#A0AEC0' : '#2D3748' }]}>Auspicious Time</Text>
-                  <Text style={[styles.astroTime, { color: isDark ? '#FFF' : '#2D3748' }]}>
-                    {auspicious}
-                  </Text>
-                </View>
-              </View>
+               <View style={[styles.infoBox, { backgroundColor: isDark ? '#2D3748' : '#F0F9FF' }]}>
+                  <View style={[styles.iconWrap, { backgroundColor: '#E0F2FE' }]}>
+                    <Ionicons name="time" size={20} color="#0284C7" />
+                  </View>
+                  <View>
+                    <Text style={styles.infoLabel}>Auspicious Time</Text>
+                    <Text style={[styles.infoValue, { color: isDark ? '#FFF' : '#0C4A6E' }]}>
+                      {auspicious}
+                    </Text>
+                  </View>
+               </View>
             </View>
 
-            {/* Extras */}
-            <View style={styles.extrasRow}>
-              <View style={styles.extraCol}>
-                <Text style={styles.extraLabel}>YOGA</Text>
-                <Text style={[styles.extraValue, { color: isDark ? '#FFF' : '#1A202C' }]}>{data?.yoga || '—'}</Text>
+            {/* Sub Stats Row */}
+            <View style={styles.subStatsRow}>
+              <View style={styles.subStatItem}>
+                <Ionicons name="sparkles" size={14} color="#FF6F00" />
+                <Text style={styles.subStatLabel}>YOGA:</Text>
+                <Text style={[styles.subStatValue, { color: isDark ? '#FFF' : '#2D3748' }]}>{data?.yoga || '—'}</Text>
               </View>
-              <View style={styles.extraCol}>
-                <Text style={styles.extraLabel}>DAY STATUS</Text>
-                <Text style={[styles.extraValue, { color: isDay ? '#D69E2E' : '#718096' }]}>
-                  {isDay ? "Daytime 🌞" : "Nighttime 🌙"}
+              <View style={styles.subStatItem}>
+                <Ionicons name={isDay ? "sunny-sharp" : "moon"} size={14} color="#718096" />
+                <Text style={styles.subStatLabel}>STATUS:</Text>
+                <Text style={[styles.subStatValue, { color: isDay ? '#D97706' : '#4A5568' }]}>
+                  {isDay ? "Daytime" : "Nighttime"}
                 </Text>
               </View>
             </View>
-          </>
+          </View>
         )}
       </View>
 
-      {/* View Full Panchang Banner */}
+      {/* Floating Action Button for More Details */}
       <TouchableOpacity 
-        style={[styles.fullPanchangBtn, { backgroundColor: isDark ? '#2D3748' : '#FFEDD5' }]}
+        style={[styles.moreDetailsBtn, { backgroundColor: '#FF6F00' }]}
         onPress={() => router.push('/(customer)/panchang' as any)}
-        activeOpacity={0.8}
       >
-        <View style={styles.fullPanchangRow}>
-          <Text style={styles.fullPanchangText}>Today's Detailed Horoscope & Panchang</Text>
-          <View style={styles.plusCircle}>
-            <Ionicons name="add" size={20} color="#FFF" />
-          </View>
-        </View>
+        <Text style={styles.moreDetailsText}>View Detailed Horoscope & Panchang</Text>
+        <Ionicons name="arrow-forward" size={18} color="#FFF" />
       </TouchableOpacity>
     </View>
   );
@@ -231,145 +233,169 @@ export const DailyPanchang = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  monthHeader: {
+  monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
   },
   monthText: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginLeft: 12,
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  calendarBtn: {
+    padding: 10,
+    borderRadius: 14,
   },
   weekSliderContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   weekScrollContent: {
-    gap: 8,
-    paddingHorizontal: 4,
+    gap: 12,
   },
   dateBlock: {
-    width: 48,
+    width: 60,
+    height: 76,
+    borderRadius: 20,
+    paddingVertical: 12,
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  selectedDateBlock: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
   },
   dayLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  dateCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   dateNum: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FF6F00',
-    marginTop: 6,
+    fontSize: 20,
+    fontWeight: '900',
   },
   panchangCard: {
-    borderRadius: 20,
-    padding: 20,
-    paddingBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    borderRadius: 32,
+    padding: 24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
     marginBottom: 16,
   },
   cardHeader: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 6,
+  dateInfoMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 8,
+  },
+  displayDate: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  nepaliDateBadge: {
+    backgroundColor: '#FF6F00',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  nepaliDateText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '900',
   },
   cardSubtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+    opacity: 0.8,
   },
-  astronomyRow: {
+  statsContainer: {
+    gap: 16,
+  },
+  infoRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
   },
-  astroBox: {
+  infoBox: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    gap: 10,
-  },
-  astroTextContainer: {
-    flex: 1,
-  },
-  astroLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  astroTime: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  extrasRow: {
-    flexDirection: 'row',
-    marginTop: 4,
-  },
-  extraCol: {
-    flex: 1,
-  },
-  extraLabel: {
-    fontSize: 10,
-    color: '#A0AEC0',
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  extraValue: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  fullPanchangBtn: {
-    borderRadius: 16,
     padding: 16,
+    borderRadius: 24,
+    gap: 12,
   },
-  fullPanchangRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  fullPanchangText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#DD6B20',
-  },
-  plusCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FF6F00',
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  infoLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#718096',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  subStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  subStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  subStatLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#A0AEC0',
+  },
+  subStatValue: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  moreDetailsBtn: {
+    height: 64,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
     shadowColor: '#FF6F00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  moreDetailsText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '900',
   },
 });

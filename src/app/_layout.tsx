@@ -10,6 +10,8 @@ import '../../global.css'; // Import NativeWind styles
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
+import { VideoCallProvider } from '@/store/VideoCallContext';
+import { FloatingVideoCall } from '@/components/video/FloatingVideoCall';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -72,17 +74,19 @@ export default function RootLayout() {
         router.replace('/(public)/role-selection' as any);
       }
     } 
-    // 2. Authenticated users (or guests) should be routed to their respective dashboards if they stray
+    // 2. Authenticated users (or guests at root) should be routed to their respective dashboards
     else if (isAuthenticated || role === 'guest') {
-      const isPublicOrAuth = inPublicGroup || inAuthGroup || isRoot;
+      const isPublicOrAuth = inPublicGroup || inAuthGroup;
       
-      if (isPublicOrAuth) {
+      // Redirect away from public/auth if already authenticated
+      // OR if at the root (initial app load)
+      if ((isAuthenticated && (isPublicOrAuth || isRoot)) || (role === 'guest' && isRoot)) {
         if (role === 'pandit') {
           console.log('[Navigation] ✅ Authenticated Pandit. Routing to Dashboard.');
           router.replace('/(pandit)');
         } else {
           // Default for customers and guests
-          console.log(`[Navigation] ✅ Authenticated ${role}. Routing to Home.`);
+          console.log(`[Navigation] ✅ ${isAuthenticated ? 'Authenticated' : 'Initial'} ${role}. Routing to Home.`);
           router.replace('/(customer)');
         }
       }
@@ -99,26 +103,22 @@ export default function RootLayout() {
   return (
     <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
       <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* Initial entry point */}
-          <Stack.Screen name="index" />
-          
-          {/* Public screens (Welcome, Onboarding, Guest) */}
-          <Stack.Screen name="(public)" />
-          
-          {/* Role-specific Auth flows (now using their own layouts) */}
-          <Stack.Screen name="(auth)/user" />
-          <Stack.Screen name="(auth)/pandit" />
-  
-          {/* Private Application flows */}
-          <Stack.Screen name="(customer)" />
-          <Stack.Screen name="(pandit)" />
-  
-          {/* Shared screens (Explicitly registered groups) */}
-          <Stack.Screen name="video" />
-          <Stack.Screen name="notifications/index" />
-          <Stack.Screen name="chat" />
-        </Stack>
+        <VideoCallProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* ... existing screens ... */}
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(public)" />
+            <Stack.Screen name="(auth)/user" />
+            <Stack.Screen name="(auth)/pandit" />
+            <Stack.Screen name="(customer)" />
+            <Stack.Screen name="(pandit)" />
+            <Stack.Screen name="video" />
+            <Stack.Screen name="notifications/index" />
+            <Stack.Screen name="chat/index" />
+            <Stack.Screen name="chat/[id]" />
+          </Stack>
+          <FloatingVideoCall />
+        </VideoCallProvider>
       </ThemeProvider>
     </StripeProvider>
   );

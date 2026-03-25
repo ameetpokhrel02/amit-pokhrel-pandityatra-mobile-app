@@ -11,13 +11,13 @@ export async function joinVideoRoom(bookingId: number): Promise<VideoLinkRespons
     return response.data;
 }
 
-export async function startVideoRoom(bookingId: number) {
-    const response = await apiClient.post(`video/room/${bookingId}/start/`);
+export async function startVideoRoom(roomId: number | string) {
+    const response = await apiClient.post(`video/rooms/${roomId}/start/`);
     return response.data;
 }
 
-export async function endVideoRoom(bookingId: number) {
-    const response = await apiClient.post(`video/room/${bookingId}/end/`);
+export async function endVideoRoom(roomId: number | string) {
+    const response = await apiClient.post(`video/rooms/${roomId}/end/`);
     return response.data;
 }
 
@@ -48,11 +48,11 @@ export async function generateVideoLink(bookingId: number) {
 }
 
 /**
- * Upload a recording for a booking
+ * Upload a recording for a booking/room
  */
-export async function uploadBookingRecording(bookingId: number, fileUri: string) {
+export async function uploadBookingRecording(roomId: number | string, fileUri: string) {
     const formData = new FormData();
-    const filename = fileUri.split('/').pop() || `recording_${bookingId}.mp4`;
+    const filename = fileUri.split('/').pop() || `recording_${roomId}.mp4`;
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `video/${match[1]}` : `video/mp4`;
 
@@ -63,7 +63,7 @@ export async function uploadBookingRecording(bookingId: number, fileUri: string)
         type: type,
     });
 
-    const response = await apiClient.post(`video/room/${bookingId}/upload-recording/`, formData, {
+    const response = await apiClient.post(`video/rooms/${roomId}/upload-recording/`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },

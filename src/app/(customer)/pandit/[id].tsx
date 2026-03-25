@@ -33,6 +33,24 @@ export default function PanditProfileScreen() {
   const [pandit, setPandit] = useState<Pandit | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleChatPress = async () => {
+    try {
+      if (!pandit) return;
+      setChatLoading(true);
+      const { initiateChat } = await import('@/services/chat.service');
+      const room = await initiateChat(Number(id));
+      if (room && room.id) {
+        router.push(`/chat/${room.id}`);
+      }
+    } catch (e) {
+      console.error('Failed to initiate chat:', e);
+      alert('Failed to start chat. Please try again.');
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -54,7 +72,7 @@ export default function PanditProfileScreen() {
               rating: data.rating || 5.0,
               reviewCount: data.review_count || 0,
               experience: data.experience_years || 0,
-              isAvailable: data.is_available,
+              isAvailable: data.is_available ?? true,
               bio: data.bio || '',
               specialization: data.expertise ? data.expertise.split(',').map((s: string) => s.trim()) : [],
               languages: data.language ? data.language.split(',').map((s: string) => s.trim()) : [],
@@ -163,12 +181,12 @@ export default function PanditProfileScreen() {
                 <View className="w-[1px] h-10 bg-zinc-100" />
                 <View className="items-center flex-1">
                     <Ionicons 
-                        name={pandit.isAvailable ? "checkmark-circle" : "time"} 
+                        name={(pandit.isAvailable ?? true) ? "checkmark-circle" : "time"} 
                         size={20} 
-                        color={pandit.isAvailable ? "#10B981" : "#EF4444"} 
+                        color={(pandit.isAvailable ?? true) ? "#10B981" : "#EF4444"} 
                     />
-                    <Text className={`text-[10px] font-black uppercase tracking-tighter mt-1 ${pandit.isAvailable ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {pandit.isAvailable ? "Available" : "Busy"}
+                    <Text className={`text-[10px] font-black uppercase tracking-tighter mt-1 ${(pandit.isAvailable ?? true) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {(pandit.isAvailable ?? true) ? "Available" : "Busy"}
                     </Text>
                 </View>
             </View>
@@ -246,19 +264,26 @@ export default function PanditProfileScreen() {
       >
         <TouchableOpacity 
           className="w-16 h-14 rounded-2xl border-1.5 border-primary items-center justify-center bg-orange-50/30"
-          onPress={() => router.push(`/chat/${pandit.id}` as any)}
+          onPress={handleChatPress}
+          disabled={chatLoading}
         >
-          <Ionicons name="chatbubbles-outline" size={24} color="#FF6F00" />
-          <Text className="text-[10px] font-black text-primary uppercase tracking-tighter mt-1">Chat</Text>
+          {chatLoading ? (
+            <ActivityIndicator size="small" color="#FF6F00" />
+          ) : (
+            <>
+              <Ionicons name="chatbubbles-outline" size={24} color="#FF6F00" />
+              <Text className="text-[10px] font-black text-primary uppercase tracking-tighter mt-1">Chat</Text>
+            </>
+          )}
         </TouchableOpacity>
         
         <TouchableOpacity 
-          className={`flex-1 ml-4 h-14 rounded-2xl flex-row items-center justify-center shadow-lg ${pandit.isAvailable ? 'bg-primary shadow-primary/30' : 'bg-zinc-300'}`}
+          className={`flex-1 ml-4 h-14 rounded-2xl flex-row items-center justify-center shadow-lg ${(pandit.isAvailable ?? true) ? 'bg-primary shadow-primary/30' : 'bg-zinc-300'}`}
           onPress={() => router.push(`/(customer)/booking?panditId=${pandit.id}`)}
-          disabled={!pandit.isAvailable}
+          disabled={!(pandit.isAvailable ?? true)}
         >
           <Text className="text-white font-black text-lg uppercase tracking-widest">
-            {pandit.isAvailable ? "Book Appointment" : "Busy Now"}
+            {(pandit.isAvailable ?? true) ? "Book Appointment" : "Busy Now"}
           </Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" className="ml-2" />
         </TouchableOpacity>
