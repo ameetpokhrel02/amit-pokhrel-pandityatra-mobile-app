@@ -51,11 +51,6 @@ export interface Payment {
     };
 }
 
-export async function fetchAdminPayments(): Promise<Payment[]> {
-    const response = await apiClient.get('payments/admin/');
-    return response.data;
-}
-
 export async function refundPayment(id: number) {
     const response = await apiClient.post(`payments/${id}/refund/`);
     return response.data;
@@ -163,20 +158,7 @@ export interface Booking {
 
 // Forgot Password functions moved to auth.service.ts
 
-// ----------------------
-// Admin APIs
-// ----------------------
-export interface AdminStats {
-    total_users: number;
-    total_pandits: number;
-    pending_verifications: number;
-    system_status: string;
-}
-
-export async function fetchAdminStats(): Promise<AdminStats> {
-    const response = await apiClient.get('users/admin/stats/');
-    return response.data;
-}
+// Removed AdminStats and fetchAdminStats as per mobile app scope
 
 // Samagri/Shop logic moved to samagri.service.ts
 
