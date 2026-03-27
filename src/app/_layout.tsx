@@ -57,6 +57,7 @@ export default function RootLayout() {
     const inPublicGroup = segment0 === '(public)';
     const inCustomerGroup = segment0 === '(customer)';
     const inPanditGroup = segment0 === '(pandit)';
+    const inVendorGroup = String(segment0) === '(vendor)';
 
     console.log('[Navigation] State:', { 
       isAuthenticated, 
@@ -84,6 +85,9 @@ export default function RootLayout() {
         if (role === 'pandit') {
           console.log('[Navigation] ✅ Authenticated Pandit. Routing to Dashboard.');
           router.replace('/(pandit)');
+        } else if (role === 'vendor') {
+          console.log('[Navigation] ✅ Authenticated Vendor. Routing to Dashboard.');
+          router.replace('/(vendor)' as any);
         } else {
           // Default for customers and guests
           console.log(`[Navigation] ✅ ${isAuthenticated ? 'Authenticated' : 'Initial'} ${role}. Routing to Home.`);
@@ -94,7 +98,9 @@ export default function RootLayout() {
       // Prevent cross-role access
       if (role === 'pandit' && inCustomerGroup) {
         router.replace('/(pandit)');
-      } else if ((role === 'customer' || role === 'guest') && inPanditGroup) {
+      } else if (role === 'vendor' && (inCustomerGroup || inPanditGroup)) {
+        router.replace('/(vendor)' as any);
+      } else if ((role === 'customer' || role === 'guest') && (inPanditGroup || inVendorGroup)) {
         router.replace('/(customer)');
       }
     }
@@ -112,6 +118,8 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)/pandit" />
             <Stack.Screen name="(customer)" />
             <Stack.Screen name="(pandit)" />
+            <Stack.Screen name="(vendor)" />
+            <Stack.Screen name="(auth)/vendor" />
             <Stack.Screen name="video" />
             <Stack.Screen name="notifications/index" />
             <Stack.Screen name="chat/index" />
