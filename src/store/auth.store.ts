@@ -8,7 +8,7 @@ interface User {
   name: string;
   phone: string;
   email?: string;
-  role: 'customer' | 'pandit' | 'admin' | 'guest';
+  role: 'customer' | 'pandit' | 'admin' | 'vendor' | 'guest';
   profile_pic_url?: string;
   photoUri?: string | null;
   pandit_profile?: {
@@ -22,6 +22,14 @@ interface User {
     rating?: string;
     skills?: string[];
   };
+  vendor_profile?: {
+    id: number;
+    shop_name: string;
+    business_type: string;
+    city: string;
+    is_verified: boolean;
+    balance: string;
+  };
 }
 
 
@@ -29,7 +37,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  role: 'customer' | 'pandit' | 'admin' | 'guest';
+  role: 'customer' | 'pandit' | 'admin' | 'vendor' | 'guest';
   
   // Actions
   setUser: (user: User | null) => void;
@@ -130,6 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           role: userData.role || 'customer',
           profile_pic_url: userData.profile_pic_url || userData.profile_image || userData.profile_pic,
           pandit_profile: userData.pandit_profile,
+          vendor_profile: userData.vendor_profile,
         };
 
         // PREVENT ROLE SWITCHING:
