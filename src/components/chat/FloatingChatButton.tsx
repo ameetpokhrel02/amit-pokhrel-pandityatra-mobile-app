@@ -16,7 +16,7 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({ onPress 
         if (onPress) {
             onPress();
         } else {
-            router.push('/(customer)/chat/ai-guide');
+            router.push('/(customer)/ai-assistant');
         }
     };
 
