@@ -29,10 +29,6 @@ export const FloatingVideoCall = () => {
   const segments = useSegments();
   const router = useRouter();
   
-  // Only show PiP if we are NOT on the video call screen
-  const isOnVideoScreen = segments[0] === 'video';
-  if (!isCallActive || isOnVideoScreen) return null;
-
   const pan = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - PIP_WIDTH - 20, y: SCREEN_HEIGHT - PIP_HEIGHT - 100 })).current;
 
   const panResponder = useRef(
@@ -44,6 +40,10 @@ export const FloatingVideoCall = () => {
       },
     })
   ).current;
+
+  // Only show PiP if we are NOT on the video call screen
+  const isOnVideoScreen = segments[0] === 'video';
+  if (!isCallActive || isOnVideoScreen) return null;
 
   const goToCall = () => {
     if (activeBookingId) {

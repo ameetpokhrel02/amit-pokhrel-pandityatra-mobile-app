@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
-  Alert,
   TextInput,
   FlatList,
   KeyboardAvoidingView,
@@ -15,6 +14,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/store/ThemeContext';
+import { getImageUrl } from '@/utils/image';
+import { Image } from 'expo-image';
+import { BlurView } from 'expo-blur';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+} from 'react-native-reanimated';
+import { useVideoCall } from '@/store/VideoCallContext';
+
 let WebRTC: any = {};
 try {
   WebRTC = require('react-native-webrtc');
@@ -56,18 +66,6 @@ try {
 }
 
 const { RTCView } = WebRTC;
-import { useTheme } from '@/store/ThemeContext';
-import { getImageUrl } from '@/utils/image';
-import { Image } from 'expo-image';
-import { ChatMessage } from '@/types/chat';
-import { BlurView } from 'expo-blur';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-} from 'react-native-reanimated';
-
-import { useVideoCall } from '@/store/VideoCallContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface NativeVideoCallProps {
@@ -78,8 +76,6 @@ interface NativeVideoCallProps {
   peerAvatar?: string;
   isPandit?: boolean;
 }
-
-const configuration = {}; // Moved to context
 
 export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
   bookingId,
@@ -125,6 +121,7 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
     if (!isCallActive || activeBookingId !== bookingId) {
       startCall(bookingId, userName, propIsPandit, propPeerName, propPeerAvatar);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId, isCallActive, activeBookingId]);
 
   const handleEndCall = async () => {

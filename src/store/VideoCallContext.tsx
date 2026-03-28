@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/services/api-client';
@@ -13,8 +13,9 @@ import { ChatMessage } from '@/types/chat';
 // Late require for WebRTC to handle Expo Go gracefully
 let WebRTC: any = {};
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   WebRTC = require('react-native-webrtc');
-} catch (e) {
+} catch {
   WebRTC = {
     RTCPeerConnection: class { 
       addEventListener() {} 
@@ -129,7 +130,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         try {
           const roomRes = await fetchVideoRoom(bookingId);
           roomId = roomRes.id || roomRes.room_id || (roomRes.data && (roomRes.data.id || roomRes.data.room_id));
-        } catch (e) {
+        } catch {
           const joinRes = await joinVideoRoom(bookingId);
           roomId = joinRes.id || joinRes.room_id || (joinRes.data && (joinRes.data.id || joinRes.data.room_id));
         }
