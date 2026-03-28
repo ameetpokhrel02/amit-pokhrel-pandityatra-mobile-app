@@ -24,7 +24,7 @@ export const DailyQuote = () => {
       <View style={styles.quoteIcon}>
         <Ionicons name="chatbox-ellipses" size={24} color="rgba(255,255,255,0.8)" />
       </View>
-      <Text style={styles.quoteText}>"{quote.text}"</Text>
+      <Text style={styles.quoteText}>&quot;{quote.text}&quot;</Text>
       <Text style={styles.authorText}>- {quote.author}</Text>
     </View>
   );

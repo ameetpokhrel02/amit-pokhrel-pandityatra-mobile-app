@@ -21,7 +21,7 @@ export default function GoogleSignIn({ onLogin }: { onLogin?: (token: string) =>
       Alert.alert("Login Successful", `Access Token: ${token}`);
       if (onLogin && token) onLogin(token);
     }
-  }, [response]);
+  }, [response, onLogin]);
 
   return (
     <Button

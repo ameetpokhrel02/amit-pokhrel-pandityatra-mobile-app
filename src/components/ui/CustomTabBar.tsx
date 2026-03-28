@@ -10,7 +10,7 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 const { width } = Dimensions.get('window');
 
 interface CustomTabBarProps extends BottomTabBarProps {
-  role: 'customer' | 'pandit';
+  role: 'customer' | 'pandit' | 'vendor';
 }
 
 export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation, role }) => {

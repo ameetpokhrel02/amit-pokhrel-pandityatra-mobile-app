@@ -45,7 +45,7 @@ export const HelpContactView = () => {
             <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Get in Touch</Text>
                 <Text style={[styles.subText, { color: isDark ? '#AAA' : '#666' }]}>
-                    If you have any inquiries get in touch with us. We'll be happy to help you.
+                    If you have any inquiries get in touch with us. We&apos;ll be happy to help you.
                 </Text>
 
                 <TouchableOpacity 
