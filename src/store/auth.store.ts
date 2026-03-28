@@ -3,12 +3,14 @@ import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { fetchProfile } from '@/services/auth.service';
 
+// ─── User Type ────────────────────────────────────────────────────────────────
+
 interface User {
   id: string;
   name: string;
   phone: string;
   email?: string;
-  role: 'customer' | 'pandit' | 'admin' | 'vendor' | 'guest';
+  role: 'customer' | 'pandit' | 'admin' | 'vendor' | 'guest'; // vendor required for routing
   profile_pic_url?: string;
   photoUri?: string | null;
   pandit_profile?: {
@@ -21,6 +23,9 @@ interface User {
     experience_years: number;
     rating?: string;
     skills?: string[];
+    pending_bookings?: number;
+    upcoming_bookings?: number;
+    total_earnings?: number;
   };
   vendor_profile?: {
     id: number;
@@ -32,23 +37,27 @@ interface User {
   };
 }
 
+// ─── State Interface ──────────────────────────────────────────────────────────
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   role: 'customer' | 'pandit' | 'admin' | 'vendor' | 'guest';
-  
+
   // Actions
   setUser: (user: User | null) => void;
   setAuthenticated: (value: boolean) => void;
   setRole: (role: AuthState['role']) => void;
+  updateUser: (partial: Partial<User>) => void;
   login: (userData: User, tokens: { access: string; refresh: string }) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   syncProfile: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
-  updateUser: (partial: Partial<User>) => void;
 }
+
+// ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -59,9 +68,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setRole: (role) => set({ role }),
-  updateUser: (partial) => set((state) => ({
-    user: state.user ? { ...state.user, ...partial } : null,
-  })),
+  updateUser: (partial) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...partial } : null,
+    })),
 
   login: async (userData, tokens) => {
     try {
@@ -69,16 +79,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.setItemAsync('refresh_token', tokens.refresh);
       await SecureStore.setItemAsync('user', JSON.stringify(userData));
       await SecureStore.setItemAsync('role', userData.role);
-      
-      set({ 
-        user: userData, 
-        isAuthenticated: true, 
+
+      set({
+        user: userData,
+        isAuthenticated: true,
         role: userData.role,
-        isLoading: false 
+        isLoading: false,
       });
 
-      // Fetch full profile immediately to ensure all data (like pandit_profile) is loaded
-      await get().syncProfile();
+      // Sync full profile in background to populate pandit/vendor sub-profiles
+      get().syncProfile();
     } catch (error) {
       console.error('Error during login store update:', error);
     }
@@ -90,14 +100,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await SecureStore.deleteItemAsync('refresh_token');
       await SecureStore.deleteItemAsync('user');
       await SecureStore.deleteItemAsync('role');
-      
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
+
+      set({
+        user: null,
+        isAuthenticated: false,
         role: 'guest',
-        isLoading: false 
+        isLoading: false,
       });
-      
+
+      // Correct Expo Router path for the role selection screen
       router.replace('/(public)/role-selection');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -109,13 +120,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const accessToken = await SecureStore.getItemAsync('access_token');
       const userStr = await SecureStore.getItemAsync('user');
       const roleStr = await SecureStore.getItemAsync('role');
-      
+
       if (accessToken && userStr) {
-        set({ 
-          user: JSON.parse(userStr), 
-          isAuthenticated: true, 
-          role: (roleStr as any) || 'customer',
-          isLoading: false 
+        set({
+          user: JSON.parse(userStr),
+          isAuthenticated: true,
+          role: (roleStr as AuthState['role']) || 'customer',
+          isLoading: false,
         });
         // Sync profile in background after immediate UI update
         get().syncProfile();
@@ -127,50 +138,57 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false, role: 'guest' });
     }
   },
+
   syncProfile: async () => {
     try {
-      const response = await fetchProfile() as any;
-      const userData = response.data || response;
-      if (userData) {
-        // Map backend profile response to store User type
-        const mappedUser: User = {
-          id: userData.id?.toString() || '',
-          name: userData.full_name || userData.name,
-          phone: userData.phone_number || userData.phone,
-          email: userData.email,
-          role: userData.role || 'customer',
-          profile_pic_url: userData.profile_pic_url || userData.profile_image || userData.profile_pic,
-          pandit_profile: userData.pandit_profile,
-          vendor_profile: userData.vendor_profile,
-        };
+      // fetchProfile returns an AxiosResponse — unwrap .data
+      const response = await fetchProfile();
+      const userData = response.data;
 
-        // PREVENT ROLE SWITCHING:
-        // Use the current session role if it's already a valid logged-in role.
-        // This prevents the app from auto-switching a Customer to a Pandit dashboard
-        // just because the backend says they have a Pandit role.
-        const currentRole = get().role;
-        const finalRole = (currentRole === 'customer' || currentRole === 'pandit' || currentRole === 'vendor') 
-          ? currentRole 
-          : (mappedUser.role || 'customer');
+      if (!userData) return;
 
-        await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
-        await SecureStore.setItemAsync('role', finalRole);
-        
-        set({ user: mappedUser, role: finalRole });
-        console.log('[Auth Store] Profile synced. Current Role:', finalRole, 'Backend Role:', mappedUser.role);
-      }
+      const mappedUser: User = {
+        id: userData.id?.toString() || '',
+        name: userData.full_name || userData.name || '',
+        phone: userData.phone_number || userData.phone || '',
+        email: userData.email,
+        role: userData.role || 'customer',
+        profile_pic_url:
+          userData.profile_pic_url || userData.profile_image || userData.profile_pic,
+        pandit_profile: userData.pandit_profile,
+        vendor_profile: userData.vendor_profile,
+      };
+
+      // Preserve the current session role to avoid unintended cross-role switches
+      const currentRole = get().role;
+      const finalRole: AuthState['role'] =
+        currentRole === 'customer' || currentRole === 'pandit' || currentRole === 'vendor'
+          ? currentRole
+          : mappedUser.role;
+
+      await SecureStore.setItemAsync('user', JSON.stringify(mappedUser));
+      await SecureStore.setItemAsync('role', finalRole);
+      set({ user: mappedUser, role: finalRole });
     } catch (error: any) {
-      console.error('Profile sync failed:', error.message);
+      if (error.response) {
+        console.error('Profile sync failed:', {
+          status: error.response.status,
+          data: error.response.data,
+        });
+      } else {
+        console.error('Error during profile sync:', error);
+      }
     }
   },
+
   continueAsGuest: async () => {
     try {
       await SecureStore.setItemAsync('role', 'guest');
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
+      set({
+        user: null,
+        isAuthenticated: false,
         role: 'guest',
-        isLoading: false 
+        isLoading: false,
       });
     } catch (error) {
       console.error('Error during continueAsGuest:', error);
