@@ -32,7 +32,6 @@ interface User {
   };
 }
 
-
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -48,6 +47,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   syncProfile: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
+  updateUser: (partial: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -59,6 +59,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setRole: (role) => set({ role }),
+  updateUser: (partial) => set((state) => ({
+    user: state.user ? { ...state.user, ...partial } : null,
+  })),
 
   login: async (userData, tokens) => {
     try {
@@ -126,7 +129,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   syncProfile: async () => {
     try {
-      const response = await fetchProfile();
+      const response = await fetchProfile() as any;
       const userData = response.data || response;
       if (userData) {
         // Map backend profile response to store User type
@@ -146,7 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // This prevents the app from auto-switching a Customer to a Pandit dashboard
         // just because the backend says they have a Pandit role.
         const currentRole = get().role;
-        const finalRole = (currentRole === 'customer' || currentRole === 'pandit') 
+        const finalRole = (currentRole === 'customer' || currentRole === 'pandit' || currentRole === 'vendor') 
           ? currentRole 
           : (mappedUser.role || 'customer');
 
@@ -174,3 +177,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
+
+// Convenience alias — some screens import `useUser` separately
+export const useUser = useAuthStore;

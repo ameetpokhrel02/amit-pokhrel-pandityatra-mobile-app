@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, TouchableOpacityProps, View, StyleProp } from 'react-native';
-import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
+import { Typography } from '@/constants/Typography';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -27,30 +27,20 @@ export const Button = ({
   const { colors } = useTheme();
 
   const getBackgroundColor = () => {
-    if (disabled) return '#E0E0E0';
-    switch (variant) {
-      case 'primary': return colors.primary;
-      case 'secondary': return colors.notification || '#DC2626';
-      case 'outline': return 'transparent';
-      case 'text': return 'transparent';
-      default: return colors.primary;
-    }
+    if (disabled) return '#e5e5e5'; // Strict rules for disabled bg
+    if (variant === 'secondary' || variant === 'outline' || variant === 'text') return 'transparent'; // Strict rule for secondary bg
+    return '#f97316'; // Primary bg strict rule
   };
 
   const getTextColor = () => {
-    if (disabled) return '#9E9E9E';
-    switch (variant) {
-      case 'primary': return '#FFFFFF';
-      case 'secondary': return '#FFFFFF';
-      case 'outline': return colors.primary;
-      case 'text': return colors.primary;
-      default: return '#FFFFFF';
-    }
+    if (disabled) return '#666666'; // Strict disabled text
+    if (variant === 'secondary' || variant === 'outline' || variant === 'text') return '#f97316'; // Strict secondary text
+    return '#ffffff'; // Primary text
   };
 
   const getBorder = () => {
-    if (variant === 'outline' && !disabled) {
-      return { borderWidth: 1, borderColor: colors.primary };
+    if ((variant === 'secondary' || variant === 'outline') && !disabled) {
+      return { borderWidth: 1, borderColor: '#f97316' };
     }
     return {};
   };
@@ -84,15 +74,15 @@ export const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    height: 50,
-    borderRadius: 12,
+    // Height is removed to allow vertical padding to dictate sizing optimally
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
     flexDirection: 'row',
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Typography.buttonPrimary,
   },
 });

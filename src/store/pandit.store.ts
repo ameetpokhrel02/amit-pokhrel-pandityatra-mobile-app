@@ -55,7 +55,7 @@ export const usePanditStore = create<PanditState>((set, get) => ({
       const rawData = response.data.results || response.data;
 
       // Map backend types to frontend types
-      const mappedData: Pandit[] = rawData.map((p: any) => ({
+      let mappedData: Pandit[] = rawData.map((p: any) => ({
         id: String(p.id),
         name: p.user_details?.full_name || 'Pandit Ji',
         image: getImageUrl(p.user_details?.profile_pic_url) || 'https://via.placeholder.com/150',
@@ -64,13 +64,32 @@ export const usePanditStore = create<PanditState>((set, get) => ({
         languages: p.language ? p.language.split(',').map((l: string) => l.trim()) : [],
         rating: Number(p.rating) || 0,
         reviewCount: p.review_count || 0,
-        location: 'Kathmandu, Nepal', // Placeholder if not in backend
+        location: p.user_details?.city ? `${p.user_details.city}` : 'Kathmandu, Nepal',
         price: p.services && p.services.length > 0 ? Number(p.services[0].custom_price) : 500,
         isAvailable: p.is_available,
         isVerified: p.is_verified,
         isTopRated: p.rating >= 4.5,
         bio: p.bio,
       }));
+
+      // Apply client-side filters
+      if (filter.searchQuery) {
+        const query = filter.searchQuery.toLowerCase();
+        mappedData = mappedData.filter(
+          p => p.name.toLowerCase().includes(query) || 
+               p.specialization.some(s => s.toLowerCase().includes(query)) ||
+               p.location.toLowerCase().includes(query)
+        );
+      }
+      if (filter.location) {
+        mappedData = mappedData.filter(p => p.location.toLowerCase().includes(filter.location!.toLowerCase()));
+      }
+      if (filter.minRating) {
+        mappedData = mappedData.filter(p => p.rating >= filter.minRating!);
+      }
+      if (filter.availability === 'today') {
+        mappedData = mappedData.filter(p => p.isAvailable);
+      }
 
       set({ pandits: mappedData, isLoading: false });
     } catch (err) {
