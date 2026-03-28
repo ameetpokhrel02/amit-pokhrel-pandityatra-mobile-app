@@ -1,43 +1,34 @@
-const tintColorLight = '#FF6F00';
-const tintColorDark = '#fff';
+const corePalette = {
+  primary: '#f97316', // Saffron Orange
+  background: '#fff7ed', // Cream
+  surface: '#ffffff', // White
+  textPrimary: '#1A1A1A',
+  textSecondary: '#666666',
+  success: '#22c55e',
+  danger: '#ef4444',
+  border: '#e5e5e5',
+
+  // Fallbacks for existing variables used in the app
+  text: '#1A1A1A',
+  card: '#ffffff',
+  icon: '#666666',
+  tint: '#f97316',
+  placeholder: '#e5e5e5',
+  lightGreen: '#22c55e',
+  error: '#ef4444',
+  inputBackground: '#ffffff',
+  notification: '#f97316',
+  tabIconDefault: '#666666',
+  tabIconSelected: '#f97316',
+  secondary: '#FFB300',
+};
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    textSecondary: '#6B7280',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-    primary: '#FF6F00',
-    secondary: '#FFA000',
-    surface: '#F5F5F5',
-    border: '#E5E7EB',
-    inputBackground: '#F3F4F6',
-    placeholder: '#9CA3AF',
-    error: '#EF4444',
-    success: '#4CAF50',
-    card: '#FFFFFF',
-    notification: '#FF3B30',
+    ...corePalette,
   },
   dark: {
-    text: '#ECEDEE',
-    textSecondary: '#9CA3AF',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-    primary: '#FF8F00',
-    secondary: '#FFB300',
-    surface: '#121212',
-    border: '#374151',
-    inputBackground: '#1F2937',
-    placeholder: '#6B7280',
-    error: '#CF6679',
-    success: '#81C784',
-    card: '#1E1E1E',
-    notification: '#FF453A',
+    // The strict rule is "Background color = #fff7ed" 
+    ...corePalette,
   },
 };

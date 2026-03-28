@@ -1,6 +1,20 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { Typography } from '@/constants/Typography';
+
+// Design system tokens — hardcoded here to match the spec exactly
+const DS = {
+  primary: '#f97316',
+  primaryPressed: '#ea6c0a',
+  surface: '#ffffff',
+  surfacePressed: '#f5f5f5',
+  border: '#e5e5e5',
+  textOnPrimary: '#ffffff',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#666666',
+  disabled: '#e5e5e5',
+  disabledText: '#666666',
+};
 
 interface ButtonProps {
   title: string;
@@ -27,25 +41,22 @@ export function Button({
 }: ButtonProps) {
 
   const getBackgroundColor = (pressed: boolean) => {
-    if (disabled) return '#BDBDBD';
-    if (variant === 'primary') return pressed ? Colors.light.deepRed : Colors.light.primary;
-    if (variant === 'secondary') return pressed ? '#E0E0E0' : Colors.light.white;
-    if (variant === 'outline') return 'transparent';
-    if (variant === 'text') return 'transparent';
-    return Colors.light.primary;
+    if (disabled) return DS.disabled;
+    if (variant === 'primary') return pressed ? DS.primaryPressed : DS.primary;
+    if (variant === 'secondary') return pressed ? DS.surfacePressed : DS.surface;
+    return 'transparent'; // outline & text
   };
 
   const getTextColor = () => {
-    if (disabled) return '#757575';
-    if (variant === 'primary') return Colors.light.lightGold;
-    if (variant === 'secondary') return Colors.light.primary;
-    if (variant === 'outline') return Colors.light.primary;
-    if (variant === 'text') return Colors.light.primary;
-    return Colors.light.lightGold;
+    if (disabled) return DS.disabledText;
+    if (variant === 'primary') return DS.textOnPrimary;
+    return DS.primary; // secondary, outline, text all use primary color
   };
 
   const getBorder = () => {
-    if (variant === 'outline') return { borderWidth: 1, borderColor: Colors.light.primary };
+    if (variant === 'outline' || variant === 'secondary') {
+      return { borderWidth: 1, borderColor: disabled ? DS.border : DS.primary };
+    }
     return {};
   };
 
@@ -71,21 +82,18 @@ export function Button({
       )}
     </Pressable>
   );
-
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 120,
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Inter', // Assuming Inter is available or falls back
+    ...Typography.buttonPrimary,
   },
 });
