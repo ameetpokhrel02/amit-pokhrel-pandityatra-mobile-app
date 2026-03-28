@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,6 @@ import {
   Dimensions, 
   ActivityIndicator, 
   Animated, 
-  Alert,
   StatusBar,
   RefreshControl,
   FlatList,
@@ -17,19 +16,16 @@ import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCartStore } from '@/store/cart.store';
+
 import { useAuthStore } from '@/store/auth.store';
-import { useTheme } from '@/store/ThemeContext';
-import { DailyPanchang } from '@/components/home/DailyPanchang';
-import { useTranslation } from 'react-i18next';
-import { fetchServices } from '@/services/puja.service';
-import { listPandits } from '@/services/pandit.service';
-import { listBookings } from '@/services/booking.service';
-import { fetchBookingSamagriRecommendations } from '@/services/recommender.service';
-import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
+import { useCartStore } from '@/store/cart.store';
 import { useNotificationStore } from '@/store/notification.store';
-import { Service, Pandit, Booking, SamagriItem, SamagriCategory } from '@/services/api';
+import { useTheme } from '@/store/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@/utils/image';
+import { DailyPanchang } from '@/components/home/DailyPanchang';
+import { useDashboardData } from '@/hooks/customer/useDashboardData';
+import { SamagriItem } from '@/services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -57,96 +53,30 @@ const BANNERS = [
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, isAuthenticated, syncProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const { colors, theme } = useTheme();
-  const { t } = useTranslation();
   const isDark = theme === 'dark';
 
-  const [services, setServices] = useState<Service[]>([]);
-  const [pandits, setPandits] = useState<Pandit[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [recommendations, setRecommendations] = useState<SamagriItem[]>([]);
-  const [samagriItems, setSamagriItems] = useState<SamagriItem[]>([]);
-  const [samagriCategories, setSamagriCategories] = useState<SamagriCategory[]>([]);
-  const [wishlist, setWishlist] = useState<number[]>([]);
-  const { unreadCount, fetchNotifications: fetchStoreNotifications } = useNotificationStore();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const { totalItems, addToCart } = useCartStore();
+  const { unreadCount } = useNotificationStore();
+
+  const {
+    services,
+    bookings,
+    samagriItems,
+    wishlist,
+    loading,
+    refreshing,
+    onRefresh,
+    handleToggleWishlist,
+    handleAuthAction,
+  } = useDashboardData();
 
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<any>(null);
   const currentIndexRef = useRef(0);
 
-  const loadHomeData = async () => {
-    try {
-      const [servicesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
-        fetchServices(),
-        listPandits(),
-        getSamagriItems(),
-        getSamagriCategories(),
-      ]);
-      setServices(servicesData.slice(0, 6));
-      setPandits(panditsRes.data.results || panditsRes.data.slice(0, 6));
-      setSamagriItems(samagriItemsRes);
-      setSamagriCategories(samagriCategoriesRes);
-
-      if (isAuthenticated && user) {
-        fetchStoreNotifications();
-        
-        try {
-            const wishlistRes = await getWishlist();
-            const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
-            const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
-            setWishlist(ids);
-        } catch (wishlistErr) {
-            console.warn("Could not fetch wishlist", wishlistErr);
-        }
-
-        const bookingsRes = await listBookings({ status: 'PENDING' });
-        const bookingsData = bookingsRes.data;
-        setBookings(bookingsData);
-
-        if (bookingsData.length > 0) {
-          try {
-            const recoData = await fetchBookingSamagriRecommendations(bookingsData[0].id);
-            setRecommendations(recoData);
-          } catch (recoErr) {
-            console.warn("Could not fetch recommendations", recoErr);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load home data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadHomeData();
-    setRefreshing(false);
-  };
-
-  const handleToggleWishlist = async (itemId: number) => {
-    if (!isAuthenticated) {
-        handleAuthAction('/(customer)/wishlist');
-        return;
-    }
-    try {
-        await toggleWishlist(itemId);
-        const wishlistRes = await getWishlist();
-        const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
-        const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
-        setWishlist(ids);
-    } catch (err) {
-        Alert.alert('Error', 'Could not update wishlist');
-    }
-  };
-
   useEffect(() => {
-    loadHomeData();
     const interval = setInterval(() => {
       if (currentIndexRef.current < BANNERS.length - 1) {
         currentIndexRef.current += 1;
@@ -161,21 +91,13 @@ export default function CustomerHomeScreen() {
       }
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, []); // Auth dependencies are now handled in the hook
 
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning!";
     if (hour < 17) return "Good afternoon!";
     return "Good evening!";
-  };
-
-  const handleAuthAction = (pathname: string, params?: any) => {
-    if (!isAuthenticated) {
-      router.push('/(public)/role-selection');
-      return;
-    }
-    router.push({ pathname: pathname as any, params });
   };
 
   if (loading && !refreshing) {
@@ -186,8 +108,7 @@ export default function CustomerHomeScreen() {
     );
   }
 
-  // Filter items for specific rows
-  const aromaItems = samagriItems.filter(item => 
+  const aromaItems = samagriItems.filter((item: SamagriItem) => 
     item.name.toLowerCase().includes('attar') || 
     item.name.toLowerCase().includes('oil') ||
     item.name.toLowerCase().includes('fragrance') ||
@@ -418,7 +339,7 @@ export default function CustomerHomeScreen() {
             <View style={[styles.quoteCard, { backgroundColor: isDark ? '#1C1C1E' : '#18181B' }]}>
                 <Ionicons name="chatbubbles" size={120} color="rgba(255,255,255,0.03)" style={{ position: 'absolute', top: -40, left: -40 }} />
                 <Text style={styles.quoteText}>
-                    "Devotion is the bridge between the human and the divine."
+                    &quot;Devotion is the bridge between the human and the divine.&quot;
                 </Text>
                 <View style={[styles.quoteDivider, { backgroundColor: colors.primary + '60' }]} />
                 <Text style={[styles.quoteAuthor, { color: colors.primary + '90' }]}>PanditYatra Spiritual Wisdom</Text>

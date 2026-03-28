@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '@/store/ThemeContext';
+import { getVendorProduct, updateProduct, deleteProduct, VendorProduct } from '@/services/vendor.service';
+
+export default function EditProductScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors, theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const [product, setProduct] = useState<VendorProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await getVendorProduct(Number(id));
+        const p = res.data;
+        setProduct(p);
+        setName(p.name || '');
+        setDescription(p.description || '');
+        setPrice(String(p.price || ''));
+        setStock(String(p.stock_quantity ?? ''));
+      } catch {
+        Alert.alert('Error', 'Could not load product.');
+        router.back();
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) load();
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!name.trim() || !price) {
+      Alert.alert('Required', 'Name and price are required.');
+      return;
+    }
+    try {
+      setSaving(true);
+      await updateProduct(Number(id), {
+        name: name.trim(),
+        description: description.trim(),
+        price: parseFloat(price),
+        stock_quantity: parseInt(stock || '0', 10),
+      });
+      Alert.alert('✅ Updated', 'Product updated successfully.', [{ text: 'OK', onPress: () => router.back() }]);
+    } catch {
+      Alert.alert('Error', 'Failed to update product.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Delete Product', `Remove "${product?.name}" permanently?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteProduct(Number(id));
+            router.back();
+          } catch {
+            Alert.alert('Error', 'Failed to delete product.');
+          }
+        }
+      }
+    ]);
+  };
+
+  const inputStyle = [styles.inputWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }];
+  const textStyle = [styles.input, { color: colors.text }];
+  const phColor = colors.text + '50';
+
+  if (loading) return (
+    <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={[styles.header, { backgroundColor: colors.card, paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Edit Product</Text>
+        <TouchableOpacity onPress={handleDelete} style={[styles.deleteBtn, { backgroundColor: '#FF5252' + '15' }]}>
+          <Ionicons name="trash-outline" size={20} color="#FF5252" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Product Details</Text>
+
+        <View style={inputStyle}>
+          <Ionicons name="pricetag-outline" size={18} color={colors.primary} style={styles.icon} />
+          <TextInput style={textStyle} placeholder="Product Name *" placeholderTextColor={phColor} value={name} onChangeText={setName} />
+        </View>
+
+        <View style={[inputStyle, { alignItems: 'flex-start', minHeight: 90 }]}>
+          <Ionicons name="document-text-outline" size={18} color={colors.primary} style={[styles.icon, { marginTop: 2 }]} />
+          <TextInput style={[textStyle, { flex: 1 }]} placeholder="Description" placeholderTextColor={phColor} value={description} onChangeText={setDescription} multiline numberOfLines={3} />
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 8 }]}>Pricing & Stock</Text>
+
+        <View style={inputStyle}>
+          <Ionicons name="cash-outline" size={18} color={colors.primary} style={styles.icon} />
+          <TextInput style={textStyle} placeholder="Price (NPR) *" placeholderTextColor={phColor} keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
+        </View>
+
+        <View style={inputStyle}>
+          <MaterialCommunityIcons name="package-variant-closed" size={18} color={colors.primary} style={styles.icon} />
+          <TextInput style={textStyle} placeholder="Stock Quantity" placeholderTextColor={phColor} keyboardType="number-pad" value={stock} onChangeText={setStock} />
+        </View>
+
+        {!product?.is_approved && (
+          <View style={[styles.infoBox, { backgroundColor: '#FF9800' + '15', borderColor: '#FF9800' + '40' }]}>
+            <Ionicons name="time-outline" size={16} color="#FF9800" />
+            <Text style={[styles.infoText, { color: '#FF9800' }]}>This product is pending admin approval.</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.7 }]}
+          onPress={handleSave} disabled={saving}
+        >
+          {saving ? <ActivityIndicator color="#FFF" /> : (
+            <>
+              <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+              <Text style={styles.saveBtnText}>Save Changes</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16 },
+  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
+  deleteBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 18, fontWeight: '800' },
+  scroll: { padding: 20, gap: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: '800' },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13 },
+  icon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15 },
+  infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, borderWidth: 1 },
+  infoText: { flex: 1, fontSize: 12 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 18, borderRadius: 18, marginTop: 4 },
+  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+});

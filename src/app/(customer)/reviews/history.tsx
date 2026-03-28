@@ -69,7 +69,7 @@ export default function ReviewHistoryScreen() {
             </View>
 
             <Text style={[styles.comment, { color: colors.text }]}>
-                "{item.comment}"
+                &quot;{item.comment}&quot;
             </Text>
         </View>
     );
@@ -98,7 +98,7 @@ export default function ReviewHistoryScreen() {
                             <Ionicons name="chatbox-outline" size={64} color={colors.primary} style={{ opacity: 0.5 }} />
                             <Text style={[styles.emptyText, { color: colors.text }]}>No reviews yet</Text>
                             <Text style={[styles.emptySubtext, { color: colors.text, opacity: 0.6 }]}>
-                                You haven't submitted any reviews for your bookings yet.
+                                You haven&apos;t submitted any reviews for your bookings yet.
                             </Text>
                         </View>
                     ) : null

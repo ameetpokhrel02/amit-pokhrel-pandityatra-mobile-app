@@ -32,7 +32,7 @@ export default function CartScreen() {
             <Ionicons name="bag-handle-outline" size={80} color={colors.primary} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Your cart is empty</Text>
-          <Text style={[styles.emptySub, { color: colors.text + '60' }]}>Looks like you haven't added anything to your cart yet.</Text>
+          <Text style={[styles.emptySub, { color: colors.text + '60' }]}>Looks like you haven&apos;t added anything to your cart yet.</Text>
           <TouchableOpacity 
             style={[styles.shopBtn, { backgroundColor: colors.primary }]} 
             onPress={() => router.push('/(customer)/shop')}

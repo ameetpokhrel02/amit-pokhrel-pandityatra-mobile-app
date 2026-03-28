@@ -13,10 +13,6 @@ import calendar from 'dayjs/plugin/calendar';
 import localeData from 'dayjs/plugin/localeData';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-dayjs.extend(calendar);
-dayjs.extend(localeData);
-dayjs.extend(localizedFormat);
-
 import { useTheme } from '@/store/ThemeContext';
 import { getPanditSummary } from '@/services/pandit.service';
 import { getImageUrl } from '@/utils/image';
@@ -28,6 +24,10 @@ import { getSamagriRequirements } from '@/services/samagri.service';
 import { Image } from 'expo-image';
 import { BookingDateTime } from '@/components/booking/BookingDateTime';
 import MapLocationPicker from '@/components/ui/MapLocationPicker';
+
+dayjs.extend(calendar);
+dayjs.extend(localeData);
+dayjs.extend(localizedFormat);
 
 const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
 

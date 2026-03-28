@@ -89,7 +89,7 @@ export default function ShopOrdersScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="bag-outline" size={60} color="#ccc" />
-              <Text style={styles.emptyText}>You haven't placed any orders yet</Text>
+              <Text style={styles.emptyText}>You haven&apos;t placed any orders yet</Text>
               <TouchableOpacity 
                 style={styles.shopBtn}
                 onPress={() => router.push('/(customer)/shop' as any)}

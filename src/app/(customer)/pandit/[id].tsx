@@ -323,7 +323,7 @@ function ServiceCard({ service, onBook }: { service: any, onBook: () => void }) 
             </View>
             {service.description && (
                 <Text className="text-zinc-500 italic text-xs mb-5 leading-5 font-medium" numberOfLines={2}>
-                    "{service.description}"
+                    &quot;{service.description}&quot;
                 </Text>
             )}
             <TouchableOpacity 
@@ -359,7 +359,7 @@ function ReviewCard({ review }: { review: any }) {
                     <Text className="text-amber-600 font-black text-[10px]">{review.rating.toFixed(1)}</Text>
                 </View>
             </View>
-            <Text className="text-zinc-500 italic text-[13px] leading-6 font-medium">"{review.comment}"</Text>
+            <Text className="text-zinc-500 italic text-[13px] leading-6 font-medium">&quot;{review.comment}&quot;</Text>
         </View>
     );
 }

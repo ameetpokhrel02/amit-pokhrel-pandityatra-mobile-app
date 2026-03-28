@@ -20,8 +20,8 @@ import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
-import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from '@/services/samagri.service';
 import { SamagriItem, SamagriCategory } from '@/services/api';
+import { useShopData } from '@/hooks/customer/useShopData';
 
 const { width } = Dimensions.get('window');
 
@@ -53,13 +53,20 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { totalItems, addToCart } = useCartStore();
   
-  const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState<SamagriItem[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [wishlist, setWishlist] = useState<number[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    loading,
+    products,
+    categories,
+    selectedCategory,
+    setSelectedCategory,
+    wishlist,
+    showSearch,
+    setShowSearch,
+    searchQuery,
+    setSearchQuery,
+    handleToggleWishlist,
+    filteredProducts,
+  } = useShopData();
 
   // Banner Carousel animation
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -67,8 +74,6 @@ export default function ShopScreen() {
   const currentIndexRef = useRef(0);
 
   useEffect(() => {
-    loadData();
-
     // Auto-slide interval (4 seconds)
     const interval = setInterval(() => {
       if (currentIndexRef.current < BANNERS.length - 1) {
@@ -84,66 +89,7 @@ export default function ShopScreen() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [itemsRes, categoriesRes] = await Promise.all([
-        getSamagriItems(),
-        getSamagriCategories(),
-      ]);
-
-      const itemsData = Array.isArray(itemsRes) ? itemsRes : (itemsRes as any)?.results || [];
-      const categoriesData = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes as any)?.results || [];
-
-      setProducts(itemsData);
-      setCategories([{ id: 'All', name: 'All' }, ...categoriesData]);
-
-      if (isAuthenticated) {
-        try {
-          const wishlistRes = await getWishlist();
-          const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
-          const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
-          setWishlist(ids);
-        } catch (error) {
-          console.warn('Wishlist load failed', error);
-        }
-      }
-    } catch (error) {
-      console.error('Data load failed', error);
-      Alert.alert('Error', 'Failed to load shop items');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleToggleWishlist = async (itemId: number) => {
-    if (!isAuthenticated) {
-      router.push('/(public)/role-selection');
-      return;
-    }
-    try {
-      await toggleWishlist(itemId);
-      const wishlistRes = await getWishlist();
-      const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
-      const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
-      setWishlist(ids);
-    } catch (err) {
-      Alert.alert('Error', 'Wishlist update failed');
-    }
-  };
-
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'All' || 
-      (product as any).category_name === selectedCategory || 
-      (product as any).category?.name === selectedCategory;
-    
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-      
-    return matchesCategory && matchesSearch;
-  });
+  }, []);
 
   const userName = user?.name ? user.name.split(' ')[0] : 'Guest';
 
@@ -332,7 +278,7 @@ export default function ShopScreen() {
         {/* Categories */}
         <View style={styles.categoriesContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-            {categories.map((cat) => (
+            {categories.map((cat: any) => (
               <TouchableOpacity
                 key={cat.id}
                 onPress={() => setSelectedCategory(cat.name)}

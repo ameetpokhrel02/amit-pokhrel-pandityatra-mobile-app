@@ -16,6 +16,13 @@ import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { isExpoGo } from "@/utils/expo-go";
 
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
+import { Ionicons } from "@expo/vector-icons";
+import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
+import { useAuthStore } from "@/store/auth.store";
+
 // Conditionally import GoogleSignin to prevent crashing in Expo Go
 let GoogleSignin: any = null;
 let statusCodes: any = {};
@@ -28,13 +35,6 @@ try {
 } catch (e) {
   console.warn("Google Sign-In native module not found.");
 }
-
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { Ionicons } from "@expo/vector-icons";
-import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
-import { useAuthStore } from "@/store/auth.store";
 
 // WebBrowser.maybeCompleteAuthSession();
 
@@ -241,7 +241,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
 
               <View className="flex-row justify-center mt-2">
-                <Text className="text-zinc-500 text-[15px]">Don't have an account? </Text>
+                <Text className="text-zinc-500 text-[15px]">Don&apos;t have an account? </Text>
                 <TouchableOpacity onPress={navToSignup}>
                   <Text className="text-primary font-bold text-[15px]">Register as Pandit</Text>
                 </TouchableOpacity>

@@ -95,7 +95,7 @@ export default function PendingReviewsScreen() {
                             <Ionicons name="checkmark-circle-outline" size={64} color={colors.primary} style={{ opacity: 0.5 }} />
                             <Text style={[styles.emptyText, { color: colors.text }]}>No pending reviews!</Text>
                             <Text style={[styles.emptySubtext, { color: colors.text, opacity: 0.6 }]}>
-                                You've rated all your recent services.
+                                You&apos;ve rated all your recent services.
                             </Text>
                         </View>
                     ) : null

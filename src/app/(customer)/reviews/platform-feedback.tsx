@@ -57,7 +57,7 @@ export default function PlatformFeedbackScreen() {
 
                 <Text style={[styles.title, { color: colors.text }]}>Your Voice Matters</Text>
                 <Text style={[styles.subtitle, { color: colors.text, opacity: 0.6 }]}>
-                    How do you like your experience with PanditYatra? We're always trying to improve.
+                    How do you like your experience with PanditYatra? We&apos;re always trying to improve.
                 </Text>
 
                 <View style={styles.ratingSection}>

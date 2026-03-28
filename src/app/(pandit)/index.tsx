@@ -19,92 +19,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
-import { fetchProfile } from '@/services/auth.service';
-import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
-import { useAuthStore } from '@/store/auth.store';
-import { useNotificationStore } from '@/store/notification.store';
+import { usePanditDashboard } from '@/hooks/pandit/usePanditDashboard';
 import dayjs from 'dayjs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PanditDashboardScreen() {
   const router = useRouter();
-  const { user, logout: storeLogout } = useAuthStore();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-  const [isAvailable, setIsAvailable] = useState(false);
-  const [myServices, setMyServices] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    pending: '0',
-    upcoming: '0',
-    earnings: '₹0',
-    rating: '0.0'
-  });
-  const { unreadCount, fetchNotifications: fetchStoreNotifications } = useNotificationStore();
+  const {
+    user,
+    profile,
+    stats,
+    myServices,
+    isAvailable,
+    loading,
+    refreshing,
+    unreadCount,
+    onRefresh,
+    handleToggleAvailability,
+    handleLogout,
+    getTimeBasedGreeting
+  } = usePanditDashboard();
   
   // Modals
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  const fetchData = async () => {
-    try {
-      if (!refreshing) setLoading(true);
-      const profileRes = await fetchProfile();
-      const profileData = profileRes.data || profileRes;
-      setProfile(profileData);
-
-      if (profileData.pandit_profile) {
-        setIsAvailable(profileData.pandit_profile.is_available);
-        setStats({
-          pending: profileData.pandit_profile.pending_bookings?.toString() || '0',
-          upcoming: profileData.pandit_profile.upcoming_bookings?.toString() || '0',
-          earnings: `₹${profileData.pandit_profile.total_earnings || 0}`,
-          rating: (profileData.pandit_profile.average_rating || profileData.pandit_profile.rating || 0).toFixed(1)
-        });
-      }
-
-      const servicesRes = await fetchPanditMyServices();
-      setMyServices(servicesRes.data || []);
-
-      await fetchStoreNotifications();
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleToggleAvailability = async (value: boolean) => {
-    try {
-      setIsAvailable(value);
-      await togglePanditAvailability(value);
-    } catch (error) {
-      console.error('Error toggling availability:', error);
-      setIsAvailable(!value);
-    }
-  };
-
-  const handleLogout = async () => {
-    await storeLogout();
-    router.replace('/(auth)/user/login' as any);
-  };
-
-  const getTimeBasedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "GOOD MORNING!";
-    if (hour < 17) return "GOOD AFTERNOON!";
-    return "GOOD EVENING!";
-  };
 
   if (loading && !refreshing) {
     return (

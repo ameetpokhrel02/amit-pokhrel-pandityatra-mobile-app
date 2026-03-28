@@ -148,7 +148,7 @@ export default function KundaliScreen() {
                 <View style={styles.section}>
                     <Text style={[styles.sectionHeader, { color: colors.text }]}>What Is AI Kundali?</Text>
                     <Text style={[styles.sectionText, { color: isDark ? '#AAA' : '#555' }]}>
-                        AI Kundali generates your birth chart using Vedic astrology algorithms powered by our spiritual engine. Get precise insights into your life's path.
+                        AI Kundali generates your birth chart using Vedic astrology algorithms powered by our spiritual engine. Get precise insights into your life&apos;s path.
                     </Text>
                     <View style={styles.featureRow}>
                         <View style={[styles.featureItem, { backgroundColor: colors.card }]}>

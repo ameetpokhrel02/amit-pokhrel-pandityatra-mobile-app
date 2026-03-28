@@ -11,7 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -24,9 +24,11 @@ export default function RoleSelectionScreen() {
     router.replace('/(customer)');
   };
 
-  const selectRole = (role: 'user' | 'pandit') => {
+  const selectRole = (role: 'user' | 'pandit' | 'vendor') => {
     if (role === 'pandit') {
        router.push('/(auth)/pandit/login' as any);
+    } else if (role === 'vendor') {
+       router.push('/(auth)/vendor/login' as any);
     } else {
        router.push('/(auth)/user/login' as any);
     }
@@ -77,6 +79,21 @@ export default function RoleSelectionScreen() {
             <View style={styles.textContainer}>
               <Text style={styles.cardTitle}>Join as Pandit</Text>
               <Text style={styles.cardDesc}>Register your services and grow</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.roleCard, { backgroundColor: '#1A6B3C' }]} 
+            onPress={() => selectRole('vendor')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.iconCircle}>
+              <MaterialCommunityIcons name="store" size={28} color="#1A6B3C" />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.cardTitle}>Join as Vendor</Text>
+              <Text style={styles.cardDesc}>Sell Samagri, Books & more</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>

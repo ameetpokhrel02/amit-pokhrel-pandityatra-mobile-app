@@ -30,7 +30,7 @@ export default function OTPScreen() {
   const [resending, setResending] = useState(false);
   const [timer, setTimer] = useState(30);
   
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     let interval: any;
@@ -128,7 +128,7 @@ export default function OTPScreen() {
             />
             <Text className="text-[20px] font-[800] text-primary text-center">Verify Phone</Text>
             <Text className="text-zinc-500 text-center font-medium mt-2 leading-5 px-2">
-              We've sent a 6-digit code to{"\n"}
+              We&apos;ve sent a 6-digit code to{"\n"}
               <Text className="text-zinc-800 font-bold">{phone}</Text>
             </Text>
           </View>
