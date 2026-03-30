@@ -11,7 +11,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoCallProvider } from '@/store/VideoCallContext';
-import { FloatingVideoCall } from '@/components/video/FloatingVideoCall';
+import { PersistentVideoCall } from '@/components/video/PersistentVideoCall';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -134,7 +134,7 @@ export default function RootLayout() {
             <Stack.Screen name="chat/index" />
             <Stack.Screen name="chat/[id]" />
           </Stack>
-          <FloatingVideoCall />
+          <PersistentVideoCall />
         </VideoCallProvider>
       </ThemeProvider>
     </StripeProvider>
