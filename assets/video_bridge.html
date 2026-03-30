@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video { 
+            position: absolute; bottom: 20px; right: 20px; 
+            width: 120px; height: 160px; 
+            background: #222; border-radius: 12px; 
+            object-fit: cover; border: 2px solid #fff; 
+            z-index: 10;
+        }
+        .status { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            color: #fff; font-family: sans-serif; 
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <video id="remote-video" autoplay playsinline></video>
+    <video id="local-video" autoplay playsinline muted></video>
+    <div id="status" class="status">Initializing...</div>
+
+    <script>
+        let pc = null;
+        let socket = null;
+        let localStream = null;
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        function log(msg) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'log', message: msg }));
+        }
+
+        function sendToRN(type, data = {}) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type, ...data }));
+        }
+
+        window.initCall = async (roomId, token, wsUrl, isPandit) => {
+            try {
+                document.getElementById('status').innerText = "Connecting signaling...";
+                
+                // 1. Signaling
+                socket = new WebSocket(`${wsUrl}/ws/video/${roomId}/?token=${token}`);
+                
+                socket.onopen = () => {
+                    log("Signaling connected");
+                    sendToRN('signaling_connected');
+                    document.getElementById('status').style.display = 'none';
+                };
+
+                socket.onmessage = async (e) => {
+                    const data = JSON.parse(e.data);
+                    handleSignaling(data, isPandit);
+                };
+
+                // 2. Media
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                document.getElementById('local-video').srcObject = localStream;
+
+                // 3. PeerConnection
+                pc = new RTCPeerConnection(config);
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.send(JSON.stringify({ type: 'ice-candidate', candidate: event.candidate }));
+                    }
+                };
+
+                pc.ontrack = (event) => {
+                    if (event.streams && event.streams[0]) {
+                        document.getElementById('remote-video').srcObject = event.streams[0];
+                        sendToRN('remote_stream_added');
+                    }
+                };
+
+            } catch (err) {
+                log("Call Init Error: " + err.message);
+                sendToRN('error', { message: err.message });
+            }
+        };
+
+        async function handleSignaling(data, isPandit) {
+            switch (data.type) {
+                case 'offer':
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    socket.send(JSON.stringify({ type: 'answer', sdp: answer }));
+                    break;
+                case 'answer':
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    break;
+                case 'ice-candidate':
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    break;
+                case 'participant-joined':
+                    if (isPandit) {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        socket.send(JSON.stringify({ type: 'offer', sdp: offer }));
+                    }
+                    break;
+            }
+        }
+
+        window.toggleMic = (enabled) => {
+            if (localStream) {
+                localStream.getAudioTracks().forEach(t => t.enabled = enabled);
+            }
+        };
+
+        window.toggleVideo = (enabled) => {
+            if (localStream) {
+                localStream.getVideoTracks().forEach(t => t.enabled = enabled);
+            }
+        };
+    </script>
+</body>
+</html>
