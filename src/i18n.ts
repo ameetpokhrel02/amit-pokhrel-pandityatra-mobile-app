@@ -5,10 +5,12 @@ import * as Localization from 'expo-localization';
 
 import en from './locales/en.json';
 import np from './locales/np.json';
+import hi from './locales/hi.json';
 
 const resources = {
   en: { translation: en },
   np: { translation: np },
+  hi: { translation: hi },
 };
 
 // Initialize immediately to prevent race conditions/Suspense errors
