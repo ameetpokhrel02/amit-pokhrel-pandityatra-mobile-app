@@ -229,7 +229,7 @@ export default function PanditRegister() {
       >
         <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center my-10">
           <View className="items-center mb-8">
-            <Image source={require("../../../../assets/images/pandit-logo.png")} className="w-[140px] h-[140px] mb-4" contentFit="contain" />
+            <Image source={require('@/assets/images/pandit-logo.png')} className="w-[140px] h-[140px] mb-4" contentFit="contain" />
             <Text className="text-[20px] font-[800] text-primary text-center mb-4">Pandit Registration</Text>
             <View className="flex-row gap-2">
                 {[1,2,3].map(s => (

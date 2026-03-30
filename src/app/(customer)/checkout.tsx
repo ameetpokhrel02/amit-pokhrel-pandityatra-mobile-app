@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -173,15 +173,18 @@ export default function ShopCheckoutScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[
-        styles.header,
-        {
-          backgroundColor: colors.card,
-          borderBottomColor: isDark ? '#333' : '#F3F4F6',
-          paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : 8)
-        }
-      ]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={[
+          styles.header,
+          {
+            backgroundColor: colors.card,
+            borderBottomColor: isDark ? '#333' : '#F3F4F6',
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : 8)
+          }
+        ]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back-outline" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -189,7 +192,13 @@ export default function ShopCheckoutScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView 
+          contentContainerStyle={[
+            styles.content, 
+            { paddingBottom: insets.bottom + 120 } // Ensure scroll content isn't hidden behind sticky footer
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Personal Information Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
@@ -323,24 +332,24 @@ export default function ShopCheckoutScreen() {
         </View>
       </ScrollView>
 
-      <View style={[
-        styles.footer,
-        {
-          backgroundColor: colors.card,
-          borderTopColor: isDark ? '#333' : '#EEE',
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24,
-          paddingTop: 16
-        }
-      ]}>
-        <Button
-          title={loading ? "Processing..." : `Pay NPR ${total}`}
-          onPress={handleCheckout}
-          isLoading={loading}
-          style={{ height: 56, borderRadius: 16 }}
-          textStyle={{ fontSize: 18, fontWeight: '800' }}
-        />
-      </View>
-    </View>
+        <View style={[
+          styles.footer,
+          {
+            backgroundColor: colors.card,
+            borderTopColor: isDark ? '#333' : '#EEE',
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24,
+            paddingTop: 16
+          }
+        ]}>
+          <Button
+            title={loading ? "Processing..." : `Pay NPR ${total}`}
+            onPress={handleCheckout}
+            isLoading={loading}
+            style={{ height: 56, borderRadius: 16 }}
+            textStyle={{ fontSize: 18, fontWeight: '800' }}
+          />
+        </View>
+      </KeyboardAvoidingView>
   );
 }
 

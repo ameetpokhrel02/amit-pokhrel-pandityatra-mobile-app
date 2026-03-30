@@ -12,17 +12,21 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 
-import { useLogin } from "@/hooks/auth/useLogin";
+import { Colors } from "@/theme/colors";
+import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthButtons } from "@/components/auth/AuthButtons";
 import { Input } from "@/components/ui/Input";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { AppContainer } from "@/components/ui/AppContainer";
 import { Button } from "@/components/ui/Button";
-import { Colors } from "@/theme/colors";
+import { useLogin } from "@/hooks/auth/useLogin";
+import { AppContainer } from "@/components/ui/AppContainer";
 import { Typography } from "@/constants/Typography";
+import { useRouter } from "expo-router";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  const router = useRouter();
   const {
     step,
     setStep,
@@ -55,55 +59,19 @@ export default function LoginScreen() {
           bounces={false}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../../../assets/images/pandit-logo.png")}
-                style={styles.logo}
-                contentFit="contain"
-              />
-              <Text style={styles.tagline}>Connecting Faith with Excellence</Text>
-            </View>
-
+          <AuthCard
+            role="customer"
+            mode="login"
+            onToggleMode={navToSignup}
+            onChangeRole={() => router.replace("/")}
+          >
             {step === "initial" && (
               <View style={styles.stepContainer}>
-                <Button
-                  title="Continue with Phone"
-                  variant="primary"
-                  leftIcon={<Ionicons name="call" size={20} color={Colors.light.surface} />}
-                  onPress={() => setStep("phone_login")}
+                <AuthButtons
+                  onPhonePress={() => setStep("phone_login")}
+                  onEmailPress={() => setStep("email_login")}
+                  onGooglePress={handleGooglePress}
                 />
-
-                <Button
-                  title="Continue with Email"
-                  variant="secondary"
-                  leftIcon={<Ionicons name="mail-outline" size={20} color={Colors.light.primary} />}
-                  onPress={() => setStep("email_login")}
-                  style={{ marginTop: 12 }}
-                />
-
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Google Button has specific branding colors outside of primary/secondary */}
-                <TouchableOpacity 
-                  style={[styles.googleBtn, loading && { opacity: 0.5 }]}
-                  onPress={handleGooglePress}
-                  disabled={loading}
-                >
-                  <Ionicons name="logo-google" size={18} color="#EA4335" />
-                  <Text style={styles.googleText}>Continue with Google</Text>
-                </TouchableOpacity>
-
-                <View style={styles.signupContainer}>
-                  <Text style={styles.signupText}>Don&apos;t have an account? </Text>
-                  <TouchableOpacity onPress={navToSignup}>
-                    <Text style={styles.signupLink}>Sign up</Text>
-                  </TouchableOpacity>
-                </View>
 
                 <TouchableOpacity 
                   style={styles.guestBtn} 
@@ -175,7 +143,7 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             )}
-          </View>
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </AppContainer>

@@ -8,7 +8,7 @@ export default function Index() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Image 
-          source={require('../../assets/images/pandit-logo.png')}
+          source={require('@/assets/images/pandit-logo.png')}
           style={{ width: 150, height: 150, marginBottom: 30 }}
           resizeMode="contain"
         />

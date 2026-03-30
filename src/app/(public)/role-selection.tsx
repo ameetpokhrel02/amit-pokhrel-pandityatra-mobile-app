@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView, 
   StatusBar,
-  Dimensions
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -34,17 +35,53 @@ export default function RoleSelectionScreen() {
     }
   };
 
+  const RoleCard = ({ 
+    title, 
+    description, 
+    icon, 
+    color, 
+    onPress, 
+    isLast = false 
+  }: { 
+    title: string, 
+    description: string, 
+    icon: any, 
+    color: string, 
+    onPress: () => void,
+    isLast?: boolean
+  }) => (
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconBox, { backgroundColor: color + '10' }]}>
+        {typeof icon === 'string' ? (
+          <Ionicons name={icon as any} size={26} color={color} />
+        ) : (
+          <MaterialCommunityIcons name={icon.name} size={26} color={color} />
+        )}
+      </View>
+      <View style={styles.textColumn}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSubtitle}>{description}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
-        bounces={false}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logoSection}>
+        {/* Header Section */}
+        <View style={styles.header}>
           <Image
-            source={require('@/../assets/images/pandit-logo.png')}
+            source={require('@/assets/images/pandit-logo.png')}
             style={styles.logo}
             contentFit="contain"
           />
@@ -52,143 +89,131 @@ export default function RoleSelectionScreen() {
           <Text style={styles.tagline}>Spiritual Services at Your Fingertips</Text>
         </View>
 
-        <View style={styles.buttonSection}>
-          <TouchableOpacity 
-            style={[styles.roleCard, { backgroundColor: '#FF6F00' }]} 
+        {/* Selection Area */}
+        <View style={styles.cardContainer}>
+          <Text style={styles.selectionTitle}>Choose your role to continue</Text>
+          
+          <RoleCard 
+            title="Join as Customer"
+            description="Book Pandits, Puja, and Astrology"
+            icon="person"
+            color="#FF6F00"
             onPress={() => selectRole('user')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.iconCircle}>
-              <Ionicons name="person" size={28} color="#FF6F00" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.cardTitle}>Join as Customer</Text>
-              <Text style={styles.cardDesc}>Book Pandits, Puja, and Astrology</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity 
-            style={[styles.roleCard, { backgroundColor: '#374151' }]} 
+          <RoleCard 
+            title="Join as Pandit"
+            description="Register your services and grow"
+            icon="school"
+            color="#374151"
             onPress={() => selectRole('pandit')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.iconCircle}>
-              <Ionicons name="school" size={28} color="#374151" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.cardTitle}>Join as Pandit</Text>
-              <Text style={styles.cardDesc}>Register your services and grow</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity 
-            style={[styles.roleCard, { backgroundColor: '#1A6B3C' }]} 
+          <RoleCard 
+            title="Join as Vendor"
+            description="Sell Samagri, Books & more"
+            icon={{ name: 'store' }}
+            color="#1A6B3C"
             onPress={() => selectRole('vendor')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons name="store" size={28} color="#1A6B3C" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.cardTitle}>Join as Vendor</Text>
-              <Text style={styles.cardDesc}>Sell Samagri, Books & more</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity 
-            style={[styles.roleCard, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#E5E7EB' }]} 
+          <RoleCard 
+            title="Explore as Guest"
+            description="Browse services without an account"
+            icon="eye"
+            color="#6B7280"
             onPress={handleGuestMode}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: '#F3F4F6' }]}>
-              <Ionicons name="eye" size={28} color="#6B7280" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: '#111827' }]}>Explore as Guest</Text>
-              <Text style={[styles.cardDesc, { color: '#6B7280' }]}>Browse services without an account</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
+            isLast={true}
+          />
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Made with ❤️ for Spirituality</Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FAFAFA', // zinc-50 equivalent
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-    minHeight: SCREEN_HEIGHT - 60,
-    justifyContent: 'center',
-  },
-  logoSection: {
+    paddingTop: 40,
+    paddingBottom: 100,
     alignItems: 'center',
-    marginBottom: 48,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
   logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 16,
+    width: 100,
+    height: 100,
+    marginBottom: 12,
   },
   appName: {
-    fontSize: 38,
+    fontSize: 32,
     fontWeight: '900',
     color: '#FF6F00',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7280',
-    fontWeight: '600',
-    marginTop: 4,
+    fontWeight: '500',
+    marginTop: 2,
   },
-  buttonSection: {
-    gap: 16,
+  cardContainer: {
+    width: '100%',
+    maxWidth: 400,
   },
-  roleCard: {
+  selectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
     backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6', // zinc-100
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  textContainer: {
+  textColumn: {
     flex: 1,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#111827',
   },
-  cardDesc: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -200,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#9CA3AF',
     fontWeight: '600',
   },

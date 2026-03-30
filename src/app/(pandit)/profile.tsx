@@ -408,7 +408,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 160 }} />
 
       {/* Edit Profile Modal */}
       <Modal visible={showEditProfileModal} animationType="slide" transparent>
@@ -491,14 +491,6 @@ export default function ProfileScreen() {
           onConfirm={handleLogout}
         />
       </ScrollView>
-
-      {/* Floating AI Guide Button */}
-      <TouchableOpacity 
-        style={[styles.floatingAiButton, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/chat/ai-guide?mode=ai' as any)}
-      >
-        <Ionicons name="chatbubble-ellipses" size={28} color="#FFF" />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -705,21 +697,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 20,
     backgroundColor: 'rgba(255, 111, 0, 0.02)',
-  },
-  floatingAiButton: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 100,
   },
 });

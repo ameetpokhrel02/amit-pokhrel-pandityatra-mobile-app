@@ -32,19 +32,19 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BANNERS = [
   {
     id: 1,
-    image: require('../../../assets/images/hero_2.png'),
+    image: require('@/assets/images/hero_2.png'),
     title: 'Divine Shanti',
     subtitle: 'Spiritual Essentials & Holistic Goods'
   },
   {
     id: 2,
-    image: require('../../../assets/images/oils_products.png'),
+    image: require('@/assets/images/oils_products.png'),
     title: 'Authentic Oils',
     subtitle: 'Pure & Energized Spiritual Oils'
   },
   {
     id: 3,
-    image: require('../../../assets/images/hero_3.png'),
+    image: require('@/assets/images/hero_3.png'),
     title: 'Sacred Rituals',
     subtitle: 'Complete Samagri for Every Occasion'
   }
@@ -161,7 +161,7 @@ export default function CustomerHomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={{ paddingBottom: 180 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />

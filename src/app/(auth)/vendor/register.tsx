@@ -1,65 +1,82 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform
+import { 
+  View, 
+  Text, 
+  Alert, 
+  TouchableOpacity, 
+  ScrollView, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ActivityIndicator,
+  Dimensions,
+  StatusBar
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '@/store/ThemeContext';
+import { Input } from '@/components/ui/Input';
+import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerVendor } from '@/services/vendor.service';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUSINESS_TYPES = ['Samagri Store', 'Book Store', 'Gift & Accessories', 'Devotional Items', 'Other'];
 
-export default function VendorRegisterScreen() {
+export default function VendorRegister() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { colors, theme } = useTheme();
-  const isDark = theme === 'dark';
-
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 1 — Personal
+  // Step 1: Personal Info
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [formattedPhone, setFormattedPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
 
-  // Step 2 — Shop
+  // Step 2: Shop Info
   const [shopName, setShopName] = useState('');
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+
+  // Step 3: Bank Details
   const [bankAccount, setBankAccount] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
 
-  const validateStep1 = () => {
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !password) {
-      Alert.alert('Missing Fields', 'Please fill in all personal details.');
-      return false;
+  const handleNext = () => {
+    if (step === 1) {
+      if (!fullName.trim() || !email.trim() || !password) {
+        Alert.alert('Required', 'Please fill in name, email and password');
+        return;
+      }
+      if (password.length < 6) {
+        Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+        return;
+      }
+      setStep(2);
+    } else if (step === 2) {
+      if (!shopName.trim() || !address.trim() || !city.trim()) {
+        Alert.alert('Required', 'Please fill in shop details');
+        return;
+      }
+      setStep(3);
     }
-    if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async () => {
-    if (!shopName.trim() || !address.trim() || !city.trim() || !bankAccount.trim() || !bankName.trim() || !accountHolder.trim()) {
-      Alert.alert('Missing Fields', 'Please complete all shop and bank details.');
+    if (!bankAccount.trim() || !bankName.trim() || !accountHolder.trim()) {
+      Alert.alert('Required', 'Please fill in all bank details');
       return;
     }
+
     try {
       setLoading(true);
       await registerVendor({
         email: email.trim(),
         password,
         full_name: fullName.trim(),
-        phone_number: phone.trim(),
+        phone_number: formattedPhone || phone.trim(),
         shop_name: shopName.trim(),
         business_type: businessType,
         address: address.trim(),
@@ -68,13 +85,15 @@ export default function VendorRegisterScreen() {
         bank_name: bankName.trim(),
         account_holder_name: accountHolder.trim(),
       });
+      
       Alert.alert(
-        '🎉 Registration Successful!',
-        'Your vendor account has been submitted for admin approval. You will be notified once verified.',
-        [{ text: 'Login', onPress: () => router.replace('/(auth)/vendor/login' as any) }]
+        'Success', 
+        'Registration submitted! Your shop is pending admin approval.',
+        [{ text: 'OK', onPress: () => router.replace('/(auth)/vendor/login' as any) }]
       );
-    } catch (err: any) {
-      const data = err?.response?.data;
+    } catch (e: any) {
+      console.error(e);
+      const data = e.response?.data;
       const msg = typeof data === 'object'
         ? Object.values(data).flat().join('\n')
         : (data?.detail || 'Registration failed. Please try again.');
@@ -84,179 +103,143 @@ export default function VendorRegisterScreen() {
     }
   };
 
-  const inputStyle = [styles.inputWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }];
-  const textStyle = [styles.input, { color: colors.text }];
-  const phColor = colors.text + '50';
-
-  return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
-        {/* Header */}
-        <TouchableOpacity onPress={() => step === 1 ? router.back() : setStep(1)} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-
-        <View style={[styles.iconWrap, { backgroundColor: colors.primary + '20' }]}>
-          <MaterialCommunityIcons name="store-plus" size={40} color={colors.primary} />
-        </View>
-
-        <Text style={[styles.title, { color: colors.text }]}>Become a Vendor</Text>
-
-        {/* Step Indicator */}
-        <View style={styles.stepRow}>
-          {[1, 2].map(s => (
-            <View key={s} style={styles.stepItem}>
-              <View style={[
-                styles.stepCircle,
-                { backgroundColor: step >= s ? colors.primary : (isDark ? '#333' : '#E5E7EB') }
-              ]}>
-                <Text style={[styles.stepNum, { color: step >= s ? '#FFF' : colors.text + '60' }]}>{s}</Text>
-              </View>
-              <Text style={[styles.stepLabel, { color: step >= s ? colors.primary : colors.text + '50' }]}>
-                {s === 1 ? 'Personal' : 'Shop Info'}
-              </Text>
+  const renderStep = () => {
+    switch(step) {
+      case 1:
+        return (
+          <View className="gap-2">
+            <Input label="Full Name *" placeholder="Owner Name" value={fullName} onChangeText={setFullName} />
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-zinc-700 mb-2">Phone Number</Text>
+              <CustomPhoneInput value={phone} onChangeText={setPhone} onFormattedChange={setFormattedPhone} />
             </View>
-          ))}
-          <View style={[styles.stepLine, { backgroundColor: step === 2 ? colors.primary : (isDark ? '#333' : '#E5E7EB') }]} />
-        </View>
-
-        {step === 1 ? (
-          /* ── Step 1: Personal ── */
-          <View style={styles.form}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
-
-            <View style={inputStyle}>
-              <Ionicons name="person-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Full Name" placeholderTextColor={phColor} value={fullName} onChangeText={setFullName} />
-            </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="mail-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Email Address" placeholderTextColor={phColor} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-            </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="call-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Phone Number" placeholderTextColor={phColor} keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-            </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Password (min 6 chars)" placeholderTextColor={phColor} secureTextEntry={!showPwd} value={password} onChangeText={setPassword} />
-              <TouchableOpacity onPress={() => setShowPwd(v => !v)}>
-                <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.text + '60'} />
-              </TouchableOpacity>
-            </View>
-
+            <Input label="Email *" placeholder="shop@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <Input label="Password *" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
+            
             <TouchableOpacity
-              style={[styles.btn, { backgroundColor: colors.primary }]}
-              onPress={() => { if (validateStep1()) setStep(2); }}
+              className="w-full h-14 bg-primary rounded-2xl items-center justify-center mt-2 shadow-lg shadow-primary/30 active:opacity-80"
+              onPress={handleNext}
             >
-              <Text style={styles.btnText}>Next: Shop Details</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+              <Text className="text-white text-lg font-bold">Next: Shop Details</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          /* ── Step 2: Shop ── */
-          <View style={styles.form}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Shop Information</Text>
-
-            <View style={inputStyle}>
-              <MaterialCommunityIcons name="store-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Shop Name" placeholderTextColor={phColor} value={shopName} onChangeText={setShopName} />
-            </View>
-
-            {/* Business Type Selector */}
-            <View style={[styles.pickerWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }]}>
-              <MaterialCommunityIcons name="tag-outline" size={18} color={colors.primary} style={styles.icon} />
-              <Text style={[styles.pickerLabel, { color: colors.text + '60' }]}>Business Type:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
-                <View style={styles.typeRow}>
-                  {BUSINESS_TYPES.map(t => (
-                    <TouchableOpacity
-                      key={t}
-                      style={[styles.typeChip, { backgroundColor: businessType === t ? colors.primary : (isDark ? '#333' : '#F3F4F6'), borderColor: businessType === t ? colors.primary : 'transparent' }]}
-                      onPress={() => setBusinessType(t)}
-                    >
-                      <Text style={{ color: businessType === t ? '#FFF' : colors.text, fontSize: 12, fontWeight: '600' }}>{t}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+        );
+      case 2:
+        return (
+          <View className="gap-2">
+            <Input label="Shop Name *" placeholder="Your Shop Name" value={shopName} onChangeText={setShopName} />
+            
+            <View className="mb-4">
+              <Text className="text-sm font-semibold text-zinc-700 mb-2">Business Type *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
+                {BUSINESS_TYPES.map((type) => (
+                  <TouchableOpacity 
+                    key={type} 
+                    className={`px-4 py-2 rounded-full border-1.5 mr-2 ${businessType === type ? 'bg-orange-50 border-primary' : 'border-zinc-200'}`}
+                    onPress={() => setBusinessType(type)}
+                  >
+                    <Text className={`text-sm ${businessType === type ? 'text-primary font-bold' : 'text-zinc-500 font-medium'}`}>{type}</Text>
+                  </TouchableOpacity>
+                ))}
               </ScrollView>
             </View>
 
-            <View style={inputStyle}>
-              <Ionicons name="location-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Street Address" placeholderTextColor={phColor} value={address} onChangeText={setAddress} />
+            <Input label="Street Address *" placeholder="Shop Address" value={address} onChangeText={setAddress} />
+            <Input label="City *" placeholder="City Name" value={city} onChangeText={setCity} />
+
+            <View className="flex-row mt-4 gap-3">
+              <TouchableOpacity
+                className="flex-1 h-14 border border-zinc-200 rounded-2xl items-center justify-center active:bg-zinc-50"
+                onPress={() => setStep(1)}
+              >
+                <Text className="text-zinc-500 font-bold">Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-[1.5] h-14 bg-primary rounded-2xl items-center justify-center shadow-lg shadow-primary/30 active:opacity-80"
+                onPress={handleNext}
+              >
+                <Text className="text-white font-bold">Next: Bank Info</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="business-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="City" placeholderTextColor={phColor} value={city} onChangeText={setCity} />
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 8 }]}>Bank Details</Text>
-
-            <View style={inputStyle}>
-              <Ionicons name="card-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Bank Account Number" placeholderTextColor={phColor} keyboardType="number-pad" value={bankAccount} onChangeText={setBankAccount} />
-            </View>
-
-            <View style={inputStyle}>
-              <MaterialCommunityIcons name="bank-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Bank Name (e.g. Nepal Bank)" placeholderTextColor={phColor} value={bankName} onChangeText={setBankName} />
-            </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="person-outline" size={18} color={colors.primary} style={styles.icon} />
-              <TextInput style={textStyle} placeholder="Account Holder Name" placeholderTextColor={phColor} value={accountHolder} onChangeText={setAccountHolder} />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#FFF" />
-                : <>
-                    <MaterialCommunityIcons name="store-check" size={18} color="#FFF" />
-                    <Text style={styles.btnText}>Submit for Approval</Text>
-                  </>
-              }
-            </TouchableOpacity>
           </View>
-        )}
+        );
+      case 3:
+        return (
+          <View className="gap-2">
+             <Input 
+              label="Bank Account Number *" 
+              placeholder="0000 0000 0000" 
+              value={bankAccount} 
+              onChangeText={setBankAccount}
+              keyboardType="number-pad"
+            />
+            <Input 
+              label="Bank Name *" 
+              placeholder="e.g. Nepal Investment Bank" 
+              value={bankName} 
+              onChangeText={setBankName} 
+            />
+            <Input 
+              label="Account Holder Name *" 
+              placeholder="Exact name as in bank" 
+              value={accountHolder} 
+              onChangeText={setAccountHolder} 
+            />
+            
+            <View className="flex-row mt-4 gap-3">
+              <TouchableOpacity
+                className="flex-1 h-14 border border-zinc-200 rounded-2xl items-center justify-center active:bg-zinc-50"
+                onPress={() => setStep(2)}
+              >
+                <Text className="text-zinc-500 font-bold">Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-[2] h-14 bg-primary rounded-2xl items-center justify-center shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white font-bold">Complete Registration</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+    }
+  };
 
+  return (
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      className="flex-1 bg-zinc-50"
+    >
+      <StatusBar barStyle="dark-content" />
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        <View className="bg-white rounded-[40px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center my-10">
+          <View className="items-center mb-8">
+             <View className="w-20 h-20 bg-primary/10 rounded-3xl justify-center items-center mb-4">
+                <MaterialCommunityIcons name="store-plus" size={40} color="#FF6F00" />
+             </View>
+            <Text className="text-[20px] font-[800] text-primary text-center mb-4">Become a Vendor</Text>
+            <View className="flex-row gap-2">
+                {[1,2,3].map(s => (
+                    <View key={s} className={`w-10 h-1.5 rounded-full ${step >= s ? 'bg-primary' : 'bg-zinc-200'}`} />
+                ))}
+            </View>
+          </View>
+
+          {renderStep()}
+
+          <TouchableOpacity 
+            className="items-center mt-6" 
+            onPress={() => step > 1 ? setStep(step - 1) : router.back()}
+          >
+            <Text className="text-zinc-500 font-semibold">← Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 24 },
-  backBtn: { alignSelf: 'flex-start', padding: 4, marginBottom: 16 },
-  iconWrap: { width: 80, height: 80, borderRadius: 28, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 24 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 32, position: 'relative' },
-  stepItem: { alignItems: 'center', gap: 4, zIndex: 1 },
-  stepCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  stepNum: { fontSize: 14, fontWeight: '800' },
-  stepLabel: { fontSize: 11, fontWeight: '700' },
-  stepLine: { position: 'absolute', left: '25%', right: '25%', height: 2, top: 18, zIndex: 0 },
-  form: { gap: 14 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13 },
-  icon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15 },
-  pickerWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, minHeight: 52 },
-  pickerLabel: { fontSize: 12, marginRight: 8, fontWeight: '600' },
-  typeRow: { flexDirection: 'row', gap: 8 },
-  typeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 18, borderRadius: 18, marginTop: 8 },
-  btnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-});

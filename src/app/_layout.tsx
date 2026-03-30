@@ -27,14 +27,14 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     ...Ionicons.font,
     // ─── Roboto (Primary UI font) ───────────────────────────────
-    'Roboto-Regular': require('../../assets/fonts/Roboto-Regular.ttf'),
-    'Roboto-Medium':  require('../../assets/fonts/Roboto-Medium.ttf'),
-    'Roboto-Bold':    require('../../assets/fonts/Roboto-Bold.ttf'),
-    'Roboto-Light':   require('../../assets/fonts/Roboto-Light.ttf'),
+    'Roboto-Regular': require('@/assets/fonts/Roboto-Regular.ttf'),
+    'Roboto-Medium':  require('@/assets/fonts/Roboto-Medium.ttf'),
+    'Roboto-Bold':    require('@/assets/fonts/Roboto-Bold.ttf'),
+    'Roboto-Light':   require('@/assets/fonts/Roboto-Light.ttf'),
     // ─── Lato (Accent / display font) ──────────────────────────
-    'Lato-Regular':   require('../../assets/fonts/Lato-Regular.ttf'),
-    'Lato-Bold':      require('../../assets/fonts/Lato-Bold.ttf'),
-    'Lato-Italic':    require('../../assets/fonts/Lato-Italic.ttf'),
+    'Lato-Regular':   require('@/assets/fonts/Lato-Regular.ttf'),
+    'Lato-Bold':      require('@/assets/fonts/Lato-Bold.ttf'),
+    'Lato-Italic':    require('@/assets/fonts/Lato-Italic.ttf'),
   });
 
   useEffect(() => {

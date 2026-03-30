@@ -60,7 +60,7 @@ export default function ForgotPasswordScreen() {
         <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
           <View className="items-center mb-8">
             <Image
-              source={require("../../../../assets/images/pandit-logo.png")}
+              source={require('@/assets/images/pandit-logo.png')}
               className="w-[140px] h-[140px] mb-2"
               contentFit="contain"
             />

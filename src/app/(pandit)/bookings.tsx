@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 160,
   },
   card: {
     backgroundColor: '#FFF',

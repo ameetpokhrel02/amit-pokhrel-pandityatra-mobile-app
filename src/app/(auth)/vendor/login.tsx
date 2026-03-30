@@ -5,12 +5,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
 import { loginPassword } from '@/services/auth.service';
 import { AppContainer } from '@/components/ui/AppContainer';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthButtons } from '@/components/auth/AuthButtons';
+import { CustomPhoneInput } from '@/components/ui/CustomPhoneInput';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function VendorLoginScreen() {
   const router = useRouter();
@@ -23,6 +27,8 @@ export default function VendorLoginScreen() {
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [step, setStep] = useState<'initial' | 'email_login' | 'phone_login'>('initial');
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -59,68 +65,86 @@ export default function VendorLoginScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top || 24, paddingBottom: insets.bottom + 32 }]}>
-          {/* Header */}
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary || colors.text} />
-          </TouchableOpacity>
-
-          {/* Logo / Icon */}
-          <View style={[styles.iconWrap, { backgroundColor: colors.primary + '20' }]}>
-            <MaterialCommunityIcons name="store" size={48} color={colors.primary} />
-          </View>
-
-          <Text style={[styles.title, { color: colors.textPrimary || colors.text }]}>Vendor Login</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary || colors.icon }]}>
-            Sign in to manage your shop on PanditYatra
-          </Text>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="mail-outline" size={20} color={colors.primary} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary || colors.text }]}
-                placeholder="Email Address"
-                placeholderTextColor={colors.textSecondary || colors.placeholder}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
+        <ScrollView 
+          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}
+          centerContent
+        >
+          <AuthCard
+            role="vendor"
+            mode="login"
+            onToggleMode={() => router.push('/(auth)/vendor/register' as any)}
+            onChangeRole={() => router.replace("/")}
+          >
+            {step === 'initial' && (
+              <AuthButtons
+                onPhonePress={() => setStep('phone_login')}
+                onEmailPress={() => setStep('email_login')}
+                onGooglePress={() => Alert.alert('Coming Soon', 'Google Login for vendors is being integrated.')}
               />
-            </View>
+            )}
 
-            <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.primary} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary || colors.text }]}
-                placeholder="Password"
-                placeholderTextColor={colors.textSecondary || colors.placeholder}
-                secureTextEntry={!showPwd}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPwd(v => !v)}>
-                <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary || colors.icon} />
-              </TouchableOpacity>
-            </View>
+            {step === 'email_login' && (
+              <View style={styles.form}>
+                <Input
+                  label="Email Address"
+                  placeholder="vendor@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
 
-            <Button 
-              title="Sign In to Dashboard" 
-              variant="primary"
-              isLoading={loading} 
-              onPress={handleLogin} 
-              style={{ marginTop: 8 }} 
-            />
-          </View>
+                <Input
+                  label="Password"
+                  placeholder="••••••••"
+                  secureTextEntry={!showPwd}
+                  value={password}
+                  onChangeText={setPassword}
+                  rightIcon={
+                    <TouchableOpacity onPress={() => setShowPwd(v => !v)}>
+                      <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  }
+                />
 
-          {/* Register link */}
-          <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary || colors.text }]}>Don&apos;t have a vendor account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/vendor/register' as any)}>
-              <Text style={[styles.footerLink, { color: colors.primary }]}>Register as Vendor</Text>
-            </TouchableOpacity>
-          </View>
+                <Button 
+                  title="Sign In to Dashboard" 
+                  variant="primary"
+                  isLoading={loading} 
+                  onPress={handleLogin} 
+                  style={{ marginTop: 8 }} 
+                />
+
+                <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
+                  <Text style={{ color: colors.textSecondary, fontWeight: '600', textAlign: 'center' }}>← Go Back</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {step === 'phone_login' && (
+              <View style={styles.form}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 4 }}>Phone Number</Text>
+                <CustomPhoneInput
+                  value={email} // Using email state for phone temporarily if needed, but better to add phone state
+                  onChangeText={setEmail}
+                  onFormattedChange={() => {}}
+                />
+                
+                <Button 
+                  title="Send OTP" 
+                  variant="primary"
+                  isLoading={loading} 
+                  onPress={() => Alert.alert('OTP Sent', 'This feature is coming soon to the Vendor portal.')} 
+                  style={{ marginTop: 8 }} 
+                />
+
+                <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
+                  <Text style={{ color: colors.textSecondary, fontWeight: '600', textAlign: 'center' }}>← Go Back</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </AppContainer>

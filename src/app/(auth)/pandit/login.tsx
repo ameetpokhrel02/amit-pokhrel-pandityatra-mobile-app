@@ -19,9 +19,13 @@ import { isExpoGo } from "@/utils/expo-go";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { Ionicons } from "@expo/vector-icons";
-import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
+import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthButtons } from "@/components/auth/AuthButtons";
+import { AppContainer } from "@/components/ui/AppContainer";
+import { Colors } from "@/theme/colors";
+import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
+import { Ionicons } from "@expo/vector-icons";
 
 // Conditionally import GoogleSignin to prevent crashing in Expo Go
 let GoogleSignin: any = null;
@@ -187,136 +191,100 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-zinc-50"
-    >
-      <StatusBar barStyle="dark-content" />
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center', minHeight: SCREEN_HEIGHT }} 
-        keyboardShouldPersistTaps="handled" 
-        bounces={false}
+    <AppContainer hideFab>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
-          <View className="items-center mb-8">
-            <Image
-              source={require("../../../../assets/images/pandit-logo.png")}
-              className="w-[140px] h-[140px] mb-2"
-              contentFit="contain"
-            />
-            <Text className="text-base text-zinc-500 text-center font-medium mt-1">Welcome back, Pandit Ji</Text>
-          </View>
+        <StatusBar barStyle="dark-content" />
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingVertical: 40 }} 
+          keyboardShouldPersistTaps="handled" 
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+        >
+          <AuthCard
+            role="pandit"
+            mode="login"
+            onToggleMode={navToSignup}
+            onChangeRole={() => router.replace("/")}
+          >
+            {step === "initial" && (
+              <AuthButtons
+                onPhonePress={() => setStep("phone_login")}
+                onEmailPress={() => setStep("email_login")}
+                onGooglePress={handleGooglePress}
+              />
+            )}
 
-          {step === "initial" && (
-            <View className="gap-4">
-              <TouchableOpacity
-                className="w-full h-14 bg-primary rounded-2xl flex-row items-center justify-center gap-3 shadow-lg shadow-primary/30 active:opacity-80"
-                onPress={() => setStep("phone_login")}
-              >
-                <Ionicons name="call" size={20} color="#FFFFFF" />
-                <Text className="text-white text-lg font-bold">Continue with Phone</Text>
-              </TouchableOpacity>
+            {step === "email_login" && (
+              <View style={{ gap: 16 }}>
+                <Input
+                  label="Email Address"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <View>
+                  <Input
+                    label="Password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    rightIcon={
+                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    }
+                  />
+                </View>
+                
+                <Button
+                  title="Login"
+                  variant="primary"
+                  isLoading={loading}
+                  onPress={handlePasswordLogin}
+                  style={{ marginTop: 8 }}
+                />
 
-              <TouchableOpacity 
-                className="w-full h-14 border-2 border-primary rounded-2xl flex-row items-center justify-center gap-3 active:bg-primary/5" 
-                onPress={() => setStep("email_login")}
-              >
-                <Ionicons name="mail-outline" size={20} color="#FF6F00" />
-                <Text className="text-primary text-lg font-bold">Continue with Email</Text>
-              </TouchableOpacity>
-
-              <View className="flex-row items-center my-3">
-                <View className="flex-1 h-[1px] bg-zinc-200" />
-                <Text className="px-4 text-sm text-zinc-400 font-semibold">OR</Text>
-                <View className="flex-1 h-[1px] bg-zinc-200" />
-              </View>
-
-              <TouchableOpacity 
-                className={`w-full h-14 border border-zinc-200 rounded-2xl flex-row items-center justify-center gap-3 active:bg-zinc-50 ${loading ? 'opacity-50' : ''}`}
-                onPress={handleGooglePress}
-                disabled={loading}
-              >
-                <Ionicons name="logo-google" size={18} color="#EA4335" />
-                <Text className="text-zinc-700 text-base font-semibold">Continue with Google</Text>
-              </TouchableOpacity>
-
-              <View className="flex-row justify-center mt-2">
-                <Text className="text-zinc-500 text-[15px]">Don&apos;t have an account? </Text>
-                <TouchableOpacity onPress={navToSignup}>
-                  <Text className="text-primary font-bold text-[15px]">Register as Pandit</Text>
+                <TouchableOpacity 
+                  style={{ alignItems: 'center', marginTop: 16 }} 
+                  onPress={() => setStep("initial")}
+                >
+                  <Text style={{ color: '#666', fontWeight: '600' }}>← Go Back</Text>
                 </TouchableOpacity>
               </View>
+            )}
 
-              <TouchableOpacity 
-                className="items-center mt-3" 
-                onPress={() => router.back()}
-              >
-                <Text className="text-zinc-500 text-[15px] font-semibold">← Change Role</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {step === "email_login" && (
-            <View className="gap-4">
-              <Input
-                label="Email Address"
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <View>
-                <Input
-                  label="Password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  rightIcon={
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                      <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
-                    </TouchableOpacity>
-                  }
+            {step === "phone_login" && (
+              <View style={{ gap: 16 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 4 }}>Phone Number</Text>
+                <CustomPhoneInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  onFormattedChange={setFormattedPhone}
                 />
+                <Button
+                  title="Send OTP"
+                  variant="primary"
+                  isLoading={loading}
+                  onPress={handleSendOtp}
+                  style={{ marginTop: 8 }}
+                />
+                <TouchableOpacity 
+                  style={{ alignItems: 'center', marginTop: 16 }} 
+                  onPress={() => setStep("initial")}
+                >
+                  <Text style={{ color: '#666', fontWeight: '600' }}>← Go Back</Text>
+                </TouchableOpacity>
               </View>
-              
-              <TouchableOpacity
-                className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-2 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
-                onPress={handlePasswordLogin}
-                disabled={loading}
-              >
-                {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white text-lg font-bold">Login</Text>}
-              </TouchableOpacity>
-
-              <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
-                <Text className="text-zinc-500 font-semibold">← Go Back</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {step === "phone_login" && (
-            <View className="gap-4">
-              <Text className="text-sm font-semibold text-zinc-700 mb-2">Phone Number</Text>
-              <CustomPhoneInput
-                value={phone}
-                onChangeText={setPhone}
-                onFormattedChange={setFormattedPhone}
-              />
-              <TouchableOpacity
-                className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-2 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
-                onPress={handleSendOtp}
-                disabled={loading}
-              >
-                {loading ? <ActivityIndicator color="#FFF" /> : <Text className="text-white text-lg font-bold">Send OTP</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity className="items-center mt-4" onPress={() => setStep("initial")}>
-                <Text className="text-zinc-500 font-semibold">← Go Back</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            )}
+          </AuthCard>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </AppContainer>
   );
 }
