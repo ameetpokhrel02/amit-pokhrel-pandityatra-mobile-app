@@ -59,6 +59,12 @@ interface VideoCallContextType {
   peerAvatar: string | undefined;
   isPandit: boolean;
   
+  // Bridge & UI State
+  isMinimized: boolean;
+  setIsMinimized: (val: boolean) => void;
+  webViewRef: React.MutableRefObject<any>;
+  setWebViewRef: (ref: any) => void;
+
   startCall: (bookingId: number, userName: string, isPandit: boolean, peerName?: string, peerAvatar?: string) => Promise<void>;
   endCall: () => Promise<void>;
   toggleMic: () => void;
@@ -66,6 +72,7 @@ interface VideoCallContextType {
   flipCamera: () => void;
   sendMessage: (text: string) => void;
   clearUnread: () => void;
+  handleBridgeMessage: (event: any) => void;
 }
 
 const VideoCallContext = createContext<VideoCallContextType | undefined>(undefined);
@@ -91,6 +98,10 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [peerName, setPeerName] = useState('Partner');
   const [peerAvatar, setPeerAvatar] = useState<string | undefined>(undefined);
   const [isPandit, setIsPandit] = useState(false);
+  
+  // Bridge States
+  const [isMinimized, setIsMinimized] = useState(false);
+  const webViewRef = useRef<any>(null);
 
   const pc = useRef<any>(null);
   const socket = useRef<WebSocket | null>(null);
@@ -106,149 +117,20 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setRemoteStream(null);
     setIsCallActive(false);
     setIsConnecting(false);
+    setIsMinimized(false);
     setActiveBookingId(null);
     setMessages([]);
     setUnreadCount(0);
     roomIdRef.current = null;
     socket.current = null;
     pc.current = null;
+    // Notify webview to hangup if possible
+    if (webViewRef.current) {
+        webViewRef.current.injectJavaScript('if(window.hangup) window.hangup()');
+    }
   }, [localStream]);
 
-  const startCall = async (bookingId: number, userName: string, panditRole: boolean, name?: string, avatar?: string) => {
-    if (isCallActive) return;
-    
-    setIsConnecting(true);
-    setActiveBookingId(bookingId);
-    setIsPandit(panditRole);
-    if (name) setPeerName(name);
-    if (avatar) setPeerAvatar(avatar);
-
-    try {
-      // 1. Notify Backend & Get Room ID
-      try {
-        let roomId: number | string | null = null;
-        try {
-          const roomRes = await fetchVideoRoom(bookingId);
-          roomId = roomRes.id || roomRes.room_id || (roomRes.data && (roomRes.data.id || roomRes.data.room_id));
-        } catch {
-          const joinRes = await joinVideoRoom(bookingId);
-          roomId = joinRes.id || joinRes.room_id || (joinRes.data && (joinRes.data.id || joinRes.data.room_id));
-        }
-        roomIdRef.current = roomId;
-        
-        if (panditRole && roomIdRef.current) {
-          await startVideoRoom(roomIdRef.current);
-        }
-      } catch (e: any) {
-        console.error('[VideoContext] Signaling Prep Error:', e.message);
-      }
-
-      // 2. Get Local Stream
-      const stream = await mediaDevices.getUserMedia({
-        audio: true,
-        video: { facingMode: isFrontCamera ? 'user' : 'environment' },
-      });
-      setLocalStream(stream);
-
-      // 3. Initialize PeerConnection
-      const peer = new RTCPeerConnection(configuration);
-      pc.current = peer;
-
-      stream.getTracks().forEach((track: any) => peer.addTrack(track, stream));
-
-      peer.addEventListener('track', (event: any) => {
-        if (event.streams && event.streams[0]) {
-          setRemoteStream(event.streams[0]);
-        }
-      });
-
-      peer.addEventListener('icecandidate', (event: any) => {
-        if (event.candidate && socket.current) {
-          socket.current.send(JSON.stringify({
-            type: 'ice-candidate',
-            candidate: event.candidate,
-          }));
-        }
-      });
-
-      // 4. Connect Signaling
-      const token = await SecureStore.getItemAsync('access_token');
-      // Correctly derive WS URL without double slashes
-      const wsBase = API_BASE_URL.replace('http', 'ws').replace(/\/api\/?$/, '');
-      const fullUrl = `${wsBase}/ws/video/${bookingId}/?token=${token}`;
-      
-      console.log('[VideoContext] Connecting to Signaling:', fullUrl);
-      socket.current = new WebSocket(fullUrl);
-
-      const connectionTimeout = setTimeout(() => {
-        if (isConnecting && !isCallActive) {
-          console.warn('[VideoContext] Signaling connection timed out');
-          setIsConnecting(false);
-          // Set call active anyway in mock mode so they can see the UI
-          if (WebRTC.isMock) setIsCallActive(true);
-        }
-      }, 10000);
-
-      socket.current.onopen = () => {
-        console.log('[VideoContext] Signaling Connected');
-        clearTimeout(connectionTimeout);
-        setIsConnecting(false);
-        setIsCallActive(true);
-      };
-
-      socket.current.onerror = (e) => {
-        console.error('[VideoContext] Signaling Error:', e);
-        clearTimeout(connectionTimeout);
-        setIsConnecting(false);
-      };
-
-      socket.current.onmessage = async (e) => {
-        const data = JSON.parse(e.data);
-        switch (data.type) {
-          case 'offer':
-            await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
-            const answer = await peer.createAnswer();
-            await peer.setLocalDescription(answer);
-            socket.current?.send(JSON.stringify({ type: 'answer', sdp: answer }));
-            break;
-          case 'answer':
-            await peer.setRemoteDescription(new RTCSessionDescription(data.sdp));
-            break;
-          case 'ice-candidate':
-            await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
-            break;
-          case 'participant-joined':
-            if (panditRole) {
-              const offer = await peer.createOffer();
-              await peer.setLocalDescription(offer);
-              socket.current?.send(JSON.stringify({ type: 'offer', sdp: offer }));
-            }
-            break;
-          case 'chat':
-            onChatMessage(data, bookingId);
-            break;
-          case 'chat-history':
-            setMessages(data.messages.map((m: any) => ({
-                id: m.chat_id,
-                chatId: bookingId.toString(),
-                senderId: m.sender === 'user' ? 'customer' : 'pandit',
-                text: m.message,
-                type: 'text',
-                timestamp: new Date(m.timestamp).getTime(),
-                isRead: true,
-            })));
-            break;
-        }
-      };
-
-    } catch (err) {
-      console.error('[VideoContext] Error starting call:', err);
-      Alert.alert('Call Error', 'Could not initialize video call.');
-      cleanup();
-    }
-  };
-
-  const onChatMessage = (data: any, bookingId: number) => {
+  const onChatMessage = useCallback((data: any, bookingId: number) => {
     const newMessage: ChatMessage = {
       id: data.chat_id || Math.random().toString(),
       chatId: bookingId.toString(),
@@ -260,6 +142,68 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
     setMessages((prev) => [...prev, newMessage]);
     setUnreadCount((c) => c + 1);
+  }, []);
+
+  const handleBridgeMessage = useCallback((event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      console.log('[VideoBridge]', data.type, data.message || '');
+
+      switch (data.type) {
+        case 'signaling_connected':
+          setIsConnecting(false);
+          setIsCallActive(true);
+          break;
+        case 'remote_stream_added':
+          console.log('[VideoBridge] Remote stream active');
+          break;
+        case 'error':
+          Alert.alert('Call Error', data.message);
+          cleanup();
+          break;
+        case 'log':
+          console.log('[VideoBridge LOG]', data.message);
+          break;
+      }
+    } catch (e) {
+      console.error('[VideoBridge] Parse Error:', e);
+    }
+  }, [cleanup]);
+
+  const startCall = async (bookingId: number, userName: string, panditRole: boolean, name?: string, avatar?: string) => {
+    if (isCallActive) return;
+    
+    setIsConnecting(true);
+    setActiveBookingId(bookingId);
+    setIsPandit(panditRole);
+    if (name) setPeerName(name);
+    if (avatar) setPeerAvatar(avatar);
+
+    try {
+      // Notify Backend & Get Room ID
+      let roomId: number | string | null = null;
+      try {
+        const roomRes = await fetchVideoRoom(bookingId);
+        roomId = roomRes.id || roomRes.room_id || (roomRes.data && (roomRes.data.id || roomRes.data.room_id));
+      } catch {
+        const joinRes = await joinVideoRoom(bookingId);
+        roomId = joinRes.id || joinRes.room_id || (joinRes.data && (joinRes.data.id || joinRes.data.room_id));
+      }
+      roomIdRef.current = roomId;
+      
+      if (panditRole && roomIdRef.current) {
+        await startVideoRoom(roomIdRef.current);
+      }
+
+      // NOTE: In the bridge-based approach, the actual WebRTC handshake happens
+      // inside the WebView. We just need to ensure the WebView is rendered.
+      // isConnecting = true will trigger the FloatingCallLayer to show the WebView.
+      
+    } catch (err) {
+      console.error('[VideoContext] Error starting call:', err);
+      Alert.alert('Call Error', 'Could not initialize video call.');
+      cleanup();
+    }
   };
 
   const endCall = async () => {
@@ -275,29 +219,25 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const toggleMic = () => {
-    if (localStream) {
-      const track = localStream.getAudioTracks()[0];
-      if (track) {
-        track.enabled = !track.enabled;
-        setIsMicOn(track.enabled);
-      }
+    const nextState = !isMicOn;
+    setIsMicOn(nextState);
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`window.toggleMic(${nextState})`);
     }
   };
 
   const toggleVideo = () => {
-    if (localStream) {
-      const track = localStream.getVideoTracks()[0];
-      if (track) {
-        track.enabled = !track.enabled;
-        setIsVideoOn(track.enabled);
-      }
+    const nextState = !isVideoOn;
+    setIsVideoOn(nextState);
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`window.toggleVideo(${nextState})`);
     }
   };
 
   const flipCamera = () => {
-    if (localStream) {
-      localStream.getVideoTracks().forEach((track: any) => track._switchCamera());
-      setIsFrontCamera(!isFrontCamera);
+    setIsFrontCamera(!isFrontCamera);
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`window.flipCamera()`);
     }
   };
 
@@ -313,7 +253,11 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStream, remoteStream, isCallActive, isConnecting,
       isMicOn, isVideoOn, isFrontCamera, messages, unreadCount,
       activeBookingId, peerName, peerAvatar, isPandit,
-      startCall, endCall, toggleMic, toggleVideo, flipCamera, sendMessage, clearUnread
+      isMinimized, setIsMinimized,
+      webViewRef: webViewRef,
+      setWebViewRef: (ref) => { webViewRef.current = ref; },
+      startCall, endCall, toggleMic, toggleVideo, flipCamera, sendMessage, clearUnread,
+      handleBridgeMessage
     }}>
       {children}
     </VideoCallContext.Provider>
