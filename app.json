@@ -7,7 +7,7 @@
     },
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/pandit-logo.png",
+    "icon": "./src/assets/images/pandit-logo.png",
     "scheme": "pandityatraapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/pandit-logo.png",
+        "foregroundImage": "./src/assets/images/pandit-logo.png",
         "backgroundColor": "#FFF7ED"
       },
       "edgeToEdgeEnabled": true,
@@ -32,7 +32,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./src/assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -45,7 +45,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/pandit-logo.png",
+          "image": "./src/assets/images/pandit-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#FFF7ED",

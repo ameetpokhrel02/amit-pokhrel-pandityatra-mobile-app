@@ -5,10 +5,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": [
-        "./*",
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "types": ["react", "react-native", "expo"]
   },
