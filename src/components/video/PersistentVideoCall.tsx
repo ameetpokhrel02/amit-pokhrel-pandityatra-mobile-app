@@ -73,7 +73,7 @@ export const PersistentVideoCall = () => {
   const loadAsset = async () => {
     try {
         // Load the local HTML asset
-        const asset = Asset.fromModule(require('../../../assets/video_bridge.html'));
+        const asset = Asset.fromModule(require('@/assets/video_bridge.html'));
         await asset.downloadAsync();
         setBridgeUri(asset.localUri || asset.uri);
     } catch (e) {
