@@ -14,7 +14,6 @@
   "dependencies": {
     "@bishaldahal/react-native-khalti-checkout": "^0.2.2",
     "@daily-co/daily-js": "^0.89.1",
-    "@expo/ui": "~0.2.0-beta.9",
     "@expo/vector-icons": "^15.1.1",
     "@lottiefiles/dotlottie-react": "^0.13.5",
     "@radix-ui/react-slot": "^1.2.4",
