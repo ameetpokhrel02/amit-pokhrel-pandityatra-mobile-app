@@ -284,7 +284,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={{ height: 160 }} />
+        <View style={{ height: 24 }} />
 
       <LogoutModal
         visible={showLogoutModal}

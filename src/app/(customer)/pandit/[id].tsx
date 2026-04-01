@@ -67,7 +67,7 @@ export default function PanditProfileScreen() {
             const mappedPandit: Pandit = {
               id: String(data.id),
               name: data.user_details?.full_name || 'Unknown',
-              image: getImageUrl(data.user_details?.profile_pic_url) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+              image: getImageUrl(data.user_details?.profile_pic) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
               location: 'Kathmandu, Nepal',
               rating: data.rating || 5.0,
               reviewCount: data.review_count || 0,
@@ -88,7 +88,18 @@ export default function PanditProfileScreen() {
               isVerified: data.is_verified
             };
             setPandit(mappedPandit);
-            setReviews(reviewsData);
+            // Reviews mapping
+            const rawReviews: any = reviewsData;
+            const safeReviews = Array.isArray(rawReviews) 
+                ? rawReviews 
+                : (rawReviews?.data || rawReviews?.results || []);
+                
+            const mappedReviews = Array.isArray(safeReviews) ? safeReviews.map((r: any) => ({
+                ...r,
+                customer_avatar: r.customer_avatar,
+                customer_name: r.customer_name
+            })) : [];
+            setReviews(mappedReviews);
           }
         }
       } catch (e) {
@@ -134,7 +145,11 @@ export default function PanditProfileScreen() {
       >
         {/* Responsive Hero Header */}
         <View className="w-full h-[440px] relative">
-          <Image source={{ uri: pandit.image || undefined }} className="w-full h-full" contentFit="cover" />
+          <Image 
+            source={{ uri: pandit.image || undefined }} 
+            style={{ width: '100%', height: '100%' }} 
+            contentFit="cover" 
+          />
           <View className="absolute inset-0 bg-black/40" />
           
           {/* Top Actions with Safe Area */}
@@ -283,7 +298,7 @@ export default function PanditProfileScreen() {
           disabled={!(pandit.isAvailable ?? true)}
         >
           <Text className="text-white font-black text-lg uppercase tracking-widest">
-            {(pandit.isAvailable ?? true) ? "Book Appointment" : "Busy Now"}
+            {(pandit.isAvailable ?? true) ? "BOOK NOW" : "BUSY NOW"}
           </Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" className="ml-2" />
         </TouchableOpacity>
@@ -309,8 +324,9 @@ function ServiceCard({ service, onBook }: { service: any, onBook: () => void }) 
         <View className="bg-white p-5 rounded-[32px] shadow-sm shadow-zinc-100 border border-zinc-50">
             <View className="flex-row mb-4">
                 <Image 
-                    source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }} 
-                    className="w-20 h-20 rounded-2xl" 
+                    source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }} 
+                    style={{ width: 80, height: 80, borderRadius: 16 }}
+                    contentFit="cover"
                 />
                 <View className="flex-1 ml-4 justify-center">
                     <Text className="text-zinc-800 font-extrabold text-lg mb-1">{service.name}</Text>
@@ -342,15 +358,15 @@ function ReviewCard({ review }: { review: any }) {
         <View className="bg-white p-5 rounded-[32px] shadow-sm shadow-zinc-100 border border-zinc-50">
             <View className="flex-row justify-between items-start mb-4">
                 <View className="flex-row items-center">
-                    <View className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center border border-orange-100">
-                        {review.user_details?.profile_pic_url ? (
-                            <Image source={{ uri: review.user_details.profile_pic_url }} className="w-full h-full rounded-full" />
+                    <View className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center border border-orange-100 overflow-hidden">
+                        {review.customer_avatar ? (
+                            <Image source={{ uri: getImageUrl(review.customer_avatar) || undefined }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                         ) : (
-                            <Text className="text-primary font-black">{review.user_details?.full_name?.[0]?.toUpperCase() || 'U'}</Text>
+                            <Text className="text-primary font-black">{review.customer_name?.[0]?.toUpperCase() || 'U'}</Text>
                         )}
                     </View>
                     <View className="ml-3">
-                        <Text className="text-zinc-800 font-extrabold text-sm">{review.user_details?.full_name || 'Anonymous'}</Text>
+                        <Text className="text-zinc-800 font-extrabold text-sm">{review.customer_name || 'Anonymous'}</Text>
                         <Text className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">{dayjs(review.created_at).fromNow()}</Text>
                     </View>
                 </View>

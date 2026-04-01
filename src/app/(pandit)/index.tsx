@@ -59,7 +59,7 @@ export default function PanditDashboardScreen() {
       
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 160 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF6F00" />
         }

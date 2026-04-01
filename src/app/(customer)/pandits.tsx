@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/theme/colors';
 import { usePanditStore } from '@/store/pandit.store';
 import { useAuthStore } from '@/store/auth.store';
@@ -13,6 +13,7 @@ import { useTheme } from '@/store/ThemeContext';
 
 export default function PanditListingPage() {
   const router = useRouter();
+  const { searchQuery } = useLocalSearchParams<{ searchQuery?: string }>();
   const { pandits, isLoading, error, fetchPandits, filter, setFilter } = usePanditStore();
   const { isAuthenticated } = useAuthStore();
   const [isFilterVisible, setFilterVisible] = useState(false);
@@ -21,8 +22,12 @@ export default function PanditListingPage() {
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    fetchPandits();
-  }, []);
+    if (searchQuery) {
+      setFilter({ searchQuery });
+    } else {
+      fetchPandits();
+    }
+  }, [searchQuery]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -164,7 +169,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingTop: 20,
-    paddingBottom: 160,
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,

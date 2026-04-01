@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
   searchHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 44 },
   searchInput: { flex: 1, height: 44, borderRadius: 14, paddingHorizontal: 15, fontSize: 15, fontWeight: '500' },
-  scrollContent: { paddingBottom: 160 },
+  scrollContent: { paddingBottom: 20 },
   bannerSection: { marginVertical: 10 },
   bannerItem: { width: width, paddingHorizontal: 20, height: 180 },
   bannerImage: { width: '100%', height: '100%', borderRadius: 25 },

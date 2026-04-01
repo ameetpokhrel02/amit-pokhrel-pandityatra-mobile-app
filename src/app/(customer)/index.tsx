@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -10,7 +10,8 @@ import {
   StatusBar,
   RefreshControl,
   FlatList,
-  StyleSheet
+  StyleSheet,
+  TextInput
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -50,6 +51,18 @@ const BANNERS = [
   }
 ];
 
+// Helper for dynamic category icons
+const getCategoryIcon = (name: string): any => {
+    const n = name.toLowerCase();
+    if (n.includes('vedic')) return 'book-open-variant';
+    if (n.includes('marri') || n.includes('vivah')) return 'ring';
+    if (n.includes('havan') || n.includes('fire')) return 'fire';
+    if (n.includes('sanskar')) return 'heart-pulse';
+    if (n.includes('birth')) return 'cake-variant';
+    if (n.includes('death') || n.includes('shrad')) return 'feather';
+    return 'flower-tulip';
+};
+
 export default function CustomerHomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -62,6 +75,7 @@ export default function CustomerHomeScreen() {
 
   const {
     services,
+    categories,
     bookings,
     samagriItems,
     wishlist,
@@ -71,6 +85,23 @@ export default function CustomerHomeScreen() {
     handleToggleWishlist,
     handleAuthAction,
   } = useDashboardData();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+
+  const filteredServices = useMemo(() => {
+    let filtered = services;
+    if (selectedCategoryId) {
+      filtered = filtered.filter(s => s.category === selectedCategoryId);
+    }
+    if (searchQuery) {
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return filtered;
+  }, [searchQuery, selectedCategoryId, services]);
 
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<any>(null);
@@ -91,7 +122,7 @@ export default function CustomerHomeScreen() {
       }
     }, 4000);
     return () => clearInterval(interval);
-  }, []); // Auth dependencies are now handled in the hook
+  }, []);
 
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
@@ -161,14 +192,14 @@ export default function CustomerHomeScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 180 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         {/* Banner Carousel */}
-        <View style={{ height: 220, marginBottom: 24, marginTop: 16 }}>
+        <View style={{ height: 200, marginBottom: 12, marginTop: 8 }}>
           <FlatList
             ref={flatListRef}
             data={BANNERS}
@@ -192,7 +223,7 @@ export default function CustomerHomeScreen() {
             }}
             renderItem={({ item }) => (
               <View style={{ width: SCREEN_WIDTH, paddingHorizontal: 20, height: 200 }}>
-                <View style={[styles.bannerWrapper, { backgroundColor: isDark ? '#2A2A2A' : '#F4F4F5' }]}>
+                <View style={[styles.bannerWrapper, { backgroundColor: isDark ? '#2A2A2E' : '#F4F4F5' }]}>
                     <Image 
                       source={item.image} 
                       style={{ width: '100%', height: '100%' }} 
@@ -216,34 +247,87 @@ export default function CustomerHomeScreen() {
           />
         </View>
 
-        {/* Quick Actions Grid */}
-        <View style={styles.quickActionsWrap}>
-          <View style={styles.quickActionsRow}>
-            <QuickActionItem title="Book Puja" icon="color-filter-outline" onPress={() => handleAuthAction('/(customer)/pandits')} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Find Pandit" icon="people-outline" onPress={() => router.push('/(customer)/pandits')} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Shop Samagri" icon="basket-outline" onPress={() => router.push('/(customer)/shop')} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Kundali" icon="sparkles-outline" onPress={() => handleAuthAction('/(customer)/kundali')} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Panchang" icon="calendar-outline" onPress={() => router.push('/(customer)/panchang' as any)} colors={colors} isDark={isDark} />
-            <QuickActionItem title="Ask AI" icon="robot-ai" onPress={() => handleAuthAction('/chat/ai-guide', { mode: 'ai' })} colors={colors} isDark={isDark} />
-          </View>
+        {/* Quick Utilities Row */}
+        <View style={styles.sectionWrap}>
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.utilityRowScroller}>
+              <UtilityItem title="Puja" icon="flame" onPress={() => router.push('/(customer)/services')} colors={colors} />
+              <UtilityItem title="Find Pandit" icon="people" onPress={() => router.push('/(customer)/pandits')} colors={colors} />
+              <UtilityItem title="Shop" icon="basket" onPress={() => router.push('/(customer)/shop')} colors={colors} />
+              <UtilityItem title="Ask AI" icon="chatbubbles" onPress={() => handleAuthAction('/chat/ai-guide', { mode: 'ai' })} colors={colors} />
+              <UtilityItem title="Kundali" icon="sparkles" onPress={() => handleAuthAction('/(customer)/kundali')} colors={colors} />
+              <UtilityItem title="Panchang" icon="calendar" onPress={() => router.push('/(customer)/panchang' as any)} colors={colors} />
+           </ScrollView>
         </View>
 
-        <DailyPanchang />
-
-        {/* Featured Pujas */}
-        <View style={styles.sectionWrap}>
-            <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Pujas</Text>
-                <TouchableOpacity onPress={() => router.push('/(customer)/pandits')}>
-                    <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
-                </TouchableOpacity>
+        {/* Home Search bar */}
+        <View style={[styles.sectionWrap, { marginTop: 24 }]}>
+            <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F3F4F6' }]}>
+                <Ionicons name="search" size={20} color={colors.primary} />
+                <TextInput
+                    style={[styles.searchInput, { color: colors.text }]}
+                    placeholder="Search Sacred Rituals..."
+                    placeholderTextColor={isDark ? '#555' : '#999'}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+                {searchQuery ? (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                        <Ionicons name="close-circle" size={20} color={isDark ? '#444' : '#CCC'} />
+                    </TouchableOpacity>
+                ) : null}
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
-                {services.map((service) => (
-                    <ServiceCard key={service.id} service={service} router={router} colors={colors} isDark={isDark} />
+        </View>
+
+        {/* Scrolling Category Filter */}
+        <View style={{ height: 60, marginTop: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollFilter}>
+                <TouchableOpacity 
+                    style={[
+                        styles.catPill, 
+                        !selectedCategoryId && { backgroundColor: Number(colors.primary) ? colors.primary : '#FF6F00', borderColor: colors.primary }
+                    ]}
+                    onPress={() => setSelectedCategoryId(null)}
+                >
+                    <MaterialCommunityIcons name="flower-tulip" size={16} color={!selectedCategoryId ? '#FFF' : colors.primary} />
+                    <Text style={[styles.catPillText, !selectedCategoryId ? { color: '#FFF' } : { color: colors.text }]}>All</Text>
+                </TouchableOpacity>
+                {categories.map(cat => (
+                    <TouchableOpacity 
+                        key={cat.id}
+                        style={[
+                            styles.catPill, 
+                            selectedCategoryId === cat.id && { backgroundColor: Number(colors.primary) ? colors.primary : '#FF6F00', borderColor: colors.primary }
+                        ]}
+                        onPress={() => setSelectedCategoryId(cat.id)}
+                    >
+                        <MaterialCommunityIcons name={getCategoryIcon(cat.name)} size={16} color={selectedCategoryId === cat.id ? '#FFF' : colors.primary} />
+                        <Text style={[styles.catPillText, selectedCategoryId === cat.id ? { color: '#FFF' } : { color: colors.text }]}>{cat.name}</Text>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
         </View>
+
+        {/* Dynamic Ritual Listing */}
+        <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ritual Discovery</Text>
+                <Text style={[styles.foundCount, { color: colors.primary }]}>{filteredServices.length} found</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+                {filteredServices.length > 0 ? (
+                    filteredServices.map((service) => (
+                        <ServiceCard key={service.id} service={service} router={router} colors={colors} isDark={isDark} />
+                    ))
+                ) : (
+                    <View style={styles.emptyRitualWrap}>
+                        <Ionicons name="search-outline" size={40} color={isDark ? '#444' : '#DDD'} />
+                        <Text style={[styles.emptyRitualText, { color: isDark ? '#AAA' : '#666' }]}>No rituals found</Text>
+                    </View>
+                )}
+            </ScrollView>
+        </View>
+
+        <DailyPanchang />
 
         {/* My Next Puja Card */}
         {bookings.length > 0 && bookings[0] && (
@@ -341,7 +425,7 @@ export default function CustomerHomeScreen() {
                 <Text style={styles.quoteText}>
                     &quot;Devotion is the bridge between the human and the divine.&quot;
                 </Text>
-                <View style={[styles.quoteDivider, { backgroundColor: colors.primary + '60' }]} />
+                <View style={styles.quoteDivider} />
                 <Text style={[styles.quoteAuthor, { color: colors.primary + '90' }]}>PanditYatra Spiritual Wisdom</Text>
             </View>
         </View>
@@ -367,22 +451,18 @@ function HeaderActionBtn({ icon, badgeCount, onPress, colors, isDark }: { icon: 
     );
 }
 
-function QuickActionItem({ title, icon, onPress, colors, isDark }: { title: string, icon: any, onPress: () => void, colors: any, isDark: boolean }) {
-  return (
-    <TouchableOpacity 
-        style={[styles.quickAction, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
-        onPress={onPress}
-    >
-      <View style={[styles.quickActionIcon, { backgroundColor: isDark ? '#3B2200' : '#FFF7ED' }]}>
-        {icon === 'robot-ai' ? (
-          <MaterialCommunityIcons name="robot-outline" size={26} color={colors.primary} />
-        ) : (
-          <Ionicons name={icon} size={26} color={colors.primary} />
-        )}
-      </View>
-      <Text style={[styles.quickActionText, { color: colors.text }]} numberOfLines={1}>{title}</Text>
-    </TouchableOpacity>
-  );
+function UtilityItem({ title, icon, onPress, colors }: { title: string, icon: any, onPress: () => void, colors: any }) {
+    return (
+        <TouchableOpacity 
+            style={styles.utilityItem}
+            onPress={onPress}
+        >
+            <View style={[styles.utilityIconWrap, { backgroundColor: colors.primary + '10' }]}>
+                <Ionicons name={icon as any} size={20} color={colors.primary} />
+            </View>
+            <Text style={[styles.utilityText, { color: colors.text + 'A0' }]}>{title}</Text>
+        </TouchableOpacity>
+    );
 }
 
 function ServiceCard({ service, router, colors, isDark }: any) {
@@ -393,18 +473,21 @@ function ServiceCard({ service, router, colors, isDark }: any) {
         >
             <View style={styles.serviceImageWrap}>
                 <Image 
-                    source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }} 
+                    source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }} 
                     style={{ width: '100%', height: '100%' }}
                     contentFit="cover" 
                 />
                 <View style={styles.featuredBadge}>
-                    <Text style={[styles.featuredText, { color: colors.primary }]}>Featured</Text>
+                    <Text style={[styles.featuredText, { color: colors.primary }]}>Starting ₹{service.base_price}</Text>
                 </View>
             </View>
             <View style={styles.serviceInfo}>
                 <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={1}>{service.name}</Text>
                 <View style={styles.serviceBottom}>
-                    <Text style={[styles.servicePrice, { color: colors.primary }]}>₹{service.base_price}</Text>
+                   <View style={styles.durationTag}>
+                      <Ionicons name="time-outline" size={12} color={colors.primary} />
+                      <Text style={[styles.durationText, { color: colors.text + '80' }]}>{service.base_duration_minutes || 60} min</Text>
+                   </View>
                     <View style={[styles.serviceArrow, { backgroundColor: isDark ? '#3B2200' : '#FFF7ED' }]}>
                         <Ionicons name="arrow-forward" size={14} color={colors.primary} />
                     </View>
@@ -470,13 +553,86 @@ const styles = StyleSheet.create({
   bannerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', marginBottom: 24, lineHeight: 20, width: '66%', textTransform: 'uppercase', letterSpacing: 2 },
   bannerBtn: { alignSelf: 'flex-start', backgroundColor: '#FFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16 },
   bannerBtnText: { fontWeight: '900', fontSize: 12, textTransform: 'uppercase' },
-  quickActionsWrap: { paddingHorizontal: 24, marginBottom: 24 },
-  quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
-  quickAction: { padding: 14, borderRadius: 28, alignItems: 'center', borderWidth: 1, width: (SCREEN_WIDTH - 64) / 3 },
-  quickActionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  quickActionText: { fontWeight: '700', fontSize: 10, textAlign: 'center', textTransform: 'uppercase', letterSpacing: -0.5 },
-  sectionWrap: { paddingHorizontal: 24, marginTop: 32 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 },
+  
+  searchContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    height: 56, 
+    borderRadius: 16, 
+    borderWidth: 1,
+  },
+  searchInput: { 
+    flex: 1, 
+    marginLeft: 12, 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  categoryScrollFilter: { 
+    paddingHorizontal: 24, 
+    gap: 12, 
+    alignItems: 'center' 
+  },
+  catPill: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 10, 
+    borderRadius: 99, 
+    borderWidth: 1.5, 
+    borderColor: '#FF6F0020',
+    gap: 8,
+  },
+  catPillText: { 
+    fontSize: 13, 
+    fontWeight: '800' 
+  },
+  foundCount: {
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  emptyRitualWrap: { 
+    padding: 32, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    width: SCREEN_WIDTH - 48 
+  },
+  emptyRitualText: { 
+    fontSize: 13, 
+    fontWeight: '700', 
+    marginTop: 8 
+  },
+  utilityRowScroller: {
+    paddingRight: 24,
+    gap: 12,
+    alignItems: 'center',
+  },
+  utilityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  utilityIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  utilityText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  sectionWrap: { paddingHorizontal: 24, marginTop: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   sectionTitle: { fontSize: 20, fontWeight: '900' },
   seeAllText: { fontWeight: '700', fontSize: 14 },
   bookingCard: { padding: 28, borderRadius: 48, borderWidth: 1 },
@@ -493,13 +649,14 @@ const styles = StyleSheet.create({
   joinBtnText: { color: '#FFF', fontWeight: '900', fontSize: 12, textTransform: 'uppercase', letterSpacing: 3 },
   serviceCard: { width: 224, borderRadius: 40, overflow: 'hidden', borderWidth: 1 },
   serviceImageWrap: { width: '100%', height: 160, position: 'relative' },
-  featuredBadge: { position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 99 },
-  featuredText: { fontWeight: '900', fontSize: 10, textTransform: 'uppercase' },
+  featuredBadge: { position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   serviceInfo: { padding: 20 },
   serviceName: { fontWeight: '900', fontSize: 18, marginBottom: 4 },
   serviceBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  servicePrice: { fontWeight: '900', fontSize: 18 },
+  durationTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  durationText: { fontSize: 12, fontWeight: '700' },
   serviceArrow: { width: 32, height: 32, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  featuredText: { fontWeight: '900', fontSize: 10, textTransform: 'uppercase' },
   samagriCard: { borderRadius: 40, padding: 12, marginBottom: 8, borderWidth: 1, position: 'relative', width: (SCREEN_WIDTH - 64) / 1.8 },
   samagriImageWrap: { width: '100%', height: 176, borderRadius: 32, overflow: 'hidden', position: 'relative' },
   wishlistBtn: { position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
@@ -507,9 +664,9 @@ const styles = StyleSheet.create({
   samagriName: { fontWeight: '900', fontSize: 16, marginBottom: 6 },
   samagriPrice: { fontWeight: '900', fontSize: 18 },
   samagriOldPrice: { fontSize: 12, fontWeight: '700', textDecorationLine: 'line-through' },
-  addBtn: { position: 'absolute', bottom: -4, right: -4, width: 48, height: 48, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 5 },
-  quoteCard: { padding: 48, borderRadius: 56, alignItems: 'center', position: 'relative', overflow: 'hidden' },
+  addBtn: { position: 'absolute', bottom: -10, right: -10, width: 56, height: 56, borderRadius: 24, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5 },
+  quoteCard: { padding: 48, borderRadius: 56, alignItems: 'center', position: 'relative', overflow: 'hidden', backgroundColor: '#18181B' },
   quoteText: { color: 'rgba(255,255,255,0.8)', textAlign: 'center', fontStyle: 'italic', fontSize: 18, lineHeight: 28, fontWeight: '500', paddingHorizontal: 16, marginBottom: 16 },
-  quoteDivider: { width: 64, height: 6, borderRadius: 3, marginTop: 8 },
+  quoteDivider: { width: 64, height: 6, borderRadius: 3, marginTop: 8, backgroundColor: '#FF6F00' },
   quoteAuthor: { fontSize: 8, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 5, marginTop: 24 },
 });

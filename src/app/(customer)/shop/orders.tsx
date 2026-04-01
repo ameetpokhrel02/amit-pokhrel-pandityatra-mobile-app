@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndi
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { myOrders } from '@/services/samagri.service';
+import { getImageUrl } from '@/utils/image';
 
 interface ShopOrder {
   id: number | string;
-  date?: string;
-  total?: number;
-  status?: string;
-  itemCount?: number;
-  previewImage?: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  items: any[];
 }
 
 export default function ShopOrdersScreen() {
@@ -19,11 +19,11 @@ export default function ShopOrdersScreen() {
   const [loading, setLoading] = useState(true);
 
   const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'Pending': return '#F59E0B';
-      case 'Shipped': return '#3B82F6';
-      case 'Delivered': return '#10B981';
-      case 'Cancelled': return '#EF4444';
+    switch (status?.toUpperCase()) {
+      case 'PENDING': return '#F59E0B';
+      case 'SHIPPED': return '#3B82F6';
+      case 'DELIVERED': return '#10B981';
+      case 'CANCELLED': return '#EF4444';
       default: return '#999';
     }
   };
@@ -44,28 +44,35 @@ export default function ShopOrdersScreen() {
     load();
   }, []);
 
-  const renderItem = ({ item }: { item: ShopOrder }) => (
-    <TouchableOpacity 
-      style={styles.orderCard}
-      onPress={() => router.push(`/(customer)/shop/order/${item.id}` as any)}
-    >
-      <Image
-        source={{ uri: item.previewImage || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' }}
-        style={styles.previewImage}
-      />
-      <View style={styles.orderInfo}>
-        <View style={styles.orderHeader}>
-          <Text style={styles.orderId}>ORD-{item.id}</Text>
-          <Text style={styles.orderDate}>{item.date || ''}</Text>
+  const renderItem = ({ item }: { item: ShopOrder }) => {
+    // Extract preview from first item
+    const firstItem = item.items && item.items.length > 0 ? item.items[0] : null;
+    const previewImg = firstItem?.samagri_item?.image || '';
+    const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : '';
+
+    return (
+      <TouchableOpacity 
+        style={styles.orderCard}
+        onPress={() => router.push(`/(customer)/shop/order/${item.id}` as any)}
+      >
+        <Image
+          source={{ uri: getImageUrl(previewImg) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' }}
+          style={styles.previewImage}
+        />
+        <View style={styles.orderInfo}>
+          <View style={styles.orderHeader}>
+            <Text style={styles.orderId}>ORD-{item.id}</Text>
+            <Text style={styles.orderDate}>{dateStr}</Text>
+          </View>
+          <Text style={styles.orderMeta}>{item.items?.length || 0} items • NPR {item.total_amount || 0}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status || 'Pending'}</Text>
+          </View>
         </View>
-        <Text style={styles.orderMeta}>{item.itemCount || 0} items • NPR {item.total || 0}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status || 'Pending'}</Text>
-        </View>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-    </TouchableOpacity>
-  );
+        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>

@@ -9,6 +9,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { listVendorProducts, deleteProduct, VendorProduct } from '@/services/vendor.service';
 import { getImageUrl } from '@/utils/image';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 export default function VendorProductsScreen() {
   const insets = useSafeAreaInsets();
@@ -19,6 +20,11 @@ export default function VendorProductsScreen() {
   const [products, setProducts] = useState<VendorProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Modal state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = async () => {
     try {
@@ -40,25 +46,24 @@ export default function VendorProductsScreen() {
     setRefreshing(false);
   }, []);
 
-  const confirmDelete = (id: number, name: string) => {
-    Alert.alert(
-      'Delete Product',
-      `Remove "${name}" from your store?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteProduct(id);
-              setProducts(prev => prev.filter(p => p.id !== id));
-            } catch {
-              Alert.alert('Error', 'Failed to delete product.');
-            }
-          }
-        }
-      ]
-    );
+  const openDeleteModal = (id: number, name: string) => {
+    setProductToDelete({ id, name });
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      setIsDeleting(true);
+      await deleteProduct(productToDelete.id);
+      setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+      setDeleteModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Failed to delete product.');
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
+    }
   };
 
   const renderItem = ({ item }: { item: VendorProduct }) => (
@@ -100,7 +105,7 @@ export default function VendorProductsScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: '#FF5252' + '15' }]}
-          onPress={() => confirmDelete(item.id, item.name)}
+          onPress={() => openDeleteModal(item.id, item.name)}
         >
           <Ionicons name="trash-outline" size={16} color="#FF5252" />
         </TouchableOpacity>
@@ -146,6 +151,18 @@ export default function VendorProductsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         />
       )}
+
+      <ConfirmationModal
+        visible={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product?"
+        message={`Are you sure you want to delete "${productToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        type="danger"
+        icon="trash"
+        isLoading={isDeleting}
+      />
     </View>
   );
 }

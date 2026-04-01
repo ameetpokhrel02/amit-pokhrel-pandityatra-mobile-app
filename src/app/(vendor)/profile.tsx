@@ -3,12 +3,16 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, TextInput, RefreshControl
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
+import { Button } from '@/components/ui/Button';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { getVendorProfile, listPayouts, requestPayout, VendorProfile, VendorPayout } from '@/services/vendor.service';
+import { getImageUrl } from '@/utils/image';
 
 const PAYOUT_STATUS_COLORS: Record<string, string> = {
   PENDING: '#FF9800', PAID: '#4CAF50', REJECTED: '#F44336',
@@ -17,7 +21,7 @@ const PAYOUT_STATUS_COLORS: Record<string, string> = {
 export default function VendorProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { colors, theme } = useTheme();
+  const { colors, theme, setMode } = useTheme();
   const { user, logout } = useAuthStore();
   const isDark = theme === 'dark';
 
@@ -27,6 +31,10 @@ export default function VendorProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [requesting, setRequesting] = useState(false);
+
+  // Modals
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const load = async () => {
     try {
@@ -54,6 +62,7 @@ export default function VendorProfileScreen() {
       Alert.alert('Insufficient Balance', `Your current balance is NPR ${balance}.`);
       return;
     }
+    
     Alert.alert('Request Payout', `Request NPR ${amount} payout?`, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -73,12 +82,33 @@ export default function VendorProfileScreen() {
     ]);
   };
 
-  const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => logout() }
-    ]);
+  const handleLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+    router.replace('/(public)/role-selection');
   };
+
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(false);
+    // In a real app, this would call a delete account service
+    Alert.alert("Account Deleted", "Your account has been queued for deletion.");
+    logout();
+    router.replace('/(public)/role-selection');
+  };
+
+  const renderSettingItem = (icon: any, label: string, onPress?: () => void, rightElement?: React.ReactNode) => (
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <View style={styles.rowLeft}>
+        <Ionicons name={icon} size={22} color={colors.text} />
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      </View>
+      {rightElement || <Ionicons name="chevron-forward" size={18} color={colors.text} style={{ opacity: 0.3 }} />}
+    </TouchableOpacity>
+  );
 
   if (loading) return (
     <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
@@ -88,104 +118,145 @@ export default function VendorProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, paddingTop: insets.top + 8 }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Shop Profile</Text>
-        <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: '#FF5252' + '15' }]} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={18} color="#FF5252" />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 100 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* Shop Identity Card */}
-        <View style={[styles.shopCard, { backgroundColor: colors.primary }]}>
-          <View style={styles.shopIconWrap}>
-            <MaterialCommunityIcons name="store" size={32} color={colors.primary} />
-          </View>
-          <Text style={styles.shopName}>{profile?.shop_name || user?.name}</Text>
-          <Text style={styles.shopType}>{profile?.business_type}</Text>
-          <View style={[styles.verifiedBadge, { backgroundColor: profile?.is_verified ? '#4CAF5030' : '#FF980030' }]}>
-            <Ionicons name={profile?.is_verified ? 'checkmark-circle' : 'time-outline'} size={14} color={profile?.is_verified ? '#4CAF50' : '#FF9800'} />
-            <Text style={{ color: profile?.is_verified ? '#4CAF50' : '#FF9800', fontSize: 12, fontWeight: '800' }}>
-              {profile?.is_verified ? 'Verified Vendor' : 'Pending Verification'}
-            </Text>
-          </View>
+        <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text }]}>Shop Profile</Text>
         </View>
 
-        {/* Shop Details */}
+        {/* Profile Header Section */}
+        <View style={styles.profileSection}>
+            <View style={[styles.imageContainer, { backgroundColor: colors.primary + '15' }]}>
+              {profile?.profile_pic ? (
+                <Image
+                  source={{ uri: getImageUrl(profile.profile_pic) || profile.profile_pic }}
+                  style={styles.profilePic}
+                  contentFit="cover"
+                />
+              ) : (
+                <MaterialCommunityIcons name="store" size={40} color={colors.primary} />
+              )}
+            </View>
+            <View style={styles.nameContainer}>
+                <Text style={[styles.userName, { color: colors.text }]}>{profile?.shop_name || user?.name || 'Vendor'}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: profile?.is_verified ? '#DCFCE7' : '#FEF3C7' }]}>
+                    <Ionicons name={profile?.is_verified ? "checkmark-circle" : "time"} size={14} color={profile?.is_verified ? '#166534' : '#92400E'} />
+                    <Text style={[styles.roleText, { color: profile?.is_verified ? '#166534' : '#92400E', marginLeft: 4 }]}>
+                        {profile?.is_verified ? 'VERIFIED VENDOR' : 'PENDING VERIFICATION'}
+                    </Text>
+                </View>
+            </View>
+        </View>
+
+        {/* Professional Details Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Shop Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Professional Details</Text>
+          {renderSettingItem("newspaper-outline", "Edit Shop Details", () => {})}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("sparkles-outline", "My Products", () => router.push('/(vendor)/products' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("star-outline", "My Reviews", () => {})}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("wallet-outline", "Earnings & Wallet", () => {})}
+        </View>
+
+        {/* Shop Information Section */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Shop Information</Text>
           <InfoRow icon="person-outline" label="Owner" value={profile?.full_name || user?.name} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <InfoRow icon="mail-outline" label="Email" value={profile?.email || user?.email} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <InfoRow icon="location-outline" label="Location" value={profile?.city} colors={colors} />
-          <InfoRow icon="map-outline" label="Address" value={profile?.address} colors={colors} />
         </View>
 
-        {/* Bank Info */}
+        {/* Bank Details Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Bank Details</Text>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Bank Details</Text>
           <InfoRow icon="card-outline" label="Account" value={profile?.bank_account_number ? '••••' + profile.bank_account_number.slice(-4) : '—'} colors={colors} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <InfoRow icon="business-outline" label="Bank" value={profile?.bank_name} colors={colors} />
-          <InfoRow icon="person-outline" label="Holder" value={profile?.account_holder_name} colors={colors} />
         </View>
 
-        {/* Balance & Payout */}
+        {/* Wallet & Payout Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Wallet & Payouts</Text>
-
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Wallet & Payouts</Text>
+          
           <View style={[styles.balanceRow, { backgroundColor: colors.primary + '10' }]}>
             <MaterialCommunityIcons name="wallet" size={20} color={colors.primary} />
             <Text style={[styles.balanceLabel, { color: colors.text }]}>Available Balance</Text>
             <Text style={[styles.balanceValue, { color: colors.primary }]}>
-              NPR {parseFloat(profile?.balance || '0').toLocaleString()}
+                NPR {parseFloat(profile?.balance || '0').toLocaleString()}
             </Text>
           </View>
 
-          <View style={[styles.inputWrap, { backgroundColor: isDark ? '#2A2A2E' : '#F9FAFB', borderColor: isDark ? '#333' : '#E5E7EB' }]}>
-            <Ionicons name="cash-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+          <View style={[styles.inputWrap, { backgroundColor: isDark ? '#2A2A2E' : '#F9FAFB', borderColor: colors.border }]}>
             <TextInput
               style={[styles.input, { color: colors.text }]}
-              placeholder="Enter payout amount"
-              placeholderTextColor={colors.text + '50'}
+              placeholder="Enter amount"
+              placeholderTextColor={colors.text + '40'}
               keyboardType="decimal-pad"
               value={payoutAmount}
               onChangeText={setPayoutAmount}
             />
+            <TouchableOpacity 
+              style={[styles.payoutActionBtn, { backgroundColor: colors.primary }]}
+              onPress={handleRequestPayout}
+              disabled={requesting}
+            >
+              {requesting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.payoutActionBtnText}>Withdraw</Text>}
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={[styles.payoutBtn, { backgroundColor: colors.primary }, requesting && { opacity: 0.7 }]}
-            onPress={handleRequestPayout}
-            disabled={requesting}
-          >
-            {requesting ? <ActivityIndicator color="#FFF" /> : (
-              <><Ionicons name="wallet-outline" size={18} color="#FFF" /><Text style={styles.payoutBtnText}>Request Payout</Text></>
-            )}
-          </TouchableOpacity>
         </View>
 
-        {/* Payout History */}
+        {/* Account Actions Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Payout History</Text>
-          {payouts.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.text + '50' }]}>No payout requests yet.</Text>
-          ) : payouts.map(p => (
-            <View key={p.id} style={[styles.payoutRow, { borderBottomColor: isDark ? '#333' : '#F3F4F6' }]}>
-              <View>
-                <Text style={[styles.payoutAmount, { color: colors.text }]}>NPR {parseFloat(p.amount).toLocaleString()}</Text>
-                <Text style={[styles.payoutDate, { color: colors.text + '50' }]}>
-                  {new Date(p.requested_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </Text>
-              </View>
-              <View style={[styles.payoutStatus, { backgroundColor: (PAYOUT_STATUS_COLORS[p.status] || '#888') + '20' }]}>
-                <Text style={{ color: PAYOUT_STATUS_COLORS[p.status] || '#888', fontWeight: '800', fontSize: 11 }}>{p.status}</Text>
-              </View>
-            </View>
-          ))}
+          <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Account Actions</Text>
+          {renderSettingItem("moon-outline", "Dark Mode", () => setMode(isDark ? 'light' : 'dark'), 
+                <TouchableOpacity onPress={() => setMode(isDark ? 'light' : 'dark')}>
+                    <Ionicons name={isDark ? "toggle" : "toggle-outline"} size={32} color={isDark ? colors.primary : colors.text} />
+                </TouchableOpacity>
+            )}
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            {renderSettingItem(
+                "trash-outline", 
+                "Delete Account", 
+                () => setShowDeleteModal(true),
+                <Ionicons name="chevron-forward" size={18} color="#FF3B30" style={{ opacity: 0.5 }} />
+            )}
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            {renderSettingItem(
+                "log-out-outline", 
+                "Logout", 
+                () => setShowLogoutModal(true), 
+                <Ionicons name="chevron-forward" size={18} color="#FF3B30" style={{ opacity: 0.5 }} />
+            )}
         </View>
+
+        <ConfirmationModal
+            visible={showLogoutModal}
+            onClose={() => setShowLogoutModal(false)}
+            onConfirm={handleLogout}
+            title="Logout?"
+            message="Are you sure you want to logout from PanditYatra?"
+            confirmText="Yes, Logout"
+            type="warning"
+            icon="log-out"
+        />
+
+        <ConfirmationModal
+            visible={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={handleDeleteAccount}
+            title="Delete Account?"
+            message="This action is permanent and cannot be undone. All your shop data, products, and earnings history will be lost."
+            confirmText="Delete Permanently"
+            type="danger"
+            icon="trash-bin"
+        />
       </ScrollView>
     </View>
   );
@@ -194,8 +265,10 @@ export default function VendorProfileScreen() {
 function InfoRow({ icon, label, value, colors }: any) {
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={16} color={colors.primary} style={{ width: 20 }} />
-      <Text style={[styles.infoLabel, { color: colors.text + '60' }]}>{label}</Text>
+      <View style={styles.infoRowLeft}>
+        <Ionicons name={icon} size={20} color={colors.text} style={{ opacity: 0.6 }} />
+        <Text style={[styles.infoLabel, { color: colors.text, opacity: 0.6 }]}>{label}</Text>
+      </View>
       <Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>{value || '—'}</Text>
     </View>
   );
@@ -203,30 +276,31 @@ function InfoRow({ icon, label, value, colors }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
-  title: { fontSize: 22, fontWeight: '900' },
-  logoutBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16, gap: 16 },
-  shopCard: { borderRadius: 28, padding: 28, alignItems: 'center', gap: 8 },
-  shopIconWrap: { width: 64, height: 64, borderRadius: 20, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center' },
-  shopName: { color: '#FFF', fontSize: 22, fontWeight: '900' },
-  shopType: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginTop: 4 },
-  section: { borderRadius: 20, padding: 18, gap: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  infoLabel: { width: 54, fontSize: 12, fontWeight: '700' },
-  infoValue: { flex: 1, fontSize: 13, fontWeight: '600' },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14 },
-  balanceLabel: { flex: 1, fontSize: 14, fontWeight: '700' },
-  balanceValue: { fontSize: 18, fontWeight: '900' },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13 },
-  input: { flex: 1, fontSize: 15 },
-  payoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 16 },
-  payoutBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
-  payoutRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1 },
-  payoutAmount: { fontSize: 15, fontWeight: '800' },
-  payoutDate: { fontSize: 11, marginTop: 2 },
-  payoutStatus: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  emptyText: { fontSize: 13, textAlign: 'center', paddingVertical: 8 },
+  scroll: { padding: 20 },
+  header: { marginBottom: 24 },
+  title: { fontSize: 28, fontWeight: 'bold' },
+  profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
+  imageContainer: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  profilePic: { width: '100%', height: '100%' },
+  nameContainer: { marginLeft: 16, flex: 1 },
+  userName: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  roleBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, alignSelf: 'flex-start' },
+  roleText: { fontSize: 11, fontWeight: 'bold' },
+  section: { borderRadius: 20, padding: 20, marginBottom: 20 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  label: { fontSize: 16, fontWeight: '500' },
+  divider: { height: 1, marginVertical: 16 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  infoRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  infoLabel: { fontSize: 14, fontWeight: '500' },
+  infoValue: { fontSize: 14, fontWeight: '600', maxWidth: '60%' },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16, borderRadius: 16, marginBottom: 16 },
+  balanceLabel: { flex: 1, fontSize: 14, fontWeight: '600' },
+  balanceValue: { fontSize: 18, fontWeight: 'bold' },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingLeft: 16, paddingRight: 6, paddingVertical: 6 },
+  input: { flex: 1, fontSize: 16, height: 44 },
+  payoutActionBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  payoutActionBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
 });

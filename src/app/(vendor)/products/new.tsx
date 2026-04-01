@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert
+  ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/store/ThemeContext';
 import { createProduct } from '@/services/vendor.service';
 
@@ -20,24 +21,48 @@ export default function NewProductScreen() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [image, setImage] = useState<string | null>(null);
 
-  const inputStyle = [styles.inputWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }];
-  const textStyle = [styles.input, { color: colors.text }];
-  const phColor = colors.text + '50';
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   const handleCreate = async () => {
     if (!name.trim() || !price) {
       Alert.alert('Required', 'Product name and price are required.');
       return;
     }
+
     try {
       setLoading(true);
-      await createProduct({
-        name: name.trim(),
-        description: description.trim(),
-        price: parseFloat(price),
-        stock_quantity: parseInt(stock || '0', 10),
-      });
+      
+      const formData = new FormData();
+      formData.append('name', name.trim());
+      formData.append('description', description.trim());
+      formData.append('price', price);
+      formData.append('stock_quantity', stock || '0');
+
+      if (image) {
+        const uriParts = image.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        formData.append('image', {
+          uri: image,
+          name: `product_${Date.now()}.${fileType}`,
+          type: `image/${fileType}`,
+        } as any);
+      }
+
+      await createProduct(formData);
+      
       Alert.alert('✅ Product Added', 'Your product is awaiting admin approval.', [
         { text: 'Back to Products', onPress: () => router.back() }
       ]);
@@ -50,12 +75,15 @@ export default function NewProductScreen() {
     }
   };
 
+  const inputStyle = [styles.inputWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#E5E7EB' }];
+  const textStyle = [styles.input, { color: colors.text }];
+  const phColor = colors.text + '50';
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -65,10 +93,28 @@ export default function NewProductScreen() {
       </View>
 
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}>
-        {/* Icon */}
-        <View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
-          <MaterialCommunityIcons name="package-variant-plus" size={40} color={colors.primary} />
-        </View>
+        {/* Image Picker */}
+        <TouchableOpacity 
+            style={[styles.imagePicker, { backgroundColor: colors.card, borderColor: colors.primary + '30' }]} 
+            onPress={pickImage}
+        >
+          {image ? (
+            <View style={styles.imageContainer}>
+                <Image source={{ uri: image }} style={styles.previewImage} />
+                <View style={[styles.editIconBadge, { backgroundColor: colors.primary }]}>
+                    <Ionicons name="camera" size={16} color="#FFF" />
+                </View>
+            </View>
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '10' }]}>
+                <MaterialCommunityIcons name="image-plus" size={32} color={colors.primary} />
+              </View>
+              <Text style={[styles.pickText, { color: colors.text }]}>Add Product Image</Text>
+              <Text style={[styles.pickSubtext, { color: colors.text + '50' }]}>Click to browse gallery</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Product Details</Text>
 
@@ -137,7 +183,17 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
   title: { fontSize: 18, fontWeight: '800' },
   scroll: { padding: 20, gap: 14 },
-  iconWrap: { width: 80, height: 80, borderRadius: 24, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 8 },
+  imagePicker: {
+    height: 180, borderRadius: 24, borderStyle: 'dashed', borderWidth: 2,
+    overflow: 'hidden', marginBottom: 10,
+  },
+  imagePlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 6 },
+  iconCircle: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  pickText: { fontSize: 16, fontWeight: '700' },
+  pickSubtext: { fontSize: 12, fontWeight: '500' },
+  imageContainer: { flex: 1, position: 'relative' },
+  previewImage: { width: '100%', height: '100%' },
+  editIconBadge: { position: 'absolute', right: 12, bottom: 12, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
   sectionTitle: { fontSize: 15, fontWeight: '800' },
   inputWrap: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13 },
   icon: { marginRight: 10 },

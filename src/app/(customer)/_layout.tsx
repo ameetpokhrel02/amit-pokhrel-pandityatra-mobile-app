@@ -106,6 +106,7 @@ function LayoutContent() {
           'panchang',
           'preferences',
           'recordings',
+          'services',
           'video-player',
           'wishlist',
           'booking/index',
