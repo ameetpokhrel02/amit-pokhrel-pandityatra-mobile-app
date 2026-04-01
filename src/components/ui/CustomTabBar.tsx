@@ -1,13 +1,10 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/store/ThemeContext';
 import { useCartStore } from '@/store/cart.store';
-import { MotiView } from 'moti';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-
-const { width } = Dimensions.get('window');
 
 interface CustomTabBarProps extends BottomTabBarProps {
   role: 'customer' | 'pandit' | 'vendor';
@@ -19,9 +16,9 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
   const { totalItems } = useCartStore();
   const isDark = theme === 'dark';
 
-
   const getIcon = (routeName: string, focused: boolean, color: string) => {
     let iconName: any = 'home';
+    let usesMaterial = false;
 
     if (role === 'customer') {
       switch (routeName) {
@@ -33,7 +30,26 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
         case 'shop/index': iconName = focused ? 'bag-handle' : 'bag-handle-outline'; break;
         case 'profile': iconName = focused ? 'person' : 'person-outline'; break;
       }
+    } else if (role === 'vendor') {
+      switch (routeName) {
+        case 'index':
+          iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
+          usesMaterial = true;
+          break;
+        case 'products/index':
+          iconName = 'package-variant-closed';
+          usesMaterial = true;
+          break;
+        case 'orders/index':
+          iconName = focused ? 'receipt' : 'receipt-outline';
+          break;
+        case 'profile':
+          iconName = focused ? 'store' : 'store-outline';
+          usesMaterial = true;
+          break;
+      }
     } else {
+      // pandit
       switch (routeName) {
         case 'index': iconName = focused ? 'grid' : 'grid-outline'; break;
         case 'bookings': iconName = focused ? 'calendar' : 'calendar-outline'; break;
@@ -48,13 +64,14 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
 
     return (
       <View>
-        <Ionicons name={iconName} size={22} color={color} />
+        {usesMaterial ? (
+          <MaterialCommunityIcons name={iconName} size={24} color={color} />
+        ) : (
+          <Ionicons name={iconName} size={24} color={color} />
+        )}
         {role === 'customer' && (routeName === 'shop' || routeName === 'shop/index') && totalItems > 0 && (
-          <View 
-            style={{ backgroundColor: colors.primary, borderColor: colors.card }}
-            className="absolute -right-2 -top-1 rounded-full min-w-[14px] h-3.5 justify-center items-center px-0.5 border-1"
-          >
-            <Text className="text-white text-[8px] font-bold">{totalItems}</Text>
+          <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+            <Text style={styles.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text>
           </View>
         )}
       </View>
@@ -62,35 +79,39 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
   };
 
   const getLabel = (routeName: string) => {
-     switch (routeName) {
-        case 'index': return 'Home';
-        case 'pandits': return 'Pandits';
-        case 'bookings':
-        case 'bookings/index': return 'Bookings';
-        case 'shop':
-        case 'shop/index': return 'Shop';
+    if (role === 'vendor') {
+      switch (routeName) {
+        case 'index': return 'Dashboard';
+        case 'products/index': return 'Products';
+        case 'orders/index': return 'Orders';
         case 'profile': return 'Profile';
-        case 'services':
-        case 'services/index': return 'Services';
-        case 'chat':
-        case 'chat/index':
-        case 'messages': return 'Messages';
         default: return routeName;
-     }
-  }
+      }
+    }
+    switch (routeName) {
+      case 'index': return 'Home';
+      case 'pandits': return 'Pandits';
+      case 'bookings':
+      case 'bookings/index': return 'Bookings';
+      case 'shop':
+      case 'shop/index': return 'Shop';
+      case 'profile': return 'Profile';
+      case 'services':
+      case 'services/index': return 'Services';
+      case 'chat':
+      case 'chat/index':
+      case 'messages': return 'Messages';
+      default: return routeName;
+    }
+  };
 
   const visibleRoutes = state.routes.filter(route => {
     const { options } = descriptors[route.key] as any;
-    // In Expo Router, hidden routes have href: null or tabBarButton strictly returning null
     const isHrefHidden = options.href === null;
     const isButtonHidden = typeof options.tabBarButton === 'function' && options.tabBarButton() === null;
     return !isHrefHidden && !isButtonHidden;
   });
 
-  const TAB_BAR_WIDTH = width - 40; // 20 margin horizontal
-  const TAB_WIDTH = TAB_BAR_WIDTH / visibleRoutes.length;
-
-  // Find the index of the focused route among visible routes for pill position
   const visibleIndex = visibleRoutes.findIndex(route => route.name === state.routes[state.index].name);
 
   // If the focused screen requests to hide the tab bar, return null
@@ -100,40 +121,17 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
   }
 
   return (
-    <View 
+    <View
       style={[
-        styles.container, 
-        { 
-          bottom: insets.bottom + 15,
-          backgroundColor: isDark ? 'rgba(28, 28, 30, 0.98)' : 'rgba(255, 255, 255, 1)',
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+        styles.container,
+        {
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F0F0',
         }
       ]}
     >
-      {/* Animated Pill Background */}
-      {visibleIndex !== -1 && (
-        <MotiView
-          from={{ translateX: 0 }}
-          animate={{ 
-            translateX: visibleIndex * TAB_WIDTH,
-          }}
-          transition={{
-            type: 'spring',
-            damping: 25,
-            stiffness: 200,
-          }}
-          style={[
-            styles.pill,
-            { 
-              width: TAB_WIDTH - 12,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-            }
-          ]}
-        />
-      )}
-
       {visibleRoutes.map((route, index) => {
-        const { options } = descriptors[route.key];
         const isFocused = visibleIndex === index;
 
         const onPress = () => {
@@ -148,28 +146,27 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
           }
         };
 
+        const color = isFocused ? colors.primary : (isDark ? '#8E8E93' : '#8E8E93');
+
         return (
           <TouchableOpacity
             key={route.key}
             onPress={onPress}
             style={styles.tabItem}
-            activeOpacity={0.4}
+            activeOpacity={0.6}
           >
-            <View style={styles.iconContainer}>
-              {getIcon(route.name, isFocused, isFocused ? colors.primary : (isDark ? '#888' : '#666'))}
-              <Text 
-                style={[
-                  styles.label, 
-                  { 
-                    color: isFocused ? colors.primary : (isDark ? '#888' : '#666'),
-                    fontWeight: isFocused ? '700' : '600',
-                    opacity: isFocused ? 1 : 0.8
-                  }
-                ]}
-              >
-                {getLabel(route.name)}
-              </Text>
-            </View>
+            {getIcon(route.name, isFocused, color)}
+            <Text
+              style={[
+                styles.label,
+                {
+                  color,
+                  fontWeight: isFocused ? '700' : '500',
+                }
+              ]}
+            >
+              {getLabel(route.name)}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -179,42 +176,36 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
     flexDirection: 'row',
-    alignSelf: 'center',
-    width: width - 40,
-    height: 70,
-    borderRadius: 35,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    borderWidth: 1,
-  },
-  pill: {
-    position: 'absolute',
-    height: 58,
-    borderRadius: 29,
-    marginHorizontal: 6,
+    borderTopWidth: 1,
+    paddingTop: 8,
   },
   tabItem: {
     flex: 1,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 4,
+    gap: 4,
   },
   label: {
-    fontSize: 10,
-    marginTop: 3,
-    letterSpacing: 0.2,
+    fontSize: 11,
+    letterSpacing: 0.1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
   },
 });

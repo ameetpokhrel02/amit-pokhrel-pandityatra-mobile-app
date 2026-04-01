@@ -234,14 +234,14 @@ export const DailyPanchang = () => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 0,
+    marginBottom: 16,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   monthSelector: {
     flexDirection: 'row',
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   weekSliderContainer: {
-    marginBottom: 24,
+    marginBottom: 14,
   },
   weekScrollContent: {
     gap: 12,

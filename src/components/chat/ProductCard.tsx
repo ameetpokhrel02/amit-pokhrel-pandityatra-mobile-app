@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
-import { addToCart } from '@/services/samagri.service';
+import { useCartStore } from '@/store/cart.store';
 
 interface ProductCardProps {
     id: number;
@@ -26,9 +26,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
 
-    const handleAddToCart = async () => {
+    const handleAddToCart = () => {
         try {
-            await addToCart(id, 1);
+            useCartStore.getState().addToCart({
+                id: String(id),
+                name: title,
+                price: price,
+                image: image || '',
+                description: description || '',
+                category: 'Chat Recommendation'
+            } as any);
             if (onAddSuccess) onAddSuccess();
         } catch (error) {
             console.error('Failed to add to cart:', error);
