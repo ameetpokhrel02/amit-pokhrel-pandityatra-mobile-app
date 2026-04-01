@@ -7,6 +7,7 @@ export interface VendorProfile {
   id: number;
   email: string;
   full_name: string;
+  phone_number: string;
   shop_name: string;
   business_type: string;
   address: string;
@@ -17,6 +18,7 @@ export interface VendorProfile {
   is_verified: boolean;
   balance: string;
   bio: string | null;
+  profile_pic: string | null;
   created_at: string;
 }
 
@@ -87,35 +89,35 @@ export interface VendorRegisterPayload {
 // ─── Auth ────────────────────────────────────────────────────────
 
 export const registerVendor = (data: VendorRegisterPayload) =>
-  publicApi.post('v-admin/register/', data);
+    publicApi.post('vendors/register/', data);
 
 // ─── Profile & Stats ─────────────────────────────────────────────
 
-export const getVendorProfile = () => api.get('v-admin/');
-export const getVendorStats = () => api.get('v-admin/stats/');
+export const getVendorProfile = () => api.get('vendors/profile/');
+export const getVendorStats = () => api.get('vendors/profile/stats/');
 
 // ─── Products ────────────────────────────────────────────────────
 
-export const listVendorProducts = () => api.get('v-admin/products/');
-export const getVendorProduct = (id: number) => api.get(`v-admin/products/${id}/`);
+export const listVendorProducts = () => api.get('vendors/products/');
+export const getVendorProduct = (id: number) => api.get(`vendors/products/${id}/`);
 export const createProduct = (data: FormData | object) =>
-  api.post('v-admin/products/', data, {
-    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-  });
+    api.post('vendors/products/', data, {
+        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
 export const updateProduct = (id: number, data: FormData | object) =>
-  api.patch(`v-admin/products/${id}/`, data, {
-    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-  });
-export const deleteProduct = (id: number) => api.delete(`v-admin/products/${id}/`);
+    api.patch(`vendors/products/${id}/`, data, {
+        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
+export const deleteProduct = (id: number) => api.delete(`vendors/products/${id}/`);
 
 // ─── Orders ──────────────────────────────────────────────────────
 
-export const listVendorOrders = () => api.get('v-admin/orders/');
-export const getVendorOrder = (id: number) => api.get(`v-admin/orders/${id}/`);
+export const listVendorOrders = () => api.get('vendors/orders/');
+export const getVendorOrder = (id: number) => api.get(`vendors/orders/${id}/`);
 export const updateOrderStatus = (id: number, status: 'SHIPPED' | 'DELIVERED') =>
-  api.post(`v-admin/orders/${id}/update_status/`, { status });
+    api.post(`vendors/orders/${id}/update_status/`, { status });
 
 // ─── Payouts ─────────────────────────────────────────────────────
 
-export const listPayouts = () => api.get('v-admin/payouts/');
-export const requestPayout = (amount: number) => api.post('v-admin/payouts/', { amount });
+export const listPayouts = () => api.get('vendors/payouts/');
+export const requestPayout = (amount: number) => api.post('vendors/payouts/', { amount });

@@ -17,11 +17,12 @@ export type SamagriCategory = Category;
 export interface Service {
     id: number;
     name: string;
-    base_price: string; // Decimal string or number depending on serializer
+    category: number;
+    base_price: string | number;
     image: string;
-    description?: string; // Detail only
-    base_duration?: string; // Detail only, e.g. "02:00:00" or minutes
-    samagri_list?: any[]; // Detail only
+    description?: string;
+    base_duration_minutes?: number;
+    samagri_list?: any[];
 }
 
 // Services functions moved to booking.service.ts

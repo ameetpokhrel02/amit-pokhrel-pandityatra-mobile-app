@@ -4,12 +4,12 @@ import { useRouter } from "expo-router";
 
 import { useAuthStore } from "@/store/auth.store";
 import { useNotificationStore } from "@/store/notification.store";
-import { fetchServices } from "@/services/puja.service";
+import { fetchServices, fetchCategories } from "@/services/puja.service";
 import { listPandits } from "@/services/pandit.service";
 import { listBookings } from "@/services/booking.service";
 import { fetchBookingSamagriRecommendations } from "@/services/recommender.service";
 import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from "@/services/samagri.service";
-import { Service, Pandit, Booking, SamagriItem, SamagriCategory } from "@/services/api";
+import { Service, Category, Pandit, Booking, SamagriItem, SamagriCategory } from "@/services/api";
 
 export const useDashboardData = () => {
   const router = useRouter();
@@ -17,6 +17,7 @@ export const useDashboardData = () => {
   const { fetchNotifications: fetchStoreNotifications } = useNotificationStore();
 
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [recommendations, setRecommendations] = useState<SamagriItem[]>([]);
@@ -29,13 +30,15 @@ export const useDashboardData = () => {
   // We memoize loadHomeData to satisfy eslint dependency rules
   const loadHomeData = useCallback(async () => {
     try {
-      const [servicesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
+      const [servicesData, categoriesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
         fetchServices(),
+        fetchCategories(),
         listPandits(),
         getSamagriItems(),
         getSamagriCategories(),
       ]);
-      setServices(servicesData.slice(0, 6));
+      setServices(servicesData);
+      setCategories(categoriesData.slice(0, 6));
       setPandits(panditsRes.data?.results || panditsRes.data?.slice(0, 6) || []);
       setSamagriItems(samagriItemsRes);
       setSamagriCategories(samagriCategoriesRes);
@@ -108,6 +111,7 @@ export const useDashboardData = () => {
 
   return {
     services,
+    categories,
     pandits,
     bookings,
     recommendations,
