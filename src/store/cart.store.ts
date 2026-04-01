@@ -18,6 +18,7 @@ interface CartState {
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   getItemCount: (productId: string) => number;
+  syncCart: (serverItems: any[]) => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -28,6 +29,7 @@ export const useCartStore = create<CartState>()(
   totalPrice: 0,
 
   addToCart: (product) => {
+
     const { items } = get();
     const existingItem = items.find(item => item.id === product.id);
     
@@ -80,6 +82,43 @@ export const useCartStore = create<CartState>()(
 
   getItemCount: (productId) => {
     return get().items.find(item => item.id === productId)?.quantity || 0;
+  },
+
+  syncCart: (serverItems) => {
+    if (!Array.isArray(serverItems)) return;
+    
+    const localItems = get().items;
+    const mergedMap = new Map();
+    
+    // Load local items first
+    localItems.forEach(item => {
+      mergedMap.set(String(item.id), item);
+    });
+    
+    // Override/Merge with server items
+    serverItems.forEach((cartEntry: any) => {
+      // Support various potential backend response structures
+      const product = cartEntry.item || cartEntry.samagri_item || cartEntry.product || cartEntry;
+      if (!product || (!product.id && !cartEntry.item_id)) return;
+      
+      const id = String(product.id || cartEntry.item_id);
+      mergedMap.set(id, {
+        id,
+        name: product.name || 'Item',
+        price: parseFloat(product.price || product.base_price || 0),
+        image: product.image || product.image_url,
+        quantity: cartEntry.quantity || 1,
+        ...product
+      });
+    });
+    
+    const newItems = Array.from(mergedMap.values());
+    
+    set({ 
+      items: newItems,
+      totalItems: newItems.reduce((sum, item) => sum + item.quantity, 0),
+      totalPrice: newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    });
   },
 }),
 {

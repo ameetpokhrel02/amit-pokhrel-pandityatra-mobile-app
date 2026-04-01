@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           phone: userData.phone_number || userData.phone || '',
           email: userData.email,
           role: userData.role || 'customer',
-          profile_pic_url: userData.profile_pic_url,
+          profile_pic_url: userData.profile_pic,
           pandit_profile: userData.pandit_profile,
           vendor_profile: userData.vendor_profile,
         };

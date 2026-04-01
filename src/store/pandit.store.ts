@@ -58,7 +58,7 @@ export const usePanditStore = create<PanditState>((set, get) => ({
       let mappedData: Pandit[] = rawData.map((p: any) => ({
         id: String(p.id),
         name: p.user_details?.full_name || 'Pandit Ji',
-        image: getImageUrl(p.user_details?.profile_pic_url) || 'https://via.placeholder.com/150',
+        image: getImageUrl(p.user_details?.profile_pic) || 'https://via.placeholder.com/150',
         experience: p.experience_years || 0,
         specialization: p.expertise ? p.expertise.split(',').map((s: string) => s.trim()) : [],
         languages: p.language ? p.language.split(',').map((l: string) => l.trim()) : [],
