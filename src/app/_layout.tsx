@@ -12,14 +12,16 @@ import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoCallProvider, useVideoCall } from '@/store/VideoCallContext';
 import { LazyLoader } from '@/components/ui/LazyLoader';
-const LazyPersistentVideoCall = React.lazy(() => import('@/components/video/PersistentVideoCall').then(m => ({ default: m.PersistentVideoCall })));
+import Toast from 'react-native-toast-message';
+
+const LazyNativeVideoCall = React.lazy(() => import('@/components/video/NativeVideoCall').then(m => ({ default: m.NativeVideoCall })));
 
 function VideoCallContainer() {
   const { isCallActive, isConnecting } = useVideoCall();
   if (!isCallActive && !isConnecting) return null;
   return (
     <LazyLoader>
-      <LazyPersistentVideoCall />
+      <LazyNativeVideoCall />
     </LazyLoader>
   );
 }
@@ -148,6 +150,7 @@ export default function RootLayout() {
           <VideoCallContainer />
         </VideoCallProvider>
       </ThemeProvider>
+      <Toast />
     </StripeProvider>
   );
 }
