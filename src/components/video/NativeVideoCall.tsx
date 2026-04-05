@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   FlatList,
   KeyboardAvoidingView,
   StatusBar,
+  PanResponder,
+  Animated as RNAnimated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,12 +20,14 @@ import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
+import { MotiView } from 'moti';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
 } from 'react-native-reanimated';
 import { useVideoCall } from '@/store/VideoCallContext';
+import { useRouter } from 'expo-router';
 
 let WebRTC: any = {};
 try {
@@ -31,61 +35,24 @@ try {
 } catch (e) {
   console.warn('[NativeVideo] WebRTC native module not found, using mocks.');
   WebRTC = {
-    RTCPeerConnection: class { 
-      addEventListener() {} 
-      removeEventListener() {} 
-      addTrack() {}
-      close() {}
-      setRemoteDescription() {}
-      setLocalDescription() {}
-      createAnswer() { return { sdp: '', type: 'answer' }; }
-      createOffer() { return { sdp: '', type: 'offer' }; }
-      addIceCandidate() {}
-    },
+    RTCPeerConnection: class { },
     RTCView: ({ children }: any) => <View style={{ flex: 1, backgroundColor: '#222' }}>{children}</View>,
-    mediaDevices: { 
-      getUserMedia: async () => {
-        const mockStream = { 
-          getTracks: () => [], 
-          getVideoTracks: () => [{ enabled: true, stop: () => {}, _switchCamera: () => {} }],
-          getAudioTracks: () => [{ enabled: true, stop: () => {} }],
-          toURL: () => '' 
-        };
-        return mockStream;
-      } 
-    },
+    mediaDevices: { },
     RTCSessionDescription: class {},
     RTCIceCandidate: class {},
-    MediaStream: class { 
-      getTracks() { return []; } 
-      getVideoTracks() { return [{ enabled: true, stop: () => {}, _switchCamera: () => {} }]; }
-      getAudioTracks() { return [{ enabled: true, stop: () => {} }]; }
-      toURL() { return ''; } 
-    },
+    MediaStream: class { },
   };
 }
 
 const { RTCView } = WebRTC;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BUBBLE_SIZE = 120;
+const BUBBLE_HEIGHT = 160;
 
-interface NativeVideoCallProps {
-  bookingId: number;
-  userName: string;
-  onLeave: () => void;
-  peerName?: string;
-  peerAvatar?: string;
-  isPandit?: boolean;
-}
-
-export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
-  bookingId,
-  userName,
-  onLeave,
-  peerName: propPeerName,
-  peerAvatar: propPeerAvatar,
-  isPandit: propIsPandit = false,
-}) => {
+export const NativeVideoCall: React.FC = () => {
   const { colors } = useTheme();
+  const router = useRouter();
+
   const { 
     localStream, 
     remoteStream, 
@@ -106,27 +73,49 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
     activeBookingId,
     peerName,
     peerAvatar,
-    isPandit: callIsPandit
+    isPandit: callIsPandit,
+    isRecording,
+    isHandRaised,
+    toggleRecording,
+    toggleHandRaise,
+    isMinimized,
+    setIsMinimized,
   } = useVideoCall();
 
   // UI States
   const [showChat, setShowChat] = useState(false);
   const [inputText, setInputText] = useState('');
 
-  const flatListRef = useRef<FlatList>(null);
-  const chatAnim = useSharedValue(SCREEN_WIDTH);
+  const chatListRef = useRef<FlatList>(null);
+  
+  // DRAG LOGIC
+  const pan = useRef(new RNAnimated.ValueXY({ x: SCREEN_WIDTH - BUBBLE_SIZE - 20, y: 100 })).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => isMinimized,
+      onPanResponderMove: RNAnimated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+      },
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+      },
+    })
+  ).current;
 
-  useEffect(() => {
-    // If no call is active or a different booking, start it
-    if (!isCallActive || activeBookingId !== bookingId) {
-      startCall(bookingId, userName, propIsPandit, propPeerName, propPeerAvatar);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingId, isCallActive, activeBookingId]);
+  // Don't render anything if there's no active call
+  if (!isCallActive && !isConnecting) return null;
 
   const handleEndCall = async () => {
+    const bookingId = activeBookingId;
+    const wasCustomer = !callIsPandit;
     await endCall();
-    onLeave();
+    if (wasCustomer && bookingId) {
+       router.push(`/(customer)/bookings/pandit-feedback?bookingId=${bookingId}` as any);
+    }
   };
 
   const handleSendMessage = () => {
@@ -136,181 +125,250 @@ export const NativeVideoCall: React.FC<NativeVideoCallProps> = ({
   };
 
   const toggleChat = () => {
-    const nextValue = !showChat;
-    setShowChat(nextValue);
-    chatAnim.value = nextValue ? withSpring(0) : withSpring(SCREEN_WIDTH);
-    if (nextValue) clearUnread();
+    if (!showChat) clearUnread();
+    setShowChat(!showChat);
   };
 
-  const animatedChatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: chatAnim.value }],
-  }));
-
-  if (isConnecting && !isCallActive) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ color: 'white', marginTop: 20 }}>Initializing Call...</Text>
-      </View>
-    );
-  }
+  const containerStyle = isMinimized 
+    ? [styles.bubble, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]
+    : styles.fullScreen;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      {/* Remote Video (Full Screen) */}
-      <View style={styles.remoteVideoContainer}>
-        {remoteStream ? (
-          <RTCView
-            streamURL={(remoteStream as any).toURL()}
-            style={styles.remoteVideo}
-            objectFit="cover"
-          />
-        ) : (
-          <View style={styles.remotePlaceholder}>
-            <Image 
-              source={{ uri: getImageUrl(peerAvatar) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} 
-              style={styles.remotePlaceholderAvatar}
-            />
-            <Text style={styles.remotePlaceholderText}>
-              {isConnecting ? 'Connecting...' : `${peerName} is joining...`}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Top Header Overlay */}
-      <SafeAreaView style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={onLeave} style={styles.headerIconBtn}>
-            <Ionicons name="chevron-back" size={24} color="white" />
-          </TouchableOpacity>
-          
-          <View style={styles.peerInfo}>
-            <Image 
-              source={{ uri: getImageUrl(peerAvatar) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} 
-              style={styles.peerAvatarSmall}
-            />
-            <Text style={styles.peerNameText}>{peerName}</Text>
-            {callIsPandit && (
-              <View style={styles.hostBadge}>
-                <Text style={styles.hostBadgeText}>HOST</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity onPress={flipCamera} style={styles.headerIconBtn}>
-              <Ionicons name="camera-reverse" size={22} color="white" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-
-      {/* Local Video PiP */}
-      <View style={styles.localVideoPip}>
-        {localStream && isVideoOn ? (
-          <RTCView
-            streamURL={(localStream as any).toURL()}
-            mirror={isFrontCamera}
-            style={styles.localVideo}
-            objectFit="cover"
-          />
-        ) : (
-          <View style={styles.localPlaceholder}>
-            <Ionicons name="videocam-off" size={20} color="#666" />
-          </View>
-        )}
-      </View>
-
-      {/* Bottom Controls Bar */}
-      <View style={styles.bottomBarContainer}>
-        <BlurView intensity={30} tint="dark" style={styles.controlsBlur}>
-          <View style={styles.controlsRow}>
-            <TouchableOpacity 
-              onPress={toggleVideo} 
-              style={[styles.controlBtn, !isVideoOn && styles.controlBtnOff]}
-            >
-              <Ionicons name={isVideoOn ? "videocam" : "videocam-off"} size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={toggleMic} 
-              style={[styles.controlBtn, !isMicOn && styles.controlBtnOff]}
-            >
-              <Ionicons name={isMicOn ? "mic" : "mic-off"} size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => {}} style={styles.controlBtn}>
-              <Ionicons name="hand-right-outline" size={24} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={toggleChat} style={styles.controlBtn}>
-              <Ionicons name="chatbubble-ellipses-outline" size={24} color="white" />
-              {unreadCount > 0 && <View style={styles.chatBadge} />}
-            </TouchableOpacity>
-  
-            <TouchableOpacity 
-              onPress={handleEndCall} 
-              style={[styles.controlBtn, styles.endCallBtn]}
-            >
-              <Ionicons name="call" size={24} color="white" />
-              {callIsPandit && <Text style={styles.endCallText}>End for All</Text>}
-            </TouchableOpacity>
-          </View>
-        </BlurView>
-      </View>
-
-      {/* Chat Overlay Sidebar */}
-      <Animated.View style={[styles.chatDrawer, animatedChatStyle]}>
-        <BlurView intensity={90} tint="dark" style={styles.chatBlur}>
-          <View style={styles.chatHeader}>
-            <Text style={styles.chatTitle}>Live Chat</Text>
-            <TouchableOpacity onPress={toggleChat}>
-              <Ionicons name="close" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <View style={[styles.msgRow, (item.senderId === 'customer' && !callIsPandit) || (item.senderId === 'pandit' && callIsPandit) ? styles.msgMe : styles.msgThem]}>
-                <View style={[styles.msgBubble, ((item.senderId === 'customer' && !callIsPandit) || (item.senderId === 'pandit' && callIsPandit)) ? { backgroundColor: colors.primary } : { backgroundColor: '#333' }]}>
-                  <Text style={styles.msgText}>{item.text}</Text>
-                </View>
-              </View>
-            )}
-            contentContainerStyle={styles.chatList}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-          />
-
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={120}>
-            <View style={styles.chatInputRow}>
-              <TextInput
-                style={styles.chatInput}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder="Type a message..."
-                placeholderTextColor="#999"
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <RNAnimated.View 
+        {...(isMinimized ? panResponder.panHandlers : {})}
+        style={containerStyle}
+      >
+        <MotiView
+          from={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring' }}
+          style={styles.content}
+        >
+          {/* Main Video Background (Remote or Local fallback) */}
+          <View style={styles.remoteVideoContainer}>
+            {remoteStream ? (
+              <RTCView
+                streamURL={(remoteStream as any).toURL()}
+                style={styles.remoteVideo}
+                objectFit="cover"
               />
-              <TouchableOpacity onPress={handleSendMessage} style={[styles.chatSendBtn, { backgroundColor: colors.primary }]}>
-                <Ionicons name="send" size={18} color="white" />
+            ) : (
+              <View style={styles.remotePlaceholder}>
+                <Image 
+                  source={{ uri: getImageUrl(peerAvatar) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} 
+                  style={styles.remotePlaceholderAvatar}
+                />
+                <Text style={styles.remotePlaceholderText}>
+                  {isConnecting ? 'Connecting...' : `${peerName} is joining...`}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {!isMinimized && (
+            <SafeAreaView style={styles.overlay} pointerEvents="box-none">
+              <View style={styles.topContainer}>
+                <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={styles.headerBlur}>
+                  <View style={styles.header}>
+                    <TouchableOpacity onPress={() => setIsMinimized(true)} style={styles.iconBtn}>
+                      <Ionicons name="chevron-down" size={24} color="white" />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.peerInfo}>
+                      <Image 
+                        source={{ uri: getImageUrl(peerAvatar) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} 
+                        style={styles.peerAvatarSmall} 
+                      />
+                      <View>
+                        <Text style={styles.peerNameText}>{peerName || 'Active Session'}</Text>
+                        <View style={styles.secureRow}>
+                          <Ionicons name="lock-closed" size={10} color="#10B981" />
+                          <Text style={styles.secureText}>End-to-end encrypted</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity onPress={flipCamera} style={styles.iconBtn}>
+                            <Ionicons name="camera-reverse" size={20} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                  </View>
+                </BlurView>
+              </View>
+
+              {/* Local Video PiP */}
+              <View style={styles.localVideoPip}>
+                {localStream && isVideoOn ? (
+                  <RTCView
+                    streamURL={(localStream as any).toURL()}
+                    mirror={isFrontCamera}
+                    style={styles.localVideo}
+                    objectFit="cover"
+                  />
+                ) : (
+                  <View style={styles.localPlaceholder}>
+                    <Ionicons name="videocam-off" size={20} color="#666" />
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.controlsWrapper}>
+                <BlurView intensity={70} tint="dark" style={styles.actionsBlur}>
+                  <View style={styles.bottomActions}>
+                    <TouchableOpacity 
+                        onPress={toggleChat} 
+                        style={[styles.actionBtn, showChat && { backgroundColor: colors.primary }]}
+                    >
+                      <Ionicons name="chatbubble-ellipses" size={22} color="white" />
+                      {!showChat && unreadCount > 0 && (
+                        <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                            <Text style={styles.badgeText}>{unreadCount}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        onPress={toggleHandRaise} 
+                        style={[styles.actionBtn, isHandRaised && { backgroundColor: '#F59E0B' }]}
+                    >
+                      <Ionicons name={isHandRaised ? "hand-right" : "hand-right-outline"} size={22} color="white" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={toggleMic} style={[styles.actionBtn, !isMicOn && styles.btnOff]}>
+                      <Ionicons name={isMicOn ? "mic" : "mic-off"} size={22} color="white" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      onPress={handleEndCall} 
+                      style={[styles.actionBtn, styles.endBtn]}
+                    >
+                      <Ionicons name="call" size={26} color="white" style={{ transform: [{ rotate: '135deg' }] }} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={toggleVideo} style={[styles.actionBtn, !isVideoOn && styles.btnOff]}>
+                      <Ionicons name={isVideoOn ? "videocam" : "videocam-off"} size={22} color="white" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        onPress={toggleRecording} 
+                        style={[styles.actionBtn, isRecording && { backgroundColor: '#EF4444' }]}
+                    >
+                      <Ionicons name={isRecording ? "radio-button-on" : "videocam-outline"} size={22} color="white" />
+                      {isRecording && <View style={styles.recordingDot} />}
+                    </TouchableOpacity>
+                  </View>
+                </BlurView>
+              </View>
+
+              {showChat && (
+                <MotiView 
+                    from={{ translateY: 400 }}
+                    animate={{ translateY: 0 }}
+                    style={styles.chatWindow}
+                >
+                    <View style={styles.chatHeader}>
+                        <Text style={styles.chatTitle}>Live Session Chat</Text>
+                        <TouchableOpacity onPress={() => setShowChat(false)}>
+                            <Ionicons name="close" size={24} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <FlatList
+                        ref={chatListRef}
+                        data={messages}
+                        keyExtractor={(item) => item.id}
+                        onContentSizeChange={() => chatListRef.current?.scrollToEnd()}
+                        renderItem={({ item }) => (
+                            <View style={[
+                                styles.messageBubble, 
+                                item.senderId === (callIsPandit ? 'pandit' : 'customer') ? styles.myMessage : styles.theirMessage
+                            ]}>
+                                <Text style={styles.messageText}>{item.text}</Text>
+                                <Text style={styles.messageTime}>{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            </View>
+                        )}
+                        style={styles.messageList}
+                        contentContainerStyle={{ padding: 16 }}
+                    />
+
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                        <View style={styles.chatInputRow}>
+                            <TextInput
+                                style={styles.chatInput}
+                                value={inputText}
+                                onChangeText={setInputText}
+                                placeholder="Type a message..."
+                                placeholderTextColor="rgba(255,255,255,0.5)"
+                            />
+                            <TouchableOpacity onPress={handleSendMessage} style={[styles.sendBtn, { backgroundColor: colors.primary }]}>
+                                <Ionicons name="send" size={20} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </MotiView>
+              )}
+            </SafeAreaView>
+          )}
+
+          {isMinimized && (
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => setIsMinimized(false)} 
+              style={styles.bubbleOverlay}
+            >
+               <View style={styles.miniLabel}>
+                  <Text style={styles.miniText}>{isConnecting ? 'Connecting...' : 'Active'}</Text>
+               </View>
+            </TouchableOpacity>
+          )}
+
+          {isConnecting && !isMinimized && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Connecting sacred session...</Text>
+              
+              <TouchableOpacity 
+                style={styles.exitBtn} 
+                onPress={handleEndCall}
+              >
+                <Ionicons name="close-circle" size={20} color="white" />
+                <Text style={styles.exitBtnText}>Exit Setup</Text>
               </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
-        </BlurView>
-      </Animated.View>
+          )}
+
+        </MotiView>
+      </RNAnimated.View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  fullScreen: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#000',
+    zIndex: 10000,
+  },
+  bubble: {
+    position: 'absolute',
+    width: BUBBLE_SIZE,
+    height: BUBBLE_HEIGHT,
+    borderRadius: 20,
+    backgroundColor: '#111',
+    overflow: 'hidden',
+    zIndex: 10001,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  content: {
+    flex: 1,
   },
   remoteVideoContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -338,50 +396,68 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     opacity: 0.8,
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    height: 60,
   },
-  headerIconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+  topContainer: {
+    paddingTop: Platform.OS === 'ios' ? 0 : 40,
+  },
+  headerBlur: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 12,
   },
   peerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 25,
-    gap: 8,
+    gap: 12,
   },
   peerAvatarSmall: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   peerNameText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 14,
+    color: 'white',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
-  headerActions: {
+  secureRow: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 1,
+  },
+  secureText: {
+    color: '#10B981',
+    fontSize: 9,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: 8,
   },
   localVideoPip: {
     position: 'absolute',
@@ -404,136 +480,186 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomBarContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  controlsWrapper: {
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
-  controlsBlur: {
-    borderRadius: 30,
+  actionsBlur: {
+    borderRadius: 32,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  controlsRow: {
+  bottomActions: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'space-evenly',
-    paddingVertical: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
   },
-  controlBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  actionBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
-  controlBtnOff: {
-    backgroundColor: 'rgba(239, 68, 68, 0.6)',
-  },
-  endCallBtn: {
-    backgroundColor: '#EF4444',
-    transform: [{ rotate: '135deg' }],
-  },
-  chatBadge: {
+  recordingDot: {
     position: 'absolute',
     top: 10,
     right: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFF',
+  },
+  btnOff: {
     backgroundColor: '#EF4444',
-    borderWidth: 2,
-    borderColor: '#000',
   },
-  chatDrawer: {
+  endBtn: {
+    backgroundColor: '#EF4444',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  bubbleOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  miniLabel: {
     position: 'absolute',
-    top: 100,
-    bottom: 120, // Increased from 100 to clear the bottom controls bar
-    right: 0,
-    width: SCREEN_WIDTH * 0.85, // Slightly wider for better readability
-    borderTopLeftRadius: 30,
-    borderBottomLeftRadius: 30,
-    overflow: 'hidden',
-    zIndex: 20,
+    bottom: 8,
+    left: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    paddingVertical: 2,
+    alignItems: 'center',
   },
-  chatBlur: {
-    flex: 1,
-    padding: 16,
+  miniText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 20,
+    fontSize: 16,
+    opacity: 0.8,
+  },
+  exitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 20,
+  },
+  exitBtnText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  chatWindow: {
+    position: 'absolute',
+    bottom: 120,
+    left: 20,
+    right: 20,
+    height: 400,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   chatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   chatTitle: {
-    color: '#FFF',
-    fontSize: 18,
+    color: 'white',
     fontWeight: 'bold',
   },
-  chatList: {
-    paddingBottom: 20,
+  messageList: {
+    flex: 1,
   },
-  msgRow: {
-    marginBottom: 10,
+  messageBubble: {
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+    maxWidth: '80%',
   },
-  msgMe: {
-    alignItems: 'flex-end',
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#FF6F00',
   },
-  msgThem: {
-    alignItems: 'flex-start',
+  theirMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#333',
   },
-  msgBubble: {
-    padding: 10,
-    borderRadius: 15,
-    maxWidth: '90%',
-  },
-  msgText: {
-    color: '#FFF',
+  messageText: {
+    color: 'white',
     fontSize: 14,
+  },
+  messageTime: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    marginTop: 4,
+    alignSelf: 'flex-end',
   },
   chatInputRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
+    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    gap: 12,
   },
   chatInput: {
     flex: 1,
-    height: 44,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 22,
-    paddingHorizontal: 15,
-    color: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    color: 'white',
   },
-  chatSendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF6F00',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  hostBadge: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginLeft: 6,
-  },
-  hostBadgeText: {
-    color: '#000',
-    fontSize: 8,
-    fontWeight: '900',
-  },
-  endCallText: {
+  badge: {
     position: 'absolute',
-    bottom: -15,
-    fontSize: 8,
-    color: '#EF4444',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#000',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
     fontWeight: 'bold',
-    width: 60,
-    textAlign: 'center',
   },
 });
