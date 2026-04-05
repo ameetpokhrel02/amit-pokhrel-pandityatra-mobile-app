@@ -92,7 +92,7 @@ export default function PanditProfileScreen() {
             const rawReviews: any = reviewsData;
             const safeReviews = Array.isArray(rawReviews) 
                 ? rawReviews 
-                : (rawReviews?.data || rawReviews?.results || []);
+                : (rawReviews?.reviews || rawReviews?.data || rawReviews?.results || []);
                 
             const mappedReviews = Array.isArray(safeReviews) ? safeReviews.map((r: any) => ({
                 ...r,

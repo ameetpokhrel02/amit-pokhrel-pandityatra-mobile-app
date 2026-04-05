@@ -6,7 +6,13 @@ import { useTheme } from '@/store/ThemeContext';
 import { generateKundali } from '@/services/kundali.service';
 import { calculateLocalKundali } from '@/services/local-kundali.service';
 import { Image } from 'expo-image';
-import MapLocationPicker from '@/components/ui/MapLocationPicker';
+import { LazyLoader } from '@/components/ui/LazyLoader';
+import KundaliChart from '@/components/kundali/KundaliChart';
+import { generateKundaliPDF } from '@/utils/kundali-pdf.utils';
+import { MotiView } from 'moti';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const MapLocationPicker = React.lazy(() => import('@/components/ui/MapLocationPicker'));
 
 
 const { width } = Dimensions.get('window');
@@ -20,6 +26,7 @@ export default function KundaliScreen() {
         place: '',
         gender: ''
     });
+    const [meridian, setMeridian] = useState<'AM' | 'PM'>('AM');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any | null>(null);
     const [birthLat, setBirthLat] = useState(27.7172);
@@ -54,9 +61,9 @@ export default function KundaliScreen() {
 
             const payload = {
                 dob: formattedDob,
-                time: formattedTime,
-                lat: birthLat,
-                lon: birthLon,
+                time: `${formattedTime} ${meridian}`,
+                latitude: birthLat,
+                longitude: birthLon,
                 timezone: 'Asia/Kathmandu',
             };
 
@@ -87,6 +94,30 @@ export default function KundaliScreen() {
         } catch (e) {
             console.error(e);
             Alert.alert('Error', 'Unable to generate Kundali. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!result) {
+            Alert.alert('No data', 'Please generate your Kundali first.');
+            return;
+        }
+        try {
+            setLoading(true);
+            await generateKundaliPDF(
+                {
+                    name: formData.name || 'Sacred Soul',
+                    dob: formData.dob,
+                    tob: `${formData.tob} ${meridian}`,
+                    place: formData.place
+                },
+                result
+            );
+        } catch (err) {
+            console.error(err);
+            Alert.alert('Export Error', 'Could not generate PDF. Please ensure storage permissions are granted.');
         } finally {
             setLoading(false);
         }
@@ -201,33 +232,52 @@ export default function KundaliScreen() {
                         </View>
                         <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
                             <Text style={[styles.label, { color: isDark ? '#AAA' : '#666' }]}>Time of Birth</Text>
-                            <View style={[styles.dateInputContainer, { backgroundColor: isDark ? '#333' : '#f9fafb', borderColor: isDark ? '#444' : '#e5e7eb' }]}>
-                                <TextInput
-                                    style={[styles.dateInput, { color: colors.text }]}
-                                    placeholder="HH:MM"
-                                    placeholderTextColor={isDark ? '#AAA' : '#999'}
-                                    value={formData.tob}
-                                    onChangeText={(t) => setFormData({ ...formData, tob: t })}
-                                />
-                                <Ionicons name="time-outline" size={20} color={isDark ? '#AAA' : '#666'} />
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={[styles.dateInputContainer, { flex: 1, backgroundColor: isDark ? '#333' : '#f9fafb', borderColor: isDark ? '#444' : '#e5e7eb' }]}>
+                                    <TextInput
+                                        style={[styles.dateInput, { color: colors.text }]}
+                                        placeholder="HH:MM"
+                                        placeholderTextColor={isDark ? '#AAA' : '#999'}
+                                        value={formData.tob}
+                                        onChangeText={(t) => setFormData({ ...formData, tob: t })}
+                                        keyboardType="numeric"
+                                    />
+                                    <Ionicons name="time-outline" size={20} color={isDark ? '#AAA' : '#666'} />
+                                </View>
+                                <View style={[styles.meridianContainer, { backgroundColor: isDark ? '#333' : '#f9fafb', borderColor: isDark ? '#444' : '#e5e7eb' }]}>
+                                    <TouchableOpacity 
+                                        style={[styles.meridianBtn, meridian === 'AM' && { backgroundColor: colors.primary }]} 
+                                        onPress={() => setMeridian('AM')}
+                                    >
+                                        <Text style={[styles.meridianText, { color: meridian === 'AM' ? '#FFF' : colors.text }]}>AM</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={[styles.meridianBtn, meridian === 'PM' && { backgroundColor: colors.primary }]} 
+                                        onPress={() => setMeridian('PM')}
+                                    >
+                                        <Text style={[styles.meridianText, { color: meridian === 'PM' ? '#FFF' : colors.text }]}>PM</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: isDark ? '#AAA' : '#666' }]}>Place of Birth</Text>
-                        <MapLocationPicker
-                            value={formData.place}
-                            onSelect={(loc) => {
-                                setFormData({ ...formData, place: loc.address });
-                                setBirthLat(loc.latitude);
-                                setBirthLon(loc.longitude);
-                            }}
-                            placeholder="Select birth place on map"
-                            colors={colors}
-                            isDark={isDark}
-                            label="Select Birth Place"
-                        />
+                        <LazyLoader height={56}>
+                          <MapLocationPicker
+                              value={formData.place}
+                              onSelect={(loc) => {
+                                  setFormData({ ...formData, place: loc.address });
+                                  setBirthLat(loc.latitude);
+                                  setBirthLon(loc.longitude);
+                              }}
+                              placeholder="Select birth place on map"
+                              colors={colors}
+                              isDark={isDark}
+                              label="Select Birth Place"
+                          />
+                        </LazyLoader>
                     </View>
 
                     {/* Offline Mode Toggle */}
@@ -256,27 +306,42 @@ export default function KundaliScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* 4. Generated Kundali (basic view) */}
+                {/* 4. Generated Kundali (Premium View) */}
                 {result && (
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionHeader, { color: colors.text }]}>Your Kundali Summary</Text>
-                        <View style={[styles.previewCard, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.previewList, { color: isDark ? '#AAA' : '#666' }]}>
-                                Lagna: {result.lagna || result.ascendant || '—'}
-                            </Text>
-                            <Text style={[styles.previewList, { color: isDark ? '#AAA' : '#666' }]}>
-                                Rashi: {result.rashi || result.sign || '—'}
-                            </Text>
-                            <Text style={[styles.previewList, { color: isDark ? '#AAA' : '#666' }]}>
-                                Moon Sign: {result.moon_sign || '—'}
-                            </Text>
-                            {result.summary && (
-                                <Text style={[styles.previewList, { color: isDark ? '#AAA' : '#666' }]}>
-                                    Summary: {result.summary}
-                                </Text>
-                            )}
+                    <MotiView 
+                        from={{ opacity: 0, translateY: 20 }}
+                        animate={{ opacity: 1, translateY: 0 }}
+                        transition={{ type: 'timing', duration: 500 }}
+                        style={styles.section}
+                    >
+                        <View style={styles.resultHeader}>
+                            <Text style={[styles.sectionHeader, { color: colors.text, marginBottom: 0 }]}>Your Birth Chart</Text>
+                            <TouchableOpacity style={[styles.pdfButton, { backgroundColor: colors.primary }]} onPress={handleDownloadPDF}>
+                                <Ionicons name="download-outline" size={18} color="#FFF" />
+                                <Text style={styles.pdfButtonText}>PDF</Text>
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                        
+                        <View style={[styles.chartContainer, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#ea580c' }]}>
+                            <KundaliChart 
+                                planets={result.planets || []}
+                                houses={result.houses || []}
+                                colors={colors}
+                                isDark={isDark}
+                            />
+                            <View style={styles.chartLegend}>
+                                <Text style={[styles.lagnaText, { color: colors.text }]}>
+                                    <Text style={{ fontWeight: 'bold', color: colors.primary }}>Ascendant (Lagna):</Text> {result.ascendant || result.lagna || '—'}
+                                </Text>
+                                {result.isOffline && (
+                                    <View style={styles.offlineStatus}>
+                                        <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+                                        <Text style={styles.offlineStatusText}>Verified On-Device Engine</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+                    </MotiView>
                 )}
 
                 {/* 5. What You Will Get (static info) */}
@@ -607,5 +672,75 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
+    },
+    meridianContainer: {
+        flexDirection: 'row',
+        marginLeft: 8,
+        borderWidth: 1,
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    meridianBtn: {
+        paddingHorizontal: 10,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    meridianText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    resultHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    pdfButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
+    },
+    pdfButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    chartContainer: {
+        borderRadius: 24,
+        padding: 10,
+        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        alignItems: 'center',
+    },
+    chartLegend: {
+        width: '100%',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
+        alignItems: 'center',
+    },
+    lagnaText: {
+        fontSize: 16,
+    },
+    offlineStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 8,
+        backgroundColor: 'rgba(16,185,129,0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    offlineStatusText: {
+        fontSize: 10,
+        color: '#10B981',
+        fontWeight: 'bold',
     },
 });

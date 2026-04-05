@@ -279,6 +279,8 @@ export default function ProfileScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("sparkles-outline", "My Services", () => router.push('/(pandit)/services' as any))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("basket-outline", "Marketplace / Buy Samagri", () => router.push('/(customer)/shop' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("star-outline", "My Reviews", () => router.push('/(pandit)/reviews' as any))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("wallet-outline", "Earnings & Wallet", () => router.push('/(pandit)/earnings' as any))}

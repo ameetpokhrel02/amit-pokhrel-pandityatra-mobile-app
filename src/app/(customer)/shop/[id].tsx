@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
-import { fetchSamagriItems } from '@/services/samagri.service';
+import { fetchSamagriItems, checkWishlistStatus, toggleWishlist } from '@/services/samagri.service';
 import { SamagriItem } from '@/services/api';
 import { useTheme } from '@/store/ThemeContext';
+import { MotiView } from 'moti';
 
 const { width } = Dimensions.get('window');
 
@@ -16,11 +18,14 @@ export default function ProductDetailScreen() {
   const { addToCart, updateQuantity, getItemCount } = useCartStore();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+  const insets = useSafeAreaInsets();
 
   const [product, setProduct] = useState<SamagriItem | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<SamagriItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSize, setSelectedSize] = useState('Medium');
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [togglingWishlist, setTogglingWishlist] = useState(false);
 
   useEffect(() => {
     if (id) loadProduct();
@@ -34,13 +39,20 @@ export default function ProductDetailScreen() {
       setProduct(found || null);
 
       if (found) {
-        // Filter for related products: same category if available, otherwise just others
+        // Check wishlist status
+        try {
+          const { is_favorite } = await checkWishlistStatus(found.id);
+          setIsFavorite(is_favorite);
+        } catch (wishErr) {
+          console.warn('Could not fetch wishlist status');
+        }
+
+        // Filter for related products
         const related = items.filter(p => 
           String(p.id) !== String(id) && 
           (p.category === found.category)
         ).slice(0, 4);
         
-        // If not enough in same category, just take some others
         if (related.length < 4) {
           const others = items.filter(p => 
             String(p.id) !== String(id) && 
@@ -55,6 +67,27 @@ export default function ProductDetailScreen() {
       console.error("Failed to load product", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!product || togglingWishlist) return;
+    try {
+      setTogglingWishlist(true);
+      const res = await toggleWishlist(product.id);
+      setIsFavorite(res.status === 'added' || res.is_favorite);
+    } catch (err) {
+      console.error('Wishlist toggle failed');
+    } finally {
+      setTogglingWishlist(false);
+    }
+  };
+
+  const handleVariantToggle = (size: string) => {
+    if (selectedSize === size) {
+      setSelectedSize(null); // Deselect
+    } else {
+      setSelectedSize(size); // Select
     }
   };
 
@@ -90,8 +123,12 @@ export default function ProductDetailScreen() {
           <TouchableOpacity style={styles.actionBtn}>
             <Ionicons name="share-social-outline" size={22} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="heart-outline" size={22} color={colors.text} />
+          <TouchableOpacity style={styles.actionBtn} onPress={handleToggleWishlist}>
+            <Ionicons 
+                name={isFavorite ? "heart" : "heart-outline"} 
+                size={22} 
+                color={isFavorite ? colors.secondary : colors.text} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -140,7 +177,7 @@ export default function ProductDetailScreen() {
             {['Small', 'Medium', 'Large'].map(size => (
               <TouchableOpacity 
                 key={size} 
-                onPress={() => setSelectedSize(size)}
+                onPress={() => handleVariantToggle(size)}
                 style={[
                   styles.sizeChip, 
                   { borderColor: colors.border },
@@ -218,26 +255,81 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom Bar */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+      <View style={[
+        styles.bottomBar, 
+        { 
+            backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF', 
+            borderTopColor: colors.border,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+            height: (insets.bottom > 0 ? 85 : 95) + insets.bottom,
+        }
+      ]}>
         <TouchableOpacity 
-          style={[styles.cartIconBtn, { borderColor: colors.border }]}
+          style={[styles.cartIconBtn, { borderColor: colors.border, backgroundColor: isDark ? '#262626' : '#F9FAFB' }]}
           onPress={() => router.push('/(customer)/cart')}
         >
-          <Ionicons name="bag-handle-outline" size={24} color={colors.text} />
+          <Ionicons name="bag-handle-outline" size={26} color={colors.text} />
           {cartQuantity > 0 && (
-            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+            <MotiView 
+                from={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                style={[styles.badge, { backgroundColor: colors.primary }]}
+            >
               <Text style={styles.badgeText}>{cartQuantity}</Text>
-            </View>
+            </MotiView>
           )}
         </TouchableOpacity>
+
+        {cartQuantity > 0 ? (
+          <View style={[styles.quantityContainer, { backgroundColor: isDark ? '#262626' : '#F3F4F6' }]}>
+            <TouchableOpacity 
+              style={[styles.qtyBtn, { backgroundColor: colors.background }]} 
+              onPress={() => updateQuantity(String(product.id), cartQuantity - 1)}
+            >
+              <Ionicons name="remove" size={20} color={colors.text} />
+            </TouchableOpacity>
+            
+            <View style={styles.qtyLabel}>
+              <Text style={[styles.qtyText, { color: colors.text }]}>{cartQuantity}</Text>
+            </View>
+ 
+            <TouchableOpacity 
+              style={[styles.qtyBtn, { backgroundColor: colors.background }]} 
+              onPress={() => updateQuantity(String(product.id), cartQuantity + 1)}
+            >
+              <Ionicons name="add" size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.buyBtn, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              addToCart({ ...product, id: String(product.id) } as any);
+            }}
+          >
+            <Ionicons name="bag-add-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+            <Text style={styles.buyBtnText}>Add to Cart</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity 
-          style={[styles.buyBtn, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            addToCart({ ...product, id: String(product.id) } as any);
-            router.push('/(customer)/cart');
-          }}
+            style={[styles.checkoutBtn, { backgroundColor: cartQuantity > 0 ? colors.text : colors.primary }]}
+            onPress={() => {
+              if (cartQuantity === 0) {
+                addToCart({ ...product, id: String(product.id) } as any);
+              }
+              router.push('/(customer)/cart');
+            }}
         >
-          <Text style={styles.buyBtnText}>Proceed to Checkout</Text>
+            <Ionicons 
+                name={cartQuantity > 0 ? "arrow-forward" : "flash-outline"} 
+                size={18} 
+                color="#FFF" 
+                style={{ marginRight: 6 }} 
+            />
+            <Text style={[styles.checkoutBtnText, { color: '#FFF' }]}>
+                {cartQuantity > 0 ? 'Checkout' : 'Buy Now'}
+            </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -333,17 +425,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 100,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    gap: 12,
     borderTopWidth: 1,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
   cartIconBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 15,
+    width: 58,
+    height: 58,
+    borderRadius: 18,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -362,8 +459,59 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
   },
   badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  buyBtn: { flex: 1, height: 60, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  buyBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  buyBtn: { 
+    flex: 1.5, 
+    height: 56, 
+    borderRadius: 16, 
+    flexDirection: 'row',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  buyBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  quantityContainer: {
+    flex: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 16,
+    paddingHorizontal: 4,
+    height: 56,
+  },
+  qtyBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  qtyLabel: { alignItems: 'center', flex: 1 },
+  qtyText: { fontSize: 18, fontWeight: 'bold' },
+  checkoutBtn: { 
+    flex: 1.2,
+    height: 56,
+    borderRadius: 16, 
+    flexDirection: 'row',
+    justifyContent: 'center', 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  checkoutBtnText: { fontSize: 15, fontWeight: 'bold' },
   recommendationContainer: { marginTop: 40, marginBottom: 20 },
   sectionHeader: { marginBottom: 16 },
   recommendationGrid: { 

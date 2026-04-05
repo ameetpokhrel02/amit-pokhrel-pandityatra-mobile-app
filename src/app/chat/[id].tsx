@@ -156,8 +156,23 @@ export default function ChatRoomScreen() {
             };
             setLocalMessages(prev => [...prev, aiMsg]);
         }
-      } catch (err) {
-        console.error('AI Chat Error:', err);
+      } catch (err: any) {
+        console.log('AI Chat Error:', err);
+        const errorMessage = err.response?.data?.error || err.message || '';
+        const isRateLimit = errorMessage.includes('429') || errorMessage.includes('Rate limit');
+        
+        const errorMsg: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            chatId: 'ai-guide',
+            senderId: 'ai',
+            text: isRateLimit 
+                ? "The guide is currently busy assisting other devotees 🙏. Please try again in a few seconds."
+                : "I'm having a bit of trouble connecting right now. Namaste! 🙏",
+            type: 'text',
+            timestamp: Date.now(),
+            isRead: true
+        };
+        setLocalMessages(prev => [...prev, errorMsg]);
       } finally {
         setIsAiTyping(false);
       }

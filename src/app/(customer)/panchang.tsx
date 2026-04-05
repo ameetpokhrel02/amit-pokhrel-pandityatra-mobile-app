@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import dayjs from 'dayjs';
+import { Calendar } from 'react-native-calendars';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchPanchang } from '@/services/panchang.service';
 import { PanchangData } from '@/services/api';
@@ -10,24 +12,25 @@ import { PanchangData } from '@/services/api';
 const { width } = Dimensions.get('window');
 
 export default function PanchangScreen() {
-    const today = new Date();
-    const isoDate = today.toISOString().slice(0, 10);
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
+    const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
     const [data, setData] = useState<PanchangData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [showFullCalendar, setShowFullCalendar] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        loadPanchang();
-    }, []);
+        loadPanchang(selectedDate);
+    }, [selectedDate]);
 
-    const loadPanchang = async () => {
+    const loadPanchang = async (dateStr: string) => {
         try {
             setLoading(true);
-            const res = await fetchPanchang(isoDate);
+            const res = await fetchPanchang(dateStr);
             setData(res);
         } catch (e) {
             setError('Unable to load Panchang data');
@@ -35,6 +38,8 @@ export default function PanchangScreen() {
             setLoading(false);
         }
     };
+
+    const weekDates = Array.from({ length: 7 }).map((_, i) => dayjs(selectedDate).startOf('week').add(i, 'day'));
 
     if (loading) {
         return (
@@ -52,7 +57,61 @@ export default function PanchangScreen() {
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Daily Panchang</Text>
-                <View style={{ width: 40 }} />
+                <TouchableOpacity onPress={() => setShowFullCalendar(!showFullCalendar)} style={styles.calendarToggle}>
+                    <Ionicons name="calendar-outline" size={24} color={colors.primary} />
+                </TouchableOpacity>
+            </View>
+
+            {showFullCalendar && (
+                <View style={[styles.calendarContainer, { backgroundColor: colors.card }]}>
+                    <Calendar
+                        current={selectedDate}
+                        onDayPress={(day: any) => {
+                            setSelectedDate(day.dateString);
+                            setShowFullCalendar(false);
+                        }}
+                        markedDates={{
+                            [selectedDate]: { selected: true, selectedColor: colors.primary }
+                        }}
+                        theme={{
+                            backgroundColor: colors.card,
+                            calendarBackground: colors.card,
+                            textSectionTitleColor: colors.primary,
+                            selectedDayBackgroundColor: colors.primary,
+                            selectedDayTextColor: '#ffffff',
+                            todayTextColor: colors.primary,
+                            dayTextColor: colors.text,
+                            textDisabledColor: isDark ? '#444' : '#d9e1e8',
+                            dotColor: colors.primary,
+                            monthTextColor: colors.text,
+                            indicatorColor: colors.primary,
+                        }}
+                    />
+                </View>
+            )}
+
+            {/* Quick Week Picker */}
+            <View style={[styles.weekStrip, { borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}>
+                {weekDates.map((date) => {
+                    const isSelected = date.format('YYYY-MM-DD') === selectedDate;
+                    return (
+                        <TouchableOpacity
+                            key={date.format('YYYY-MM-DD')}
+                            onPress={() => setSelectedDate(date.format('YYYY-MM-DD'))}
+                            style={[
+                                styles.weekDayItem,
+                                isSelected && { backgroundColor: colors.primary }
+                            ]}
+                        >
+                            <Text style={[styles.weekDayLabel, { color: isSelected ? '#FFF' : colors.text + '80' }]}>
+                                {date.format('ddd')}
+                            </Text>
+                            <Text style={[styles.weekDayValue, { color: isSelected ? '#FFF' : colors.text }]}>
+                                {date.format('D')}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -60,10 +119,25 @@ export default function PanchangScreen() {
                 <View style={[styles.dateCard, { backgroundColor: isDark ? '#1F2937' : '#FFF7ED' }]}>
                     <Text style={styles.nepaliDate}>{data?.nepali_date || '—'}</Text>
                     <Text style={[styles.englishDate, { color: colors.text }]}>
-                        {today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        {dayjs(selectedDate).format('dddd, MMMM D, YYYY')}
                     </Text>
                     <View style={styles.tithiBadge}>
                         <Text style={styles.tithiText}>{data?.tithi || '—'}</Text>
+                    </View>
+                    
+                    <View style={styles.dateNavRows}>
+                        <TouchableOpacity onPress={() => setSelectedDate(dayjs(selectedDate).subtract(1, 'day').format('YYYY-MM-DD'))}>
+                            <Ionicons name="chevron-back" size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => setSelectedDate(dayjs().format('YYYY-MM-DD'))}
+                            style={[styles.todayBtn, { borderColor: colors.primary }]}
+                        >
+                            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>TODAY</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setSelectedDate(dayjs(selectedDate).add(1, 'day').format('YYYY-MM-DD'))}>
+                            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -74,12 +148,12 @@ export default function PanchangScreen() {
                 </View>
 
                 {/* Details Section */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Celestial Details</Text>
-                    <DetailRow label="Nakshatra" value={data?.nakshatra || '—'} isDark={isDark} />
-                    <DetailRow label="Yoga" value={data?.yoga || '—'} isDark={isDark} />
-                    <DetailRow label="Karana" value={data?.karana || '—'} isDark={isDark} />
-                    <DetailRow label="Rashi" value={data?.rashi || '—'} isDark={isDark} />
+                <View style={[styles.section, styles.detailsCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#F3F4F6' }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 10 }]}>Celestial Details</Text>
+                    <DetailRow label="Nakshatra" value={data?.nakshatra || '—'} icon="star" isDark={isDark} />
+                    <DetailRow label="Yoga" value={data?.yoga || '—'} icon="infinite" isDark={isDark} />
+                    <DetailRow label="Karana" value={data?.karana || '—'} icon="analytics" isDark={isDark} />
+                    <DetailRow label="Rashi" value={data?.rashi || '—'} icon="moon" isDark={isDark} />
                 </View>
 
                 {/* Auspicious Times */}
@@ -108,18 +182,25 @@ export default function PanchangScreen() {
 }
 
 const StatItem = ({ icon, label, value, color, isDark }: any) => (
-    <View style={[styles.statItem, { backgroundColor: isDark ? '#1F2937' : '#FFF' }]}>
-        <View style={[styles.iconBg, { backgroundColor: color + '20' }]}>
-            <Ionicons name={icon} size={24} color={color} />
+    <View style={[styles.statItem, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#F3F4F6' }]}>
+        <View style={[styles.iconBg, { backgroundColor: color + '15' }]}>
+            <Ionicons name={icon} size={26} color={color} />
         </View>
-        <Text style={styles.statLabel}>{label}</Text>
-        <Text style={[styles.statValue, { color: isDark ? '#FFF' : '#333' }]}>{value}</Text>
+        <View style={{ alignItems: 'center' }}>
+            <Text style={styles.statLabel}>{label}</Text>
+            <Text style={[styles.statValue, { color: isDark ? '#FFF' : '#1F2937' }]}>{value}</Text>
+        </View>
     </View>
 );
 
-const DetailRow = ({ label, value, isDark }: any) => (
+const DetailRow = ({ label, value, icon, isDark }: any) => (
     <View style={[styles.detailRow, { borderBottomColor: isDark ? '#374151' : '#F3F4F6' }]}>
-        <Text style={styles.detailLabel}>{label}</Text>
+        <View style={styles.detailLeft}>
+            <View style={[styles.miniIcon, { backgroundColor: isDark ? '#374151' : '#F9FAFB' }]}>
+                <Ionicons name={icon} size={14} color={isDark ? '#9CA3AF' : '#6B7280'} />
+            </View>
+            <Text style={styles.detailLabel}>{label}</Text>
+        </View>
         <Text style={[styles.detailValue, { color: isDark ? '#FFF' : '#333' }]}>{value}</Text>
     </View>
 );
@@ -156,6 +237,54 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
+    },
+    calendarToggle: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calendarContainer: {
+        overflow: 'hidden',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    weekStrip: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+    },
+    weekDayItem: {
+        width: 44,
+        height: 54,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 2,
+    },
+    weekDayLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    weekDayValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    dateNavRows: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        gap: 24,
+    },
+    todayBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+        borderWidth: 1,
     },
     scrollContent: {
         padding: 20,
@@ -200,18 +329,18 @@ const styles = StyleSheet.create({
     },
     statItem: {
         flex: 1,
-        padding: 16,
-        borderRadius: 20,
+        padding: 20,
+        borderRadius: 24,
         alignItems: 'center',
-        elevation: 1,
+        borderWidth: 1,
     },
     iconBg: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     statLabel: {
         fontSize: 12,
@@ -230,19 +359,38 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 16,
     },
+    detailsCard: {
+        padding: 20,
+        borderRadius: 24,
+        borderWidth: 1,
+    },
     detailRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingVertical: 14,
+        alignItems: 'center',
+        paddingVertical: 16,
         borderBottomWidth: 1,
+    },
+    detailLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    miniIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     detailLabel: {
         fontSize: 14,
+        fontWeight: '500',
         color: '#6B7280',
     },
     detailValue: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '700',
     },
     auspiciousCard: {
         flexDirection: 'row',

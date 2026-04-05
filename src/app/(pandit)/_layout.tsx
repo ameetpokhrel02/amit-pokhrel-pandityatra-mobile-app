@@ -71,7 +71,7 @@ export default function PanditTabLayout() {
       
       {/* Hidden Screens Moved to Profile or List logic */}
       {[
-        'calendar', 'earnings', 'feedback', 'reviews', 'help', 'payout-history', 'upload-recording'
+        'calendar', 'earnings', 'feedback', 'reviews', 'help', 'payout-history', 'upload-recording', 'cart'
       ].map(screen => (
         <Tabs.Screen
           key={screen}

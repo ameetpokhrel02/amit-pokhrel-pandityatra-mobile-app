@@ -6,9 +6,9 @@ import {
   TouchableOpacity, 
   ScrollView, 
   StatusBar,
-  Dimensions,
-  SafeAreaView
+  Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';

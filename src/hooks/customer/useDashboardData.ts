@@ -55,13 +55,20 @@ export const useDashboardData = () => {
             console.warn("Could not fetch wishlist", wishlistErr);
         }
 
-        const bookingsRes = await listBookings({ status: 'PENDING' });
-        const bookingsData = bookingsRes.data;
-        setBookings(bookingsData);
+        // Fetch upcoming bookings for reminders and dashboard
+        const bookingsRes = await listBookings({ status: 'ACCEPTED' });
+        const upcomingBookings = (bookingsRes.data || []).filter((b: Booking) => 
+          b.service_location === 'ONLINE' && b.status === 'ACCEPTED'
+        ).sort((a: Booking, b: Booking) => {
+          return new Date(`${a.booking_date} ${a.booking_time}`).getTime() - 
+                 new Date(`${b.booking_date} ${b.booking_time}`).getTime();
+        });
+        
+        setBookings(upcomingBookings);
 
-        if (bookingsData.length > 0) {
+        if (upcomingBookings.length > 0) {
           try {
-            const recoData = await fetchBookingSamagriRecommendations(bookingsData[0].id);
+            const recoData = await fetchBookingSamagriRecommendations(upcomingBookings[0].id);
             setRecommendations(recoData);
           } catch (recoErr) {
             console.warn("Could not fetch recommendations", recoErr);

@@ -21,6 +21,19 @@ export interface SiteReview {
   created_at: string;
 }
 
+export interface SiteReviewsResponse {
+  reviews: SiteReview[];
+  average_rating: number;
+  total_reviews: number;
+  breakdown: Record<string, number>;
+}
+
+export interface PanditReviewsResponse {
+  reviews: Review[];
+  average_rating: number;
+  total_reviews: number;
+}
+
 /**
  * Fetch reviews given by the current user
  */
@@ -46,10 +59,17 @@ export async function submitSiteReview(payload: { rating: number; comment: strin
 }
 
 /**
+ * Fetch platform (site) feedback
+ */
+export async function fetchSiteReviews(): Promise<SiteReviewsResponse> {
+  const response = await apiClient.get('reviews/site-reviews/');
+  return response.data;
+}
+
+/**
  * Fetch public reviews for a specific pandit
  */
-export async function fetchPanditReviews(panditId: number): Promise<Review[]> {
+export async function fetchPanditReviews(panditId: number): Promise<PanditReviewsResponse> {
   const response = await apiClient.get(`reviews/pandit-reviews/`, { params: { pandit_id: panditId } });
-  const data = response.data.results || response.data;
-  return data;
+  return response.data;
 }

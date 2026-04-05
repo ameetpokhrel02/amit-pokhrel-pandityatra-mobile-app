@@ -119,6 +119,8 @@ function LayoutContent() {
           'reviews/pending',
           'reviews/history',
           'reviews/platform-feedback',
+          'reviews/app-reviews',
+          'bookings/pandit-feedback',
           'shop/ai-recommend',
           'shop/[id]',
           'shop/orders',
@@ -129,7 +131,6 @@ function LayoutContent() {
             name={screen}
             options={{
               href: null,
-              tabBarStyle: { display: 'none' },
             }}
           />
         ))}

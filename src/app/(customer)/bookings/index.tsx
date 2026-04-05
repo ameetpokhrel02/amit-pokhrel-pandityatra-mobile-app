@@ -121,13 +121,21 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             )}
 
-            {(item.status === 'ACCEPTED' || item.status === 'PENDING') && (
+            {item.status === 'ACCEPTED' && item.service_location === 'ONLINE' && (
               <TouchableOpacity
-                style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: 8 }]}
-                onPress={() => router.push(`/video/${item.id}`)}
+                style={[styles.quickActionButton, { backgroundColor: '#FF6F00', marginLeft: 8 }]}
+                onPress={() => router.push({
+                   pathname: '/video',
+                   params: {
+                     bookingId: item.id,
+                     role: 'customer',
+                     peerName: item.pandit_name || item.pandit_full_name,
+                     serviceName: item.service_name
+                   }
+                } as any)}
               >
                 <Ionicons name="videocam" size={16} color="#FFF" />
-                <Text style={styles.quickActionText}>Video Puja</Text>
+                <Text style={styles.quickActionText}>Join Session</Text>
               </TouchableOpacity>
             )}
 

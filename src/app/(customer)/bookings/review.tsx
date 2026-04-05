@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { Button } from '@/components/ui/Button';
 import apiClient from '@/services/api-client';
+import { Image } from 'expo-image';
 
 export default function ReviewScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -56,6 +57,11 @@ export default function ReviewScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
+          <Image 
+            source={require('@/assets/images/pandit-logo.png')} 
+            style={{ width: 80, height: 80, marginBottom: 16, borderRadius: 20 }}
+            contentFit="contain"
+          />
           <Text style={[styles.title, { color: colors.text }]}>How was your experience?</Text>
           <Text style={[styles.subtitle, { color: isDark ? '#AAA' : '#666' }]}>
             Your review helps us improve and helps others choose better Pandits.
@@ -117,7 +123,7 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   content: { padding: 24, alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginTop: 20, marginBottom: 8, textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginTop: 10, marginBottom: 8, textAlign: 'center' },
   subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 40, paddingHorizontal: 20 },
   ratingContainer: { flexDirection: 'row', gap: 12, marginBottom: 40 },
   inputGroup: { width: '100%', marginBottom: 20 },

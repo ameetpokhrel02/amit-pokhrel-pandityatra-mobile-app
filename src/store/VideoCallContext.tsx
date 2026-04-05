@@ -8,41 +8,48 @@ import {
   joinVideoRoom, 
   fetchVideoRoom 
 } from '@/services/video.service';
+import { fetchChatRoomMessages } from '@/services/chat.service';
+import { getBooking } from '@/services/booking.service';
 import { ChatMessage } from '@/types/chat';
+import { Camera } from 'expo-camera';
+import { Audio } from 'expo-av';
 
-// Late require for WebRTC to handle Expo Go gracefully
-let WebRTC: any = {};
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  WebRTC = require('react-native-webrtc');
-} catch {
-  WebRTC = {
-    RTCPeerConnection: class { 
-      addEventListener() {} 
-      removeEventListener() {} 
-      addTrack() {}
-      close() {}
-      setRemoteDescription() {}
-      setLocalDescription() {}
-      createAnswer() { return { sdp: '', type: 'answer' }; }
-      createOffer() { return { sdp: '', type: 'offer' }; }
-      addIceCandidate() {}
-    },
-    mediaDevices: { 
-      getUserMedia: async () => ({ 
-        getTracks: () => [], 
-        getVideoTracks: () => [{ enabled: true, stop: () => {}, _switchCamera: () => {} }],
-        getAudioTracks: () => [{ enabled: true, stop: () => {} }],
-        toURL: () => '' 
-      }) 
-    },
-    isMock: true,
-    RTCIceCandidate: class {},
-    RTCSessionDescription: class {},
-  };
-}
+// Lazy loading of Native WebRTC for better startup performance
+const getWebRTC = () => {
+  try {
+    return require('react-native-webrtc');
+  } catch (e) {
+    console.warn('[VideoContext] WebRTC native module not available, using fallback Mock');
+    return {
+      RTCPeerConnection: class { 
+        addEventListener() {} 
+        removeEventListener() {} 
+        addTrack() {}
+        close() {}
+        setRemoteDescription() {}
+        setLocalDescription() {}
+        createAnswer() { return { sdp: '', type: 'answer' }; }
+        createOffer() { return { sdp: '', type: 'offer' }; }
+        addIceCandidate() {}
+      },
+      mediaDevices: { 
+        getUserMedia: async () => ({ 
+          getTracks: () => [], 
+          getVideoTracks: () => [{ enabled: true, stop: () => {}, _switchCamera: () => {} }],
+          getAudioTracks: () => [{ enabled: true, stop: () => {} }],
+          toURL: () => '' 
+        }) 
+      },
+      isMock: true,
+      RTCIceCandidate: class {},
+      RTCSessionDescription: class {},
+    };
+  }
+};
 
-const { RTCPeerConnection, mediaDevices, RTCIceCandidate, RTCSessionDescription } = WebRTC;
+// Accessors will be used only inside functions to ensure late-binding
+const lazyWebRTC = getWebRTC();
+const { RTCPeerConnection, mediaDevices, RTCIceCandidate, RTCSessionDescription } = lazyWebRTC;
 
 interface VideoCallContextType {
   localStream: any | null;
@@ -58,18 +65,22 @@ interface VideoCallContextType {
   peerName: string;
   peerAvatar: string | undefined;
   isPandit: boolean;
+  isRecording: boolean;
+  isHandRaised: boolean;
   
   // Bridge & UI State
   isMinimized: boolean;
   setIsMinimized: (val: boolean) => void;
   webViewRef: React.MutableRefObject<any>;
   setWebViewRef: (ref: any) => void;
-
+ 
   startCall: (bookingId: number, userName: string, isPandit: boolean, peerName?: string, peerAvatar?: string) => Promise<void>;
   endCall: () => Promise<void>;
   toggleMic: () => void;
   toggleVideo: () => void;
   flipCamera: () => void;
+  toggleHandRaise: () => void;
+  toggleRecording: () => void;
   sendMessage: (text: string) => void;
   clearUnread: () => void;
   handleBridgeMessage: (event: any) => void;
@@ -98,6 +109,8 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [peerName, setPeerName] = useState('Partner');
   const [peerAvatar, setPeerAvatar] = useState<string | undefined>(undefined);
   const [isPandit, setIsPandit] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
   
   // Bridge States
   const [isMinimized, setIsMinimized] = useState(false);
@@ -121,6 +134,8 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setActiveBookingId(null);
     setMessages([]);
     setUnreadCount(0);
+    setIsRecording(false);
+    setIsHandRaised(false);
     roomIdRef.current = null;
     socket.current = null;
     pc.current = null;
@@ -134,13 +149,17 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const newMessage: ChatMessage = {
       id: data.chat_id || Math.random().toString(),
       chatId: bookingId.toString(),
-      senderId: data.sender === 'user' ? 'customer' : 'pandit',
+      senderId: data.sender === 'user' || data.sender === 'customer' ? 'customer' : 'pandit',
       text: data.message,
       type: 'text',
-      timestamp: Date.now(),
+      timestamp: data.timestamp ? new Date(data.timestamp).getTime() : Date.now(),
       isRead: true,
     };
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => {
+        // Prevent duplicate messages
+        if (prev.find(m => m.id === newMessage.id)) return prev;
+        return [...prev, newMessage];
+    });
     setUnreadCount((c) => c + 1);
   }, []);
 
@@ -154,8 +173,10 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setIsConnecting(false);
           setIsCallActive(true);
           break;
-        case 'remote_stream_added':
-          console.log('[VideoBridge] Remote stream active');
+        case 'chat_received':
+          if (activeBookingId) {
+              onChatMessage(data, activeBookingId);
+          }
           break;
         case 'error':
           Alert.alert('Call Error', data.message);
@@ -164,11 +185,17 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'log':
           console.log('[VideoBridge LOG]', data.message);
           break;
+        case 'recording_status':
+          setIsRecording(data.isRecording);
+          break;
+        case 'hand_raise_status':
+          setIsHandRaised(data.isHandRaised);
+          break;
       }
     } catch (e) {
       console.error('[VideoBridge] Parse Error:', e);
     }
-  }, [cleanup]);
+  }, [cleanup, activeBookingId, onChatMessage]);
 
   const startCall = async (bookingId: number, userName: string, panditRole: boolean, name?: string, avatar?: string) => {
     if (isCallActive) return;
@@ -180,7 +207,20 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (avatar) setPeerAvatar(avatar);
 
     try {
-      // Notify Backend & Get Room ID
+      // 1. Request Permissions
+      const cameraStatus = await Camera.requestCameraPermissionsAsync();
+      const audioStatus = await Audio.requestPermissionsAsync();
+
+      if (cameraStatus.status !== 'granted' || audioStatus.status !== 'granted') {
+          Alert.alert(
+              'Permissions Needed',
+              'Camera and Microphone access are required for sacred video sessions. Please enable them in settings.',
+              [{ text: 'OK', onPress: () => cleanup() }]
+          );
+          return;
+      }
+
+      // 2. Notify Backend & Get Room ID
       let roomId: number | string | null = null;
       try {
         const roomRes = await fetchVideoRoom(bookingId);
@@ -195,9 +235,18 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         await startVideoRoom(roomIdRef.current);
       }
 
-      // NOTE: In the bridge-based approach, the actual WebRTC handshake happens
-      // inside the WebView. We just need to ensure the WebView is rendered.
-      // isConnecting = true will trigger the FloatingCallLayer to show the WebView.
+      // Fetch initial chat history for the booking
+      try {
+          const bookingData = await getBooking(bookingId);
+          const chatRoomId = bookingData.data?.chat_room;
+          if (chatRoomId) {
+              const history = await fetchChatRoomMessages(chatRoomId);
+              setMessages(history);
+              setUnreadCount(0);
+          }
+      } catch (err) {
+          console.error('[VideoContext] History fetch error:', err);
+      }
       
     } catch (err) {
       console.error('[VideoContext] Error starting call:', err);
@@ -240,10 +289,27 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       webViewRef.current.injectJavaScript(`window.flipCamera()`);
     }
   };
-
+ 
+  const toggleHandRaise = () => {
+    const nextState = !isHandRaised;
+    setIsHandRaised(nextState);
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`window.toggleHandRaise(${nextState})`);
+    }
+  };
+ 
+  const toggleRecording = () => {
+    const nextState = !isRecording;
+    // We update UI immediately for optimism, but wait for signaling if possible
+    setIsRecording(nextState);
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`window.toggleRecording(${nextState})`);
+    }
+  };
+ 
   const sendMessage = (text: string) => {
-    if (!text.trim() || !socket.current) return;
-    socket.current.send(JSON.stringify({ type: 'chat', message: text }));
+    if (!text.trim() || !webViewRef.current) return;
+    webViewRef.current.injectJavaScript(`window.sendChatMessage("${text.replace(/"/g, '\\"')}")`);
   };
 
   const clearUnread = () => setUnreadCount(0);
@@ -253,10 +319,13 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStream, remoteStream, isCallActive, isConnecting,
       isMicOn, isVideoOn, isFrontCamera, messages, unreadCount,
       activeBookingId, peerName, peerAvatar, isPandit,
+      isRecording, isHandRaised,
       isMinimized, setIsMinimized,
       webViewRef: webViewRef,
       setWebViewRef: (ref) => { webViewRef.current = ref; },
-      startCall, endCall, toggleMic, toggleVideo, flipCamera, sendMessage, clearUnread,
+      startCall, endCall, toggleMic, toggleVideo, flipCamera, 
+      toggleHandRaise, toggleRecording,
+      sendMessage, clearUnread,
       handleBridgeMessage
     }}>
       {children}

@@ -60,13 +60,21 @@ export default function VideoCallScreen() {
         }
     };
 
-    if (loading) {
+    if (loading && !isCallActive) {
         return (
             <View style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.loadingText}>
                     {isPandit ? 'Preparing session for your devotee...' : 'Preparing your sacred session...'}
                 </Text>
+                
+                <TouchableOpacity 
+                    style={[styles.backBtn, { marginTop: 40, backgroundColor: '#222', flexDirection: 'row', alignItems: 'center' }]} 
+                    onPress={() => router.back()}
+                >
+                    <Ionicons name="close" size={18} color="white" />
+                    <Text style={[styles.backBtnText, { marginLeft: 8 }]}>Cancel & Go Back</Text>
+                </TouchableOpacity>
             </View>
         );
     }

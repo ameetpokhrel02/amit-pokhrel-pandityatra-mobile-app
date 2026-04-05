@@ -170,7 +170,7 @@ export default function ProfileScreen() {
           {renderSettingItem(
             "megaphone-outline", 
             "Rate the App (PanditYatra)", 
-            () => Alert.alert("Rate App", "Redirecting to App Store...")
+            () => router.push('/(customer)/reviews/app-reviews' as any)
           )}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem(

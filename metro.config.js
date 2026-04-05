@@ -7,4 +7,11 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.assetExts.push('html');
 
+config.transformer.getTransformOptions = async () => ({
+  transform: {
+    experimentalImportSupport: false,
+    inlineRequires: true,
+  },
+});
+
 module.exports = withNativeWind(config, { input: './global.css' });

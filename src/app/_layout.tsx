@@ -1,6 +1,6 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { ThemeProvider } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
@@ -10,8 +10,19 @@ import '../../global.css'; // Import NativeWind styles
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import { VideoCallProvider } from '@/store/VideoCallContext';
-import { PersistentVideoCall } from '@/components/video/PersistentVideoCall';
+import { VideoCallProvider, useVideoCall } from '@/store/VideoCallContext';
+import { LazyLoader } from '@/components/ui/LazyLoader';
+const LazyPersistentVideoCall = React.lazy(() => import('@/components/video/PersistentVideoCall').then(m => ({ default: m.PersistentVideoCall })));
+
+function VideoCallContainer() {
+  const { isCallActive, isConnecting } = useVideoCall();
+  if (!isCallActive && !isConnecting) return null;
+  return (
+    <LazyLoader>
+      <LazyPersistentVideoCall />
+    </LazyLoader>
+  );
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -134,7 +145,7 @@ export default function RootLayout() {
             <Stack.Screen name="chat/index" />
             <Stack.Screen name="chat/[id]" />
           </Stack>
-          <PersistentVideoCall />
+          <VideoCallContainer />
         </VideoCallProvider>
       </ThemeProvider>
     </StripeProvider>

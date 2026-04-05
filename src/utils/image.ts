@@ -10,6 +10,14 @@ export const getImageUrl = (path?: string | null): string | null => {
   
   // If it's already a full URL, return it
   if (path.startsWith('http://') || path.startsWith('https://')) {
+    // FIX: Hande localhost URLs from backend that fail on mobile
+    if (path.includes('localhost') || path.includes('127.0.0.1')) {
+        const rootUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+        const relativePart = path.split(':8000')[1] || path.split('localhost')[1] || path.split('127.0.0.1')[1];
+        if (relativePart) {
+            return `${rootUrl}${relativePart}`;
+        }
+    }
     return path;
   }
   

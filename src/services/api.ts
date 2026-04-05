@@ -141,13 +141,14 @@ export interface Booking {
     pandit: number; // or object
     pandit_name?: string; // helper for UI
     pandit_full_name?: string; // from serializer
-    status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED';
+    status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'MISSED';
     booking_date: string;
     booking_time?: string;
     location?: string;
     notes?: string;
     service?: number;
     service_name?: string;
+    service_location?: 'ONLINE' | 'OFFLINE';
     payment_status?: string | boolean;
     total_fee?: number;
     is_reviewed?: boolean;

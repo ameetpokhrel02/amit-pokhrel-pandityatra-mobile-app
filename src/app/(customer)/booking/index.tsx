@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LottieAnimation } from '@/components/ui/LottieAnimation';
 import DateTimePicker from 'react-native-ui-datepicker';
 import { Calendar } from 'react-native-calendars';
 import { fetchPanchang } from '@/services/panchang.service';
@@ -23,7 +22,12 @@ import { fetchPujaSamagriRecommendations } from '@/services/recommender.service'
 import { getSamagriRequirements } from '@/services/samagri.service';
 import { Image } from 'expo-image';
 import { BookingDateTime } from '@/components/booking/BookingDateTime';
-import MapLocationPicker from '@/components/ui/MapLocationPicker';
+import { LazyLoader } from '@/components/ui/LazyLoader';
+
+const MapLocationPicker = React.lazy(() => import('@/components/ui/MapLocationPicker'));
+const LottieAnimation = React.lazy(() =>
+  import('@/components/ui/LottieAnimation').then(m => ({ default: m.LottieAnimation }))
+);
 
 dayjs.extend(calendar);
 dayjs.extend(localeData);
@@ -197,12 +201,14 @@ export default function BookingScreen() {
   if (isSuccess) {
     return (
       <View style={[styles.successContainer, { backgroundColor: colors.background }]}>
+      <LazyLoader height={styles.lottie.height}>
         <LottieAnimation
           source={require('@/assets/animations/success.json')} // Make sure this file exists or use a placeholder
           autoPlay
           loop={false}
           style={styles.lottie}
         />
+      </LazyLoader>
       <View>
         <Text style={[styles.successTitle, { color: colors.text }]}>Booking Created</Text>
         <Text style={[styles.successMessage, { color: isDark ? '#AAA' : '#666' }]}>
@@ -432,14 +438,16 @@ export default function BookingScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: isDark ? '#AAA' : '#666' }]}>Search/Select on Map</Text>
-                <MapLocationPicker
-                  value={address}
-                  onSelect={(loc) => setAddress(loc.address)}
-                  placeholder="Where should the puja be performed?"
-                  colors={colors}
-                  isDark={isDark}
-                  label="Pin Location"
-                />
+                <LazyLoader height={56}>
+                  <MapLocationPicker
+                    value={address}
+                    onSelect={(loc) => setAddress(loc.address)}
+                    placeholder="Where should the puja be performed?"
+                    colors={colors}
+                    isDark={isDark}
+                    label="Pin Location"
+                  />
+                </LazyLoader>
               </View>
 
               {address ? (

@@ -90,11 +90,19 @@ export default function BookingsScreen() {
         </View>
       )}
 
-      {(item.status === 'ACCEPTED' || item.status === 'CONFIRMED') && (
+      {(item.status === 'ACCEPTED' || item.status === 'CONFIRMED') && item.service_location === 'ONLINE' && (
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionButton, styles.acceptButton, { backgroundColor: '#FF6F00' }]}
-            onPress={() => router.push(`/video/${item.id}` as any)}
+            onPress={() => router.push({
+               pathname: '/video',
+               params: {
+                 bookingId: item.id,
+                 role: 'pandit',
+                 peerName: item.user_details?.full_name || 'Customer',
+                 serviceName: item.service_name || item.puja_details?.name
+               }
+            } as any)}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Ionicons name="videocam-outline" size={18} color="#FFF" />

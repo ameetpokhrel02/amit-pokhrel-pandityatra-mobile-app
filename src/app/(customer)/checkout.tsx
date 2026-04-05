@@ -9,8 +9,12 @@ import { useTheme } from '@/store/ThemeContext';
 import { checkoutSamagri } from '@/services/samagri.service';
 import { verifyKhaltiPayment, verifyEsewaPayment, checkPaymentStatus } from '@/services/payment.service';
 import { Button } from '@/components/ui/Button';
-import { PaymentWebView } from '@/components/common/PaymentWebView';
+import { LazyLoader } from '@/components/ui/LazyLoader';
 import { useStripe } from '@stripe/stripe-react-native';
+
+const PaymentWebView = React.lazy(() =>
+  import('@/components/common/PaymentWebView').then(m => ({ default: m.PaymentWebView }))
+);
 
 export default function ShopCheckoutScreen() {
   const router = useRouter();
@@ -153,21 +157,23 @@ export default function ShopCheckoutScreen() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Complete Payment</Text>
           <View style={{ width: 40 }} />
         </View>
-        <PaymentWebView
-          url={paymentUrl}
-          html={formHtml}
-          onSuccess={(data) => {
-            setShowWebView(false);
-            const pidx = data.url.split('pidx=')[1]?.split('&')[0];
-            const esewaData = data.url.split('data=')[1]?.split('&')[0];
-            handlePaymentSuccess(pidx, esewaData);
-          }}
-          onFailure={() => {
-            setShowWebView(false);
-            Alert.alert('Payment Failed', 'The payment process was not successful.');
-          }}
-          onCancel={() => setShowWebView(false)}
-        />
+        <LazyLoader>
+          <PaymentWebView
+            url={paymentUrl}
+            html={formHtml}
+            onSuccess={(data) => {
+              setShowWebView(false);
+              const pidx = data.url.split('pidx=')[1]?.split('&')[0];
+              const esewaData = data.url.split('data=')[1]?.split('&')[0];
+              handlePaymentSuccess(pidx, esewaData);
+            }}
+            onFailure={() => {
+              setShowWebView(false);
+              Alert.alert('Payment Failed', 'The payment process was not successful.');
+            }}
+            onCancel={() => setShowWebView(false)}
+          />
+        </LazyLoader>
       </SafeAreaView>
     );
   }

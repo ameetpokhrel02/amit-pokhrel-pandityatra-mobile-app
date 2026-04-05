@@ -1,17 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
-export default function CartScreen() {
+export default function PanditCartScreen() {
   const router = useRouter();
-  const { items, updateQuantity, addToCart, removeFromCart, totalPrice } = useCartStore();
+  const { items, updateQuantity, addToCart, removeFromCart, totalPrice, syncCart } = useCartStore();
   const { colors, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
@@ -26,20 +25,20 @@ export default function CartScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>My Cart</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Pandit Store Cart</Text>
           <View style={{ width: 44 }} />
         </View>
         <View style={[styles.emptyContent, { justifyContent: 'center', alignItems: 'center' }]}>
           <View style={[styles.emptyIconBox, { backgroundColor: colors.primary + '10' }]}>
             <Ionicons name="bag-handle-outline" size={80} color={colors.primary} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>Your cart is empty</Text>
-          <Text style={[styles.emptySub, { color: colors.text + '60' }]}>Looks like you haven&apos;t added anything to your cart yet.</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No ritual bag found</Text>
+          <Text style={[styles.emptySub, { color: colors.text + '60' }]}>You haven't added any samagri items to your cart yet.</Text>
           <TouchableOpacity 
             style={[styles.shopBtn, { backgroundColor: colors.primary }]} 
-            onPress={() => router.push('/(customer)/shop')}
+            onPress={() => router.push('/(pandit)')}
           >
-            <Text style={styles.shopBtnText}>Start Shopping</Text>
+            <Text style={styles.shopBtnText}>Browse Ritual Items</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -53,9 +52,9 @@ export default function CartScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>My Cart</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Ritual Cart</Text>
         <TouchableOpacity 
-           onPress={() => router.push('/(customer)/shop')}
+           onPress={() => router.push('/(pandit)')}
            style={[styles.backBtn, { backgroundColor: 'transparent' }]}
         >
           <Ionicons name="add" size={26} color={colors.primary} />
@@ -67,7 +66,7 @@ export default function CartScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Items in Cart ({items.length})</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Selected Items ({items.length})</Text>
         {items.map((item) => (
           <View key={item.id} style={[styles.cartItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.itemImageWrapper, { backgroundColor: colors.background }]}>
@@ -98,10 +97,10 @@ export default function CartScreen() {
                   </TouchableOpacity>
                 </View>
                 <TouchableOpacity 
-                  style={[styles.removeBtn, { backgroundColor: colors.secondary + '10' }]}
+                  style={[styles.removeBtn, { backgroundColor: colors.secondary ? colors.secondary + '10' : '#FF000010' }]}
                   onPress={() => removeFromCart(item.id)}
                 >
-                  <Ionicons name="trash-outline" size={18} color={colors.secondary} />
+                  <Ionicons name="trash-outline" size={18} color={colors.secondary || '#FF0000'} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -124,15 +123,6 @@ export default function CartScreen() {
             <Text style={[styles.totalValText, { color: colors.primary }]}>NPR {total}</Text>
           </View>
         </View>
-
-        {/* Promo Code Mock */}
-        <View style={[styles.promoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.promoLeft}>
-            <Ionicons name="pricetag-outline" size={20} color={colors.primary} />
-            <Text style={[styles.promoText, { color: colors.text }]}>Apply Promo Code</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.text + '40'} />
-        </View>
       </ScrollView>
 
       <View style={[
@@ -145,9 +135,9 @@ export default function CartScreen() {
       ]}>
         <TouchableOpacity 
             style={[styles.checkoutBtn, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/(customer)/checkout')}
+            onPress={() => Alert.alert('Coming Soon', 'Pandit checkout functionality is being integrated.')}
         >
-          <Text style={styles.checkoutBtnText}>Secure Checkout</Text>
+          <Text style={styles.checkoutBtnText}>Checkout Ritual Items</Text>
           <Ionicons name="lock-closed" size={18} color="#FFF" />
         </TouchableOpacity>
       </View>
@@ -227,17 +217,6 @@ const styles = StyleSheet.create({
   totalLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: 16, fontWeight: 'bold' },
   totalValText: { fontSize: 20, fontWeight: 'bold' },
-  promoBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 100,
-  },
-  promoLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  promoText: { fontWeight: '500' },
   footer: {
     padding: 20,
     borderTopWidth: 1,

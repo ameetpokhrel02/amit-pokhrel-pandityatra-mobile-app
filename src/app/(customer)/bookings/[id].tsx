@@ -9,6 +9,8 @@ import { getBooking, updateBookingStatus, cancelBooking, getBookingInvoice } fro
 import { Button } from '@/components/ui/Button';
 import dayjs from 'dayjs';
 import { usePujaRealtime } from '@/hooks/usePujaRealtime';
+import { fetchBookingSamagriRecommendations } from '@/services/recommender.service';
+import { SamagriItem } from '@/services/api';
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -17,6 +19,7 @@ export default function BookingDetailScreen() {
   const isDark = theme === 'dark';
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [recommendations, setRecommendations] = useState<SamagriItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
@@ -30,7 +33,16 @@ export default function BookingDetailScreen() {
     try {
       setLoading(true);
       const response = await getBooking(Number(id));
-      setBooking(response.data);
+      const bookingData = response.data;
+      setBooking(bookingData);
+
+      // Fetch Samagri Recommendations
+      try {
+        const recoRes = await fetchBookingSamagriRecommendations(Number(id));
+        setRecommendations(recoRes);
+      } catch (err) {
+        console.warn('Could not fetch recommendations', err);
+      }
     } catch (error) {
       console.error('Error loading booking:', error);
       Alert.alert('Error', 'Failed to load booking details.');
@@ -89,7 +101,11 @@ export default function BookingDetailScreen() {
     );
   }
 
+  const isMissed = booking.status === 'ACCEPTED' && 
+                   dayjs(`${booking.booking_date} ${booking.booking_time}`).add(1, 'hour').isBefore(dayjs());
+
   const getStatusColor = () => {
+    if (isMissed) return '#EF4444';
     switch (booking.status) {
       case 'ACCEPTED': return '#16A34A';
       case 'COMPLETED': return '#2563EB';
@@ -114,7 +130,9 @@ export default function BookingDetailScreen() {
         {/* Status Section */}
         <View style={[styles.statusSection, { backgroundColor: colors.card }]}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor() }]}>{booking.status}</Text>
+            <Text style={[styles.statusText, { color: getStatusColor() }]}>
+              {isMissed ? 'MISSED' : booking.status}
+            </Text>
           </View>
           <Text style={[styles.bookingId, { color: isDark ? '#AAA' : '#666' }]}>
             Booking ID: #{booking.id}
@@ -144,9 +162,35 @@ export default function BookingDetailScreen() {
           </View>
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={18} color={isDark ? '#AAA' : '#666'} />
-            <Text style={[styles.infoValue, { color: colors.text }]}>{booking.location}</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>
+              {booking.service_location === 'ONLINE' ? 'Online Video Session' : (booking.location || 'At User Location')}
+            </Text>
           </View>
         </View>
+
+        {/* Samagri Recommendations */}
+        {recommendations.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Recommended Samagri</Text>
+            {recommendations.slice(0, 3).map((item) => (
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.recoRow}
+                onPress={() => router.push(`/(customer)/shop?itemId=${item.id}` as any)}
+              >
+                <Text style={[styles.recoName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.recoPrice, { color: colors.primary }]}>₹{item.price}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.text + '40'} />
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity 
+              style={styles.viewMoreReco}
+              onPress={() => router.push({ pathname: "/(customer)/bookings/samagri-recommendations", params: { bookingId: booking.id } })}
+            >
+              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>View All Recommendations</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Payment Card */}
         <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -177,14 +221,31 @@ export default function BookingDetailScreen() {
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          {booking.status === 'ACCEPTED' && (
+          {booking.status === 'ACCEPTED' && booking.service_location === 'ONLINE' && !isMissed && (
             <Button 
                title="Join Live Session" 
-               onPress={() => router.push(`/video/${booking.id}`)}
+               onPress={() => router.push({
+                 pathname: '/video',
+                 params: {
+                   bookingId: booking.id,
+                   role: 'customer',
+                   peerName: booking.pandit_full_name,
+                   serviceName: booking.service_name
+                 }
+               } as any)}
                variant="primary"
                leftIcon={<Ionicons name="videocam" size={20} color="white" />}
                style={styles.actionButton}
             />
+          )}
+
+          {isMissed && (
+            <View style={styles.missedNotice}>
+              <Ionicons name="alert-circle" size={20} color="#DC2626" />
+              <Text style={styles.missedNoticeText}>
+                This session was scheduled for a past time and is now marked as missed.
+              </Text>
+            </View>
           )}
 
           {!booking.payment_status && booking.status !== 'CANCELLED' && (
@@ -312,4 +373,43 @@ const styles = StyleSheet.create({
   invoiceButtonText: { fontWeight: 'bold', fontSize: 16 },
   wsIndicator: { width: 40, alignItems: 'flex-end', justifyContent: 'center' },
   wsDot: { width: 8, height: 8, borderRadius: 4 },
+  recoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  recoName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  recoPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  viewMoreReco: {
+    marginTop: 12,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  missedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEE2E2',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    marginBottom: 8,
+  },
+  missedNoticeText: {
+    color: '#991B1B',
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
 });

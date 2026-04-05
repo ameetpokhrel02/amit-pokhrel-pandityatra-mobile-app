@@ -3,8 +3,8 @@ import apiClient from './api-client';
 export async function generateKundali(payload: {
     dob: string;
     time: string;
-    lat: number;
-    lon: number;
+    latitude: number;
+    longitude: number;
     timezone: string
 }) {
     const response = await apiClient.post('kundali/generate/', payload);
