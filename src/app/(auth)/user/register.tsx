@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  Alert, 
   TouchableOpacity, 
   ActivityIndicator, 
   KeyboardAvoidingView, 
@@ -11,6 +10,7 @@ import {
   Dimensions,
   StatusBar
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { Image } from "expo-image";
 import { Ionicons } from '@expo/vector-icons';
@@ -69,7 +69,7 @@ export default function CustomerRegister() {
         (googleResponse.authentication as any)?.idToken ||
         (googleResponse.params as any)?.id_token;
       if (!idToken) {
-        Alert.alert("Google Sign-In", "No id_token returned from Google.");
+        Toast.show({ type: 'error', text1: 'Google Sign-In', text2: 'No id_token returned from Google.' });
         return;
       }
 
@@ -85,7 +85,7 @@ export default function CustomerRegister() {
         else router.replace("/(customer)" as any);
       } catch (e: any) {
         console.error(e);
-        Alert.alert("Google Sign-In failed", e?.message || "Please try again.");
+        Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: e?.message || 'Please try again.' });
       } finally {
         setLoading(false);
       }
@@ -96,11 +96,11 @@ export default function CustomerRegister() {
 
   const handleSubmit = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
-      Alert.alert('Required', 'Please fill in all required fields (*)');
+      Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in all required fields (*)' });
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Passwords do not match' });
       return;
     }
 
@@ -122,7 +122,7 @@ export default function CustomerRegister() {
       } as any);
     } catch (e: any) {
       console.error(e);
-      Alert.alert('Registration failed', e.response?.data?.detail || e.message || 'Please try again.');
+      Toast.show({ type: 'error', text1: 'Registration failed', text2: e.response?.data?.detail || e.message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -130,7 +130,7 @@ export default function CustomerRegister() {
 
   const handleGooglePress = async () => {
     if (!GOOGLE_CLIENT_ID) {
-      Alert.alert("Config Error", "Missing Google client id.");
+      Toast.show({ type: 'error', text1: 'Config Error', text2: 'Missing Google client id.' });
       return;
     }
     await googlePromptAsync();

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  Alert, 
   TouchableOpacity, 
   ScrollView, 
   KeyboardAvoidingView, 
@@ -11,6 +10,7 @@ import {
   Dimensions,
   StatusBar
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { Image } from "expo-image";
 import { Ionicons } from '@expo/vector-icons';
@@ -57,13 +57,13 @@ export default function PanditRegister() {
   const handleNext = () => {
     if (step === 1) {
       if (!fullName || !email || !password) {
-        Alert.alert('Required', 'Please fill in name, email and password');
+        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in name, email and password' });
         return;
       }
       setStep(2);
     } else if (step === 2) {
       if (!expertise || !experience || !bio) {
-        Alert.alert('Required', 'Please fill in professional details');
+        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in professional details' });
         return;
       }
       setStep(3);
@@ -72,7 +72,7 @@ export default function PanditRegister() {
 
   const handleSubmit = async () => {
     if (!certificate) {
-      Alert.alert('Required', 'Please upload your certification');
+      Toast.show({ type: 'error', text1: 'Required', text2: 'Please upload your certification' });
       return;
     }
 
@@ -100,14 +100,11 @@ export default function PanditRegister() {
     try {
       setLoading(true);
       await registerPandit(formData);
-      Alert.alert(
-        'Success', 
-        'Registration submitted! Your profile is pending admin approval.',
-        [{ text: 'OK', onPress: () => router.replace('/(public)/role-selection') }]
-      );
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Registration submitted! Your profile is pending admin approval.' });
+      router.replace('/(public)/role-selection');
     } catch (e: any) {
       console.error(e);
-      Alert.alert('Error', e.response?.data?.detail || e.message || 'Registration failed');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.response?.data?.detail || e.message || 'Registration failed' });
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert } from "react-native";
+import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { isExpoGo } from "@/utils/expo-go";
@@ -51,14 +52,22 @@ export const useLogin = () => {
       setLoading(true);
       const finalPhone = formattedPhone || phone;
       if (!finalPhone) {
-        Alert.alert("Error", "Please enter a valid phone number");
+        Toast.show({
+          type: 'error',
+          text1: 'Phone Number Required',
+          text2: 'Please enter a valid phone number',
+        });
         return;
       }
       await requestOTP({ phone_number: finalPhone });
       router.push({ pathname: "/(auth)/user/otp", params: { phone: finalPhone } });
     } catch (e: any) {
       console.error(e);
-      Alert.alert("OTP Error", e?.message || "Failed to send OTP. Try again.");
+      Toast.show({
+        type: 'error',
+        text1: 'OTP Error',
+        text2: e?.message || "Failed to send OTP. Try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -68,7 +77,11 @@ export const useLogin = () => {
     try {
       setLoading(true);
       if (!email || !password) {
-        Alert.alert("Error", "Please enter email and password");
+        Toast.show({
+          type: 'error',
+          text1: 'Required',
+          text2: 'Please enter email and password',
+        });
         return;
       }
 
@@ -91,7 +104,11 @@ export const useLogin = () => {
       }
     } catch (e: any) {
       console.error(e);
-      Alert.alert("Login failed", e?.message || "Invalid credentials");
+      Toast.show({
+        type: 'error',
+        text1: 'Login failed',
+        text2: e?.message || "Invalid credentials",
+      });
     } finally {
       setLoading(false);
     }
@@ -99,21 +116,30 @@ export const useLogin = () => {
 
   const handleGooglePress = async () => {
     if (!GOOGLE_CLIENT_ID && !WEB_CLIENT_ID) {
-      Alert.alert("Config Error", "Missing Google client id.");
+      Toast.show({
+        type: 'error',
+        text1: 'Config Error',
+        text2: 'Missing Google client id.',
+      });
       return;
     }
     
     if (isExpoGo()) {
-      Alert.alert(
-        "Expo Go Limited", 
-        "Google Sign-In is not available in Expo Go. Please use Email/Phone login or use a native development build."
-      );
+      Toast.show({
+        type: 'info',
+        text1: 'Expo Go Limited',
+        text2: 'Google Sign-In is not available in Expo Go. Please use Email/Phone login or use a native development build.',
+      });
       setLoading(false);
       return;
     }
 
     if (!GoogleSignin) {
-      Alert.alert("Error", "Google Sign-In module is not available.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Google Sign-In module is not available.',
+      });
       setLoading(false);
       return;
     }
@@ -125,7 +151,11 @@ export const useLogin = () => {
       
       const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
       if (!idToken) {
-         Alert.alert("Google Sign-In", "No id_token returned from Google.");
+         Toast.show({
+           type: 'error',
+           text1: 'Google Sign-In',
+           text2: 'No id_token returned from Google.',
+         });
          return;
       }
 
@@ -145,9 +175,9 @@ export const useLogin = () => {
       } else if (error.code === statusCodes.IN_PROGRESS) {
         // operation is in progress already
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert("Error", "Play services are not available or are outdated.");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Play services are not available or are outdated.' });
       } else {
-        Alert.alert("Google Sign-In failed", error.message || "Please try again.");
+        Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error.message || 'Please try again.' });
       }
     } finally {
       setLoading(false);

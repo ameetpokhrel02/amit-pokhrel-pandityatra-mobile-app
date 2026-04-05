@@ -11,6 +11,7 @@ import {
   StatusBar,
   ActivityIndicator,
 } from "react-native";
+import Toast from 'react-native-toast-message';
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
@@ -96,7 +97,11 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       if (!email || !password) {
-        Alert.alert("Error", "Please enter email and password");
+        Toast.show({
+          type: 'error',
+          text1: 'Required',
+          text2: 'Please enter email and password',
+        });
         return;
       }
 
@@ -120,7 +125,12 @@ export default function LoginScreen() {
       }
     } catch (e: any) {
       console.error(e);
-      Alert.alert("Login failed", e?.message || "Invalid credentials");
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: e?.message || "Invalid credentials",
+        visibilityTime: 4000,
+      });
     } finally {
       setLoading(false);
     }

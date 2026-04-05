@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  Alert, 
   TouchableOpacity, 
   ScrollView, 
   KeyboardAvoidingView, 
@@ -11,6 +10,7 @@ import {
   Dimensions,
   StatusBar
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -47,17 +47,17 @@ export default function VendorRegister() {
   const handleNext = () => {
     if (step === 1) {
       if (!fullName.trim() || !email.trim() || !password) {
-        Alert.alert('Required', 'Please fill in name, email and password');
+        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in name, email and password' });
         return;
       }
       if (password.length < 6) {
-        Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+        Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password must be at least 6 characters.' });
         return;
       }
       setStep(2);
     } else if (step === 2) {
       if (!shopName.trim() || !address.trim() || !city.trim()) {
-        Alert.alert('Required', 'Please fill in shop details');
+        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in shop details' });
         return;
       }
       setStep(3);
@@ -66,7 +66,7 @@ export default function VendorRegister() {
 
   const handleSubmit = async () => {
     if (!bankAccount.trim() || !bankName.trim() || !accountHolder.trim()) {
-      Alert.alert('Required', 'Please fill in all bank details');
+      Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in all bank details' });
       return;
     }
 
@@ -86,18 +86,15 @@ export default function VendorRegister() {
         account_holder_name: accountHolder.trim(),
       });
       
-      Alert.alert(
-        'Success', 
-        'Registration submitted! Your shop is pending admin approval.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/vendor/login' as any) }]
-      );
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Registration submitted! Your shop is pending admin approval.' });
+      router.replace('/(auth)/vendor/login' as any);
     } catch (e: any) {
       console.error(e);
       const data = e.response?.data;
       const msg = typeof data === 'object'
         ? Object.values(data).flat().join('\n')
         : (data?.detail || 'Registration failed. Please try again.');
-      Alert.alert('Error', msg);
+      Toast.show({ type: 'error', text1: 'Error', text2: msg });
     } finally {
       setLoading(false);
     }

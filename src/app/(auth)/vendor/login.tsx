@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Alert, ScrollView, KeyboardAvoidingView, Platform
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
@@ -32,7 +33,11 @@ export default function VendorLoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Missing Fields', 'Please enter your email and password.');
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Fields',
+        text2: 'Please enter your email and password.',
+      });
       return;
     }
     try {
@@ -43,7 +48,11 @@ export default function VendorLoginScreen() {
       
       const role = data.user?.role || data.role;
       if (role !== 'vendor') {
-        Alert.alert('Access Denied', 'This login is for Vendor accounts only.');
+        Toast.show({
+          type: 'error',
+          text1: 'Access Denied',
+          text2: 'This login is for Vendor accounts only.',
+        });
         return;
       }
 
@@ -53,7 +62,11 @@ export default function VendorLoginScreen() {
       );
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || 'Login failed.';
-      Alert.alert('Login Failed', msg);
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: msg,
+      });
     } finally {
       setLoading(false);
     }
