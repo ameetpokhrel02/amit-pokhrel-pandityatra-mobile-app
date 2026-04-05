@@ -75,7 +75,7 @@
         }
       ],
       [
-        "react-native-webrtc",
+        "@config-plugins/react-native-webrtc",
         {
           "cameraPermission": "Allow PanditYatra to access your camera for sacred live video sessions.",
           "microphonePermission": "Allow PanditYatra to access your microphone for sacred live audio sessions."

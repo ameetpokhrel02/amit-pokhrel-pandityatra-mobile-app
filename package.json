@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@bishaldahal/react-native-khalti-checkout": "^0.2.2",
+    "@config-plugins/react-native-webrtc": "^13.0.0",
     "@daily-co/daily-js": "^0.89.1",
     "@expo/vector-icons": "^15.1.1",
     "@lottiefiles/dotlottie-react": "^0.13.5",
