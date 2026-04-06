@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="PanditYatra Logo" width="120" />
-  <h1>🕉️ Pandit Yatra App</h1>
-  <p><strong>A Next-Generation Spiritual Booking & E-commerce Platform</strong></p>
+  <h1>🕉️ Pandit Yatra Platform (Mobile Interfaces)</h1>
+  <p><strong>A Next-Generation Spiritual Booking & E-commerce Platform for Customers, Pandits, and Vendors</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/React_Native-0.81.5-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native Version" />
@@ -14,116 +14,120 @@
 
 ---
 
-## ✨ Features
+## ✨ Comprehensive Features
 
-- 👳 **Pandit Booking:** Discover top-rated pandits near you, view their experience, ratings, and book personalized rituals or pujas.
-- 🛒 **Samagri Shop:** A fully-featured e-commerce store to buy authentic spiritual items, complete with a persistent cart and wishlist.
-- 🤖 **AI Spiritual Guide:** Ask questions about rituals, kundali matching, or recommendations utilizing our integrated AI bot.
-- 📱 **Premium UI/UX:** A stunning, animated, and highly responsive interface designed with NativeWind and built on Expo Router.
-- 🔔 **Real-Time Notifications:** Stay updated with your booking statuses, messages, and platform updates.
-- 💬 **Live Chat & Video:** Seamlessly communicate with pandits directly from the app via text or integrated Daily.co video calling.
-- 💳 **Secure Payments:** Integrated with Khalti, eSewa, and Stripe for reliable transacting.
+### 👤 Customer (Anita) Journey
+- **Pandit Booking:** Discover top-rated pandits near your location, view their real-time availability, and securely book personalized rituals or pujas.
+- **Offline Kundali AI Engine:** Generate highly precise, private Vedic Kundali charts entirely on-device, and seamlessly export your detailed reading as a formatted PDF.
+- **Unified Samagri Shop:** A comprehensive e-commerce portal to buy genuine spiritual items, including secure Khalti and eSewa integrated checkouts.
+- **Live Video Consultations:** Communicate with your booked Pandits immediately through the native WebRTC Video Call integration.
 
----
+### 👳 Pandit (Ramesh) Portal
+- **Service & Availability Management:** Update custom prices for rituals, set expected durations, and toggle your availability.
+- **Live Wallet & Earnings Tracker:** View total bookings, track real-time earnings stored dynamically, and manage upcoming, ongoing, or pending payments securely in NPR.
 
-## 🛠️ Technology Stack
+### 🏬 Marketplace Vendor (Riya) Interface
+- **Store & Product Oversight:** Add and customize listings directly onto the PanditYatra ecosystem securely.
+- **Analytics Dashboard:** Instantly view live total earnings, real-time product depletion counts, and payout metrics managed end-to-end through the synchronized backend.
 
-| Category | Technology | Version |
-| :--- | :--- | :--- |
-| **Framework** | Expo Router / React Native | Expo 54, React Native 0.81 |
-| **Language** | TypeScript | 5.9.x |
-| **State Management** | Zustand (with Persist Middleware) | 5.0.9 |
-| **Styling** | NativeWind (TailwindCSS) | 4.2.1 |
-| **Storage & Caching** | AsyncStorage / SecureStore | - |
-| **Package Manager** | PNPM | Recommended |
+*(Note: **Admin Oversight** is managed exclusively out of the native application context via the connected Django Web Administrator platform to enforce strict boundary protocols and keep the apps lightweight.)*
 
 ---
 
-## 🚀 Getting Started
+## 🛑 System Requirements & SDK Dependencies
 
-Follow these instructions to get the project running on your local machine.
+Before building PanditYatra natively or using Expo, you strictly need the following environment configurations installed.
 
-### Prerequisites
+### Global Dependencies
+- **Node.js**: v18.17.0+ (LTS Version highly recommended)
+- **PNPM**: Package manager (Install via `npm install -g pnpm`)
+- **Git**: For version control management
 
-Ensure you have the following installed on your system:
-- [Node.js](https://nodejs.org/) (v18 or newer recommended)
-- [Git](https://git-scm.com/)
-- [PNPM](https://pnpm.io/installation) (`npm install -g pnpm`)
-- Expo Go app on your [iOS](https://apps.apple.com/us/app/expo-go/id982107779) or [Android](https://play.google.com/store/apps/details?id=host.exp.exponent) device (or set up Android Studio/Xcode emulators).
+### 🍏 Mac OS X Specifics (iOS & Android)
+- **Watchman**: `brew install watchman`
+- **Xcode** (For iOS Emulation/Builds): Available from the Mac App Store. Make sure the Command Line Tools are active.
+- **CocoaPods**: `sudo gem install cocoapods`
+- **Android Studio** (For Android Emulation/Builds): 
+   - Accept all SDK licenses.
+   - Requires Android SDK 34, Android SDK Platform-Tools 35.x, and Android NDK settings.
+   - *Java requirement: OpenJDK 17 (`brew install openjdk@17`).*
 
-### 🐧 Setup for Linux / 🍏 macOS
+### 🪟 Windows Specifics (Android Only)
+- **Java Development Kit (JDK)**: Microsoft OpenJDK 17 or Oracle JDK 17.
+- **Android Studio**:
+   - Install standard SDK packages via SDK Manager. Ensure `Android API 34` and `Android SDK Build-Tools` are accessible.
+   - Configure global `ANDROID_HOME` system variables properly pointing to `C:\Users\YOUR_USERNAME\AppData\Local\Android\Sdk`.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-app.git
-   cd amit-pokhrel-pandityatra-app
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
-
-3. **Environment Setup:**
-   Create a `.env` file in the root directory based on the provided configuration variables in the codebase (e.g., API Base URLs, Google Client IDs).
-
-4. **Start the Development Server:**
-   ```bash
-   # Starts the standard local development server
-   pnpm run start
-   
-   # OR, if testing on a physical device over a different network (highly recommended):
-   pnpm run start:tunnel
-   ```
-
-### 🪟 Setup for Windows
-
-1. **Clone the repository** (Using Git Bash or PowerShell):
-   ```powershell
-   git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-app.git
-   cd amit-pokhrel-pandityatra-app
-   ```
-
-2. **Install dependencies:**
-   ```powershell
-   pnpm install
-   ```
-
-3. **Start the Development Server:**
-   ```powershell
-   pnpm run start
-   ```
-   *Note: If you have firewall issues accessing the local server from your phone, use the tunnel command:* `pnpm run start:tunnel`
+### 🐧 Linux Specifics (Android Only)
+- **Java**: OpenJDK 17 (`sudo apt install openjdk-17-jdk`)
+- **Android Studio**: Install via Snap or direct tar extract. 
+   - Add `.bashrc` or `.zshrc` exports:
+     ```bash
+     export ANDROID_HOME=$HOME/Android/Sdk
+     export PATH=$PATH:$ANDROID_HOME/emulator
+     export PATH=$PATH:$ANDROID_HOME/platform-tools
+     ```
+- **KVM**: Ensure KVM accelerates Linux kernel running to assist with smooth emulator performance.
 
 ---
 
-## 👨‍💻 Development Guides
+## 🚀 Installation & Build Guide
 
-### Running on Emulators
-Once the server is running, press the corresponding key in the terminal output:
-- Press `a` to open the app in an Android Emulator.
-- Press `i` to open the app in an iOS Simulator (macOS only).
+### 1. Cloning the Core Application
+On all operating systems, begin by cloning the repository using bash or powershell:
+```bash
+git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-app.git
+cd amit-pokhrel-pandityatra-app
+```
 
-### Project Structure (src/)
-- `/app` - Expo Router file-based navigation screens.
-- `/components` - Reusable UI components.
-- `/services` - API client configurations and endpoint functions.
-- `/store` - Global state management utilizing Zustand.
-- `/constants` & `/utils` - Theming, configuration, and helper functions.
+### 2. Dependency Resolution
+Execute the following to hydrate all internal packages without legacy peer conflicts:
+```bash
+pnpm install
+```
+
+### 3. Environment Context
+Duplicate the template structure to bind your endpoints locally:
+```bash
+cp .env.example .env
+```
+Ensure `process.env.EXPO_PUBLIC_API_URL` reflects either your local Django environment network tunnel or your live production instance to verify authentication channels correctly.
+
+### 4. Running the Development Server
+**For Local Testing & Device Previews:**
+```bash
+# Starts the local development instance using Expo Metro
+pnpm run start
+
+# Important: If firing this on an external mobile device over fluctuating Wi-Fi 
+# or testing heavily isolated APIs, ALWAYS prefer tunnel tunneling:
+pnpm run start:tunnel
+```
+Press `a` in your terminal to fire up your Android Emulator, `i` for iOS (Mac only), or scan the QR Code via the **Expo Go App** on your smartphone.
+
+### 5. Compiling for Production Release (APK / AAB)
+When validating your end-to-end integration mapping, execute an internal build sequence to distribute the APK. Wait for the EAS compilation process to export the standalone application file.
+```bash
+# Install Expo Application Services CLI globally
+npm install -g eas-cli
+
+# Login and create your localized build configuration locally or push to servers
+eas login
+eas build:configure
+eas build -p android --profile production
+```
 
 ---
 
-## 🤝 Contributing
-
-1. Fork the repo
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 👨‍💻 Primary Directory Mapping
+- `src/app/` — Central Expo Router Navigation. All restricted roles `(customer)`, `(pandit)`, and `(vendor)` live dynamically here alongside strictly gated middleware in `_layout.tsx`.
+- `src/components/` — Standalone native components including maps, video layers, and chart parsers.
+- `src/services/` — All API handlers managing Axios interceptors tracking automatic 401 token rotations.
+- `src/store/` — Robust Zustand state modules (Global Authenticators, Wishlists).
+- `src/utils/` — Math engine layers including standalone pure TS calculation mechanisms (WASM fallback Kundali).
 
 ## 📄 License
-
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-<p align="center">Made with ❤️ by Amit Pokhrel</p>
+<p align="center">Built and Maintained for PanditYatra Production • Amit Pokhrel</p>
