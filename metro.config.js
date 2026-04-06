@@ -5,7 +5,7 @@ const { withNativeWind } = require('nativewind/metro');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-config.resolver.assetExts.push('html');
+// Allow .html assets
 
 // Fix for react-native-webrtc event-target-shim warning
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -13,10 +13,11 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     const newModuleName = moduleName.replace(/\/index$/, '');
     return context.resolveRequest(context, newModuleName, platform);
   }
-  // Call the default resolver instead of a recursive call to self
-  return null; // Returning null in resolveRequest tells Metro to use the default resolver logic
+  // Standard resolution fallback
+  return context.resolveRequest(context, moduleName, platform);
 };
 
+// Performance config
 config.transformer.getTransformOptions = async () => ({
   transform: {
     experimentalImportSupport: false,

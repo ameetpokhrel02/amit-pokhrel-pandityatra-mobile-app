@@ -11,6 +11,17 @@
     "web": "expo start --web",
     "lint": "expo lint"
   },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-webrtc",
+          "@bishaldahal/react-native-khalti-checkout",
+          "expo-random"
+        ]
+      }
+    }
+  },
   "dependencies": {
     "@bishaldahal/react-native-khalti-checkout": "^0.2.2",
     "@config-plugins/react-native-webrtc": "^13.0.0",
