@@ -192,7 +192,7 @@ export default function PanditDashboardScreen() {
             </View>
             <View style={{ marginLeft: 16, flex: 1 }}>
               <Text style={{ color: '#9CA3AF', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>Total Earnings</Text>
-              <Text style={{ color: '#1F2937', fontSize: 24, fontWeight: 'bold' }}>{stats.earnings}</Text>
+              <Text style={{ color: '#1F2937', fontSize: 24, fontWeight: 'bold' }}>NPR {stats.earnings}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
@@ -223,7 +223,7 @@ export default function PanditDashboardScreen() {
                   <Text style={{ color: '#1F2937', fontWeight: '800', fontSize: 15, marginBottom: 4 }} numberOfLines={1}>
                     {service.puja_details?.name}
                   </Text>
-                  <Text style={{ color: '#FF6F00', fontWeight: '900', fontSize: 18, marginBottom: 12 }}>₹{service.custom_price || service.price}</Text>
+                  <Text style={{ color: '#FF6F00', fontWeight: '900', fontSize: 18, marginBottom: 12 }}>NPR {service.custom_price || service.price}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 }}>
                     <Ionicons name="time-outline" size={12} color="#6B7280" />
                     <Text style={{ color: '#6B7280', fontSize: 11, fontWeight: 'bold', marginLeft: 4 }}>{service.duration_minutes}M</Text>
@@ -268,7 +268,7 @@ export default function PanditDashboardScreen() {
                   />
                   <View style={{ marginTop: 12 }}>
                     <Text style={{ color: '#1F2937', fontWeight: '700', fontSize: 14, marginBottom: 4 }} numberOfLines={1}>{item.name}</Text>
-                    <Text style={{ color: '#FF6F00', fontWeight: '800', fontSize: 16 }}>₹{item.price}</Text>
+                    <Text style={{ color: '#FF6F00', fontWeight: '800', fontSize: 16 }}>NPR {item.price}</Text>
                   </View>
                   <TouchableOpacity
                     style={{ position: 'absolute', bottom: 12, right: 12, backgroundColor: '#FF6F00', width: 32, height: 32, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}

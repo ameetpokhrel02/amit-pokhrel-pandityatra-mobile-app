@@ -334,7 +334,7 @@ function ServiceCard({ service, onBook }: { service: any, onBook: () => void }) 
                         <Ionicons name="time-outline" size={12} color="#9CA3AF" />
                         <Text className="text-zinc-400 font-bold text-xs uppercase">{service.duration} Mins</Text>
                     </View>
-                    <Text className="text-primary font-black text-base">₹{service.price}</Text>
+                    <Text className="text-primary font-black text-base">NPR {service.price}</Text>
                 </View>
             </View>
             {service.description && (

@@ -74,6 +74,14 @@ export async function addSamagriItem(bookingId: number, itemId: number) {
 }
 
 /**
+ * Remove an item from a booking's samagri list
+ */
+export async function removeSamagriItem(bookingId: number, itemId: number) {
+    const response = await apiClient.delete(`recommender/bookings/${bookingId}/samagri/${itemId}/`);
+    return response.data;
+}
+
+/**
  * Get user preference insights
  */
 export async function fetchUserInsights() {

@@ -1,23 +1,54 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { getBooking } from '@/services/booking.service';
+import { useTheme } from '@/store/ThemeContext';
+import * as Linking from 'expo-linking';
+import { API_BASE_URL } from '@/services/api-client';
 
 export default function InvoiceViewerScreen() {
   const router = useRouter();
-  const { orderId, bookingId } = useLocalSearchParams();
+  const { bookingId, orderId } = useLocalSearchParams<{ bookingId?: string, orderId?: string }>();
+  const { colors } = useTheme();
+  const [booking, setBooking] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleDownload = async () => {
-    // Mock download/share
+  useEffect(() => {
+    if (bookingId) {
+      loadBookingDetails();
+    }
+  }, [bookingId]);
+
+  const loadBookingDetails = async () => {
     try {
-      await Share.share({
-        message: `Invoice for ${orderId || bookingId} from PanditYatra.`,
-        title: 'Download Invoice'
-      });
-    } catch (error) {
-      console.error(error);
+      setLoading(true);
+      const res = await getBooking(Number(bookingId));
+      setBooking(res.data);
+    } catch (e) {
+      // Silently fail for production
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleDownload = async () => {
+    if (!bookingId) return;
+    try {
+      const invoiceUrl = `${API_BASE_URL}bookings/${bookingId}/invoice/`;
+      Linking.openURL(invoiceUrl);
+    } catch (error) {
+      // Silently fail
+    }
+  };
+
+  if (loading && !booking) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -25,7 +56,7 @@ export default function InvoiceViewerScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="close" size={24} color="#3E2723" />
         </TouchableOpacity>
-        <Text style={styles.title}>Invoice {orderId || bookingId}</Text>
+        <Text style={styles.title}>Invoice #{booking?.id || orderId || bookingId}</Text>
         <TouchableOpacity onPress={handleDownload}>
           <Ionicons name="share-outline" size={24} color="#f97316" />
         </TouchableOpacity>
@@ -41,41 +72,45 @@ export default function InvoiceViewerScreen() {
           <View style={styles.infoGrid}>
             <View style={styles.infoCol}>
               <Text style={styles.infoTitle}>Bill To:</Text>
-              <Text style={styles.infoVal}>Ameet Pokhrel</Text>
-              <Text style={styles.infoVal}>Kathmandu, Nepal</Text>
+              <Text style={styles.infoVal}>{booking?.user_full_name || 'Customer'}</Text>
+              <Text style={styles.infoVal} numberOfLines={2}>{booking?.customer_location || 'Address not listed'}</Text>
             </View>
             <View style={styles.infoCol}>
               <Text style={styles.infoTitle}>Date:</Text>
-              <Text style={styles.infoVal}>March 14, 2026</Text>
+              <Text style={styles.infoVal}>{booking?.booking_date}</Text>
               <Text style={styles.infoTitle}>Status:</Text>
-              <Text style={[styles.infoVal, { color: '#10B981', fontWeight: 'bold' }]}>PAID</Text>
+              <Text style={[styles.infoVal, { color: booking?.payment_status === 'PAID' ? '#10B981' : '#EF4444', fontWeight: 'bold' }]}>
+                {booking?.payment_status || 'PENDING'}
+              </Text>
             </View>
           </View>
 
           <View style={styles.table}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHead, { flex: 2 }]}>Description</Text>
+              <Text style={[styles.tableHead, { flex: 2, textAlign: 'left' }]}>Description</Text>
               <Text style={styles.tableHead}>Qty</Text>
               <Text style={styles.tableHead}>Price</Text>
             </View>
             
             <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 2 }]}>Ganesh Puja Ritual</Text>
+              <Text style={[styles.tableCell, { flex: 2, textAlign: 'left' }]}>{booking?.service_name || 'Puja Service'}</Text>
               <Text style={styles.tableCell}>1</Text>
-              <Text style={styles.tableCell}>2500</Text>
+              <Text style={styles.tableCell}>{booking?.service_fee}</Text>
             </View>
             
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 2 }]}>Puja Samagri Kit</Text>
-              <Text style={styles.tableCell}>1</Text>
-              <Text style={styles.tableCell}>750</Text>
-            </View>
+            {(Number(booking?.samagri_fee) > 0) && (
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 2, textAlign: 'left' }]}>Puja Samagri (Materials)</Text>
+                <Text style={styles.tableCell}>1</Text>
+                <Text style={styles.tableCell}>{booking?.samagri_fee}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.calculation}>
             <View style={styles.calcRow}>
               <Text style={styles.calcLabel}>Subtotal</Text>
-              <Text style={styles.calcVal}>NPR 3250</Text>
+              <Text style={styles.calcVal}>NPR {booking?.total_fee}</Text>
             </View>
             <View style={styles.calcRow}>
               <Text style={styles.calcLabel}>Tax (0%)</Text>
@@ -83,7 +118,7 @@ export default function InvoiceViewerScreen() {
             </View>
             <View style={[styles.calcRow, styles.finalTotal]}>
               <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalVal}>NPR 3250</Text>
+              <Text style={styles.totalVal}>NPR {booking?.total_fee}</Text>
             </View>
           </View>
 

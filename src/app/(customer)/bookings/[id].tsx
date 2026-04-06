@@ -179,7 +179,7 @@ export default function BookingDetailScreen() {
                 onPress={() => router.push(`/(customer)/shop?itemId=${item.id}` as any)}
               >
                 <Text style={[styles.recoName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.recoPrice, { color: colors.primary }]}>₹{item.price}</Text>
+                <Text style={[styles.recoPrice, { color: colors.primary }]}>NPR {item.price}</Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.text + '40'} />
               </TouchableOpacity>
             ))}

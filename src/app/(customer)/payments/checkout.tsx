@@ -64,9 +64,8 @@ export default function CheckoutScreen() {
             setLoading(true);
             const response = await getBooking(parseInt(bookingId));
             setBooking(response.data);
-        } catch (error) {
-            console.error('Error loading booking:', error);
-            Alert.alert('Error', 'Failed to load booking details.');
+        } catch (e) {
+            // Quietly handle errors in production
         } finally {
             setLoading(false);
         }
@@ -180,11 +179,20 @@ export default function CheckoutScreen() {
                 }
             }
 
-            Alert.alert('Success', 'Payment successful!', [
-                { text: 'OK', onPress: () => router.replace('/(customer)/bookings') }
-            ]);
+            if (booking) {
+                router.replace({
+                    pathname: '/(customer)/payments/success',
+                    params: {
+                        bookingId: booking.id.toString(),
+                        method: selectedMethod,
+                        amount: (booking.total_fee || 0).toString()
+                    }
+                });
+            } else {
+                router.replace('/(customer)/bookings');
+            }
         } catch (e: any) {
-            console.error('Verification Error:', e);
+            // Error logged centrally in service
             Alert.alert('Verification Failed', e?.message || 'Payment verification failed. Please contact support.');
         }
     };

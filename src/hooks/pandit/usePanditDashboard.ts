@@ -42,7 +42,7 @@ export const usePanditDashboard = () => {
         setStats({
           pending: profileData.pandit_profile.pending_bookings?.toString() || '0',
           upcoming: profileData.pandit_profile.upcoming_bookings?.toString() || '0',
-          earnings: `₹${profileData.pandit_profile.total_earnings || 0}`,
+          earnings: `NPR ${profileData.pandit_profile.total_earnings || 0}`,
           rating: (profileData.pandit_profile.average_rating || profileData.pandit_profile.rating || 0).toFixed(1)
         });
       }

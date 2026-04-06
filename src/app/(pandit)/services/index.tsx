@@ -114,7 +114,7 @@ export default function ServicesScreen() {
                 <View style={styles.serviceInfo}>
                     <Text style={styles.serviceName} numberOfLines={1}>{item.puja_details?.name}</Text>
                     <View style={styles.serviceMeta}>
-                        <Text style={styles.servicePrice}>₹{item.custom_price}</Text>
+                        <Text style={styles.servicePrice}>NPR {item.custom_price}</Text>
                         <View style={styles.metaDivider} />
                         <View style={styles.durationBadge}>
                             <Ionicons name="time-outline" size={12} color="#6B7280" />
@@ -217,7 +217,7 @@ export default function ServicesScreen() {
                                 ))}
                             </View>
 
-                            <Text style={styles.inputLabel}>Custom Price (₹) *</Text>
+                            <Text style={styles.inputLabel}>Custom Price (NPR) *</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="e.g. 5000"

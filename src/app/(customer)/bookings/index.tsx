@@ -139,6 +139,16 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             )}
 
+            {item.payment_status === 'PAID' && (
+              <TouchableOpacity
+                style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: 8 }]}
+                onPress={() => router.push(`/(customer)/invoice?bookingId=${item.id}` as any)}
+              >
+                <Ionicons name="receipt-outline" size={16} color="#FFF" />
+                <Text style={styles.quickActionText}>Invoice</Text>
+              </TouchableOpacity>
+            )}
+
             {item.status === 'ACCEPTED' && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: colors.primary, marginLeft: 8 }]}

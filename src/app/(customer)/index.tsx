@@ -541,7 +541,7 @@ const ServiceCard = React.memo(({ service, router, colors, isDark }: any) => {
           contentFit="cover"
         />
         <View style={styles.featuredBadge}>
-          <Text style={[styles.featuredText, { color: colors.primary }]}>Starting ₹{service.base_price}</Text>
+          <Text style={[styles.featuredText, { color: colors.primary }]}>Starting NPR {service.base_price}</Text>
         </View>
       </View>
       <View style={styles.serviceInfo}>
@@ -582,8 +582,8 @@ const SamagriCard = React.memo(({ item, isWishlisted, onToggleWishlist, onAdd, c
       <View style={styles.samagriInfo}>
         <Text style={[styles.samagriName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={[styles.samagriPrice, { color: colors.text }]}>₹{item.price}</Text>
-          <Text style={[styles.samagriOldPrice, { color: colors.text + '40' }]}>₹{Math.round(item.price * 1.2)}</Text>
+          <Text style={[styles.samagriPrice, { color: colors.text }]}>NPR {item.price}</Text>
+          <Text style={[styles.samagriOldPrice, { color: colors.text + '40' }]}>NPR {Math.round(item.price * 1.2)}</Text>
         </View>
       </View>
 

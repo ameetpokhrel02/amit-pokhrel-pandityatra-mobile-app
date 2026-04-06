@@ -236,6 +236,32 @@ export default function VendorProfileScreen() {
             )}
         </View>
 
+        {/* App Feedback Section */}
+        <View style={{ marginTop: 12, marginBottom: 40 }}>
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              padding: 20, borderRadius: 24, borderWidth: 1, backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0'
+            }}
+            onPress={() => router.push('/(customer)/reviews/app-reviews' as any)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary + '20', overflow: 'hidden' }}>
+                <Image
+                  source={require('@/assets/images/pandit-logo.png')}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                />
+              </View>
+              <View style={{ marginLeft: 16 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', marginBottom: 2, color: colors.text }}>Love PanditYatra?</Text>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: colors.text + '80' }}>Share your feedback with us</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.text + '50'} />
+          </TouchableOpacity>
+        </View>
+
         <ConfirmationModal
             visible={showLogoutModal}
             onClose={() => setShowLogoutModal(false)}

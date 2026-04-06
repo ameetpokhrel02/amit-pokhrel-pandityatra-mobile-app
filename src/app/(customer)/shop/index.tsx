@@ -130,7 +130,7 @@ export default function ShopScreen() {
           <View style={styles.productInfo}>
             <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
             <View style={styles.priceRow}>
-              <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.price}</Text>
+              <Text style={[styles.productPrice, { color: colors.primary }]}>NPR {item.price}</Text>
             </View>
           </View>
         </TouchableOpacity>

@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from 'react-native-ui-datepicker';
 import { Calendar } from 'react-native-calendars';
 import { fetchPanchang } from '@/services/panchang.service';
 import dayjs from 'dayjs';
@@ -18,7 +17,7 @@ import { getImageUrl } from '@/utils/image';
 import { createBooking, availableSlots as fetchAvailableSlots } from '@/services/booking.service';
 import { initiatePayment, PaymentIntentResponse } from '@/services/payment.service';
 import { Booking, PanditService, Pandit, SamagriItem } from '@/services/api';
-import { fetchPujaSamagriRecommendations } from '@/services/recommender.service';
+import { fetchBookingSamagri, fetchBookingSamagriRecommendations, fetchPujaSamagriRecommendations, addSamagriItem, removeSamagriItem } from '@/services/recommender.service';
 import { getSamagriRequirements } from '@/services/samagri.service';
 import { Image } from 'expo-image';
 import { BookingDateTime } from '@/components/booking/BookingDateTime';
@@ -33,7 +32,7 @@ dayjs.extend(calendar);
 dayjs.extend(localeData);
 dayjs.extend(localizedFormat);
 
-const STEPS = ['Service', 'Date & Time', 'Address', 'Review'];
+const STEPS = ['Service', 'Schedule', 'Location', 'Samagri', 'Review'];
 
 export default function BookingScreen() {
   const { panditId, serviceId } = useLocalSearchParams();
@@ -61,6 +60,20 @@ export default function BookingScreen() {
   const [loadingReqs, setLoadingReqs] = useState(false);
   const [panchangData, setPanchangData] = useState<any>(null);
   const [loadingPanchang, setLoadingPanchang] = useState(false);
+  const [selectedSamagriIds, setSelectedSamagriIds] = useState<Set<number>>(new Set());
+  const [removedRequirementIds, setRemovedRequirementIds] = useState<Set<number>>(new Set());
+
+  const totalSamagriPrice = React.useMemo(() => {
+    let total = 0;
+    // Add price of selected recommendations
+    selectedSamagriIds.forEach(id => {
+      const item = recommendations.find(r => r.id === id);
+      if (item?.price) total += Number(item.price);
+    });
+    return total;
+  }, [selectedSamagriIds, recommendations]);
+
+  const finalTotal = (Number(selectedService?.custom_price) || 0) + totalSamagriPrice;
 
   useEffect(() => {
     const loadPandit = async () => {
@@ -182,13 +195,25 @@ export default function BookingScreen() {
         booking_time: selectedTime,
         location: address,
         notes,
+        samagri_required: true, // Always start with samagri for recommendation sync
       };
 
       const response = await createBooking(bookingPayload);
       const booking = response.data;
+      const bId = booking.id;
 
-      // Save just the booking ID to state so we can pass it to the success screen
-      setPaymentInfo({ payment_url: '', pidx: '', bookingId: booking.id } as any);
+      // 2️⃣ Sync Samagri selections (Post-creation)
+      // Remove default requirements that were deselected
+      for (const reqId of Array.from(removedRequirementIds)) {
+        try { await removeSamagriItem(bId, reqId); } catch(e) { console.warn('Failed to remove req', reqId); }
+      }
+      
+      // Add newly selected recommendations
+      for (const recId of Array.from(selectedSamagriIds)) {
+        try { await addSamagriItem(bId, recId); } catch(e) { console.warn('Failed to add rec', recId); }
+      }
+
+      setPaymentInfo({ payment_url: '', pidx: '', bookingId: bId } as any);
       setIsSuccess(true);
     } catch (error) {
       console.error(error);
@@ -485,6 +510,77 @@ export default function BookingScreen() {
 
           {currentStep === 3 && (
             <View key="step3">
+              <Text style={[styles.stepTitle, { color: colors.text }]}>Ritual Samagri</Text>
+              <Text className="text-sm opacity-60 mb-6" style={{ color: colors.text }}>
+                Our AI suggests items based on your ritual. Select what you need or remove items you already have.
+              </Text>
+
+              <Text style={[styles.subLabel, { color: colors.text }]}>Required Items</Text>
+              {requirements.length > 0 ? (
+                requirements.map((req, idx) => (
+                  <TouchableOpacity 
+                    key={idx}
+                    className={`flex-row items-center p-4 rounded-3xl mb-3 border ${!removedRequirementIds.has(req.id) ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-zinc-800 opacity-60'}`}
+                    style={{ backgroundColor: colors.card }}
+                    onPress={() => {
+                      const newSet = new Set(removedRequirementIds);
+                      if (newSet.has(req.id)) newSet.delete(req.id);
+                      else newSet.add(req.id);
+                      setRemovedRequirementIds(newSet);
+                    }}
+                  >
+                    <View className="flex-1">
+                      <Text className="font-bold" style={{ color: colors.text }}>{req.samagri_item_details?.name}</Text>
+                      <Text className="text-xs opacity-60" style={{ color: colors.text }}>{req.quantity} {req.unit}</Text>
+                    </View>
+                    <Ionicons 
+                      name={!removedRequirementIds.has(req.id) ? "checkbox" : "square-outline"} 
+                      size={24} 
+                      color={!removedRequirementIds.has(req.id) ? colors.primary : '#AAA'} 
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text className="opacity-50 italic mb-4">No standard items listed.</Text>
+              )}
+
+              <View className="mt-4 flex-row items-center gap-2 mb-4">
+                 <Ionicons name="sparkles" size={18} color={colors.primary} />
+                 <Text style={[styles.subLabel, { color: colors.text, marginTop: 0 }]}>AI Suggestions</Text>
+              </View>
+              
+              {recommendations.length > 0 ? (
+                recommendations.map((rec, idx) => (
+                  <TouchableOpacity 
+                    key={idx}
+                    className={`flex-row items-center p-4 rounded-3xl mb-3 border ${selectedSamagriIds.has(rec.id) ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-zinc-800'}`}
+                    style={{ backgroundColor: colors.card }}
+                    onPress={() => {
+                      const newSet = new Set(selectedSamagriIds);
+                      if (newSet.has(rec.id)) newSet.delete(rec.id);
+                      else newSet.add(rec.id);
+                      setSelectedSamagriIds(newSet);
+                    }}
+                  >
+                    <View className="flex-1">
+                      <Text className="font-bold" style={{ color: colors.text }}>{rec.name}</Text>
+                      <Text className="text-xs text-emerald-600 font-bold">NPR {rec.price}</Text>
+                    </View>
+                    <Ionicons 
+                      name={selectedSamagriIds.has(rec.id) ? "add-circle" : "add-circle-outline"} 
+                      size={24} 
+                      color={selectedSamagriIds.has(rec.id) ? colors.primary : '#AAA'} 
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text className="opacity-50 italic">No additional suggestions.</Text>
+              )}
+            </View>
+          )}
+
+          {currentStep === 4 && (
+            <View key="step4">
               <Text style={[styles.stepTitle, { color: colors.text }]}>Confirm Booking</Text>
 
               <View 
@@ -513,7 +609,7 @@ export default function BookingScreen() {
                 <View className="h-[1px] bg-gray-100 dark:bg-zinc-800 my-2" />
                 <View className="flex-row justify-between items-center pt-3">
                   <Text className="text-base font-bold" style={{ color: colors.text }}>Total Pay</Text>
-                  <Text className="text-2xl font-black text-primary">NPR {selectedService?.custom_price}</Text>
+                  <Text className="text-2xl font-black text-primary">NPR {finalTotal}</Text>
                 </View>
               </View>
 

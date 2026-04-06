@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, Activit
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
-import { fetchBookingSamagri, fetchBookingSamagriRecommendations, fetchPujaSamagriRecommendations } from '@/services/recommender.service';
+import { fetchBookingSamagri, fetchBookingSamagriRecommendations, fetchPujaSamagriRecommendations, addSamagriItem, removeSamagriItem } from '@/services/recommender.service';
 import { SamagriItem } from '@/services/api';
 
 export default function SamagriRecommendationsScreen() {
@@ -46,19 +46,52 @@ export default function SamagriRecommendationsScreen() {
     }
   };
 
-  const renderSamagriItem = ({ item }: { item: any }) => (
-    <View style={[styles.itemCard, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
+  const renderSamagriItem = ({ item, isSelected, onToggle }: { item: any, isSelected: boolean, onToggle: () => void }) => (
+    <TouchableOpacity 
+      style={[styles.itemCard, { backgroundColor: colors.card, borderLeftWidth: 4, borderLeftColor: isSelected ? colors.primary : 'transparent' }]}
+      onPress={onToggle}
+      activeOpacity={0.7}
+    >
       <View style={styles.itemInfo}>
         <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
         <Text style={[styles.itemDetail, { color: isDark ? '#AAA' : '#666' }]}>
           {item.quantity} {item.unit}
         </Text>
       </View>
-      {item.price && (
-        <Text style={[styles.itemPrice, { color: colors.primary }]}>NPR {item.price}</Text>
-      )}
-    </View>
+      <View style={styles.rightContent}>
+        {item.price && (
+          <Text style={[styles.itemPrice, { color: colors.primary }]}>NPR {item.price}</Text>
+        )}
+        <Ionicons 
+          name={isSelected ? "checkbox" : "square-outline"} 
+          size={24} 
+          color={isSelected ? colors.primary : (isDark ? '#555' : '#CCC')} 
+          style={{ marginLeft: 12 }}
+        />
+      </View>
+    </TouchableOpacity>
   );
+
+  const toggleItem = async (item: any, isRecommendation: boolean) => {
+    if (!bookingId) return;
+    
+    const bid = Number(bookingId);
+    const itemId = item.id || item.item_id;
+    
+    try {
+      if (isRecommendation) {
+        // Adding a recommendation
+        await addSamagriItem(bid, itemId);
+      } else {
+        // Removing a required item
+        await removeSamagriItem(bid, itemId);
+      }
+      // Refresh data to reflect changes
+      loadData();
+    } catch (error) {
+      console.error('Error toggling samagri:', error);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -82,21 +115,37 @@ export default function SamagriRecommendationsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Required Items</Text>
           </View>
           {items.length > 0 ? (
-            items.map((item, index) => <View key={index}>{renderSamagriItem({ item })}</View>)
+            items.map((item, index) => (
+              <View key={index}>
+                {renderSamagriItem({ 
+                  item, 
+                  isSelected: true, 
+                  onToggle: () => toggleItem(item, false) 
+                })}
+              </View>
+            ))
           ) : (
             <Text style={[styles.emptyText, { color: isDark ? '#AAA' : '#666' }]}>No items listed yet.</Text>
           )}
 
-          <View style={[styles.aiSection, { backgroundColor: colors.primary + '10' }]}>
+          <View style={[styles.aiSection, { backgroundColor: colors.primary + '05' }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="sparkles" size={20} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>AI Suggestions</Text>
             </View>
             <Text style={[styles.aiDescription, { color: isDark ? '#AAA' : '#666' }]}>
-              Based on the ritual, our AI suggests these additional items for a complete experience.
+              Based on the ritual, our AI suggests these additional items for a complete experience. Tapping adds them to your booking.
             </Text>
             {recommendations.length > 0 ? (
-              recommendations.map((item, index) => <View key={index}>{renderSamagriItem({ item })}</View>)
+              recommendations.map((item, index) => (
+                <View key={index}>
+                  {renderSamagriItem({ 
+                    item, 
+                    isSelected: false, 
+                    onToggle: () => toggleItem(item, true) 
+                  })}
+                </View>
+              ))
             ) : (
               <Text style={[styles.emptyText, { color: isDark ? '#AAA' : '#666' }]}>No additional suggestions.</Text>
             )}
@@ -104,10 +153,10 @@ export default function SamagriRecommendationsScreen() {
 
           <TouchableOpacity
             style={[styles.shopButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/(customer)/shop')}
+            onPress={() => router.push({ pathname: '/(customer)/bookings/review', params: { bookingId } })}
           >
-            <Text style={styles.shopButtonText}>Go to Samagri Shop</Text>
-            <Ionicons name="cart" size={20} color="#FFF" />
+            <Text style={styles.shopButtonText}>Confirm & Proceed</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -184,6 +233,10 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  rightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   aiSection: {
     marginTop: 24,
