@@ -39,7 +39,7 @@ export default function PanditListingPage() {
     setFilter({ searchQuery: text });
   };
 
-  const renderItem = ({ item, index }: { item: Pandit; index: number }) => (
+  const renderItem = useCallback(({ item, index }: { item: Pandit; index: number }) => (
     <PanditCard
       pandit={item}
       index={index}
@@ -55,7 +55,7 @@ export default function PanditListingPage() {
         router.push(`/(customer)/booking?panditId=${item.id}`);
       }}
     />
-  );
+  ), [isAuthenticated, router]);
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -98,17 +98,21 @@ export default function PanditListingPage() {
           <Text style={[styles.loadingText, { color: isDark ? '#AAA' : '#666' }]}>Finding the best Pandits...</Text>
         </View>
       ) : (
-        <FlatList
-          data={pandits}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
-          }
-          ListEmptyComponent={!isLoading ? renderEmptyState : null}
-        />
+          <FlatList
+            data={pandits}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            removeClippedSubviews={true}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+            }
+            ListEmptyComponent={!isLoading ? renderEmptyState : null}
+          />
       )}
 
       {/* Filter Sheet */}

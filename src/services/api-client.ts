@@ -195,7 +195,11 @@ apiClient.interceptors.response.use(
         const status = error.response?.status;
         const configUrl = error.config?.url || '';
         if (!(status === 404 && configUrl.includes('pandits/wallet/'))) {
-            console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, JSON.stringify(error.response?.data || error.message));
+            const details = error.response?.data || error.message;
+            const safeDetails = typeof details === 'string'
+                ? (details.length > 500 ? details.substring(0, 500) + '... (truncated)' : details)
+                : JSON.stringify(details);
+            console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, safeDetails);
         }
         return Promise.reject(error);
     }
@@ -206,7 +210,11 @@ publicApi.interceptors.response.use(
     (error) => {
         const status = error.response?.status;
         const details = error.response?.data || error.message;
-        console.error(`[Public API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, JSON.stringify(details));
+        const safeDetails = typeof details === 'string'
+            ? (details.length > 500 ? details.substring(0, 500) + '... (truncated)' : details)
+            : JSON.stringify(details);
+
+        console.error(`[Public API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${status} | Details:`, safeDetails);
 
         if (status === 400 && typeof details === 'string' && details.includes('Bad Request (400)')) {
             console.warn('[API Insight] This "Bad Request (400)" without a JSON body often indicates a Django ALLOWED_HOSTS mismatch. Check backend settings.py.');

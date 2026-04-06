@@ -37,8 +37,8 @@ export async function checkPaymentStatus(id: number): Promise<Payment> {
     return response.data;
 }
 
-export async function verifyKhaltiPayment(payload: { pidx: string; amount: number }) {
-    const response = await apiClient.get('payments/khalti/verify/', { params: payload });
+export async function verifyKhaltiPayment(params: Record<string, any>) {
+    const response = await apiClient.get('payments/khalti/verify/', { params });
     return response.data;
 }
 

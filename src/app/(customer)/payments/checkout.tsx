@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image , TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,7 @@ import { LazyLoader } from '@/components/ui/LazyLoader';
 import { useStripe } from '@stripe/stripe-react-native';
 
 const PaymentWebView = React.lazy(() =>
-  import('@/components/common/PaymentWebView').then(m => ({ default: m.PaymentWebView }))
+    import('@/components/common/PaymentWebView').then(m => ({ default: m.PaymentWebView }))
 );
 
 export default function CheckoutScreen() {
@@ -31,12 +32,26 @@ export default function CheckoutScreen() {
     const [paymentUrl, setPaymentUrl] = useState('');
     const [formHtml, setFormHtml] = useState('');
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
-    
+
     const [formData, setFormData] = useState({
         full_name: useAuthStore.getState().user?.name || '',
         email: useAuthStore.getState().user?.email || '',
         phone_number: useAuthStore.getState().user?.phone || '',
     });
+
+    const getQueryParams = (url: string) => {
+        const params: Record<string, string> = {};
+        const parts = url.split('?');
+        if (parts.length > 1) {
+            const query = parts[1];
+            const pairs = query.split('&');
+            for (const pair of pairs) {
+                const [key, value] = pair.split('=');
+                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            }
+        }
+        return params;
+    };
 
     useEffect(() => {
         if (bookingId) {
@@ -76,7 +91,7 @@ export default function CheckoutScreen() {
                 if (!paymentIntent.client_secret) {
                     throw new Error('Stripe client secret missing from response');
                 }
-                
+
                 const { error: initError } = await initPaymentSheet({
                     paymentIntentClientSecret: paymentIntent.client_secret,
                     merchantDisplayName: 'PanditYatra',
@@ -107,7 +122,7 @@ export default function CheckoutScreen() {
                     const formFields = Object.keys(paymentIntent.form_data)
                         .map(key => `<input type="hidden" name="${key}" value="${String(paymentIntent.form_data[key]).replace(/"/g, '&quot;')}" />`)
                         .join('');
-                    
+
                     const htmlContent = `
                         <html>
                             <head>
@@ -142,32 +157,29 @@ export default function CheckoutScreen() {
         }
     };
 
-    const handlePaymentSuccess = async (pidx?: string, esewaData?: string) => {
+    const handlePaymentSuccess = async (khaltiParams?: Record<string, any>, esewaData?: string) => {
         try {
             // Step 1: Tell backend to verify the redirect token
-            if (pidx) {
-                await verifyKhaltiPayment({
-                    pidx: pidx,
-                    amount: booking?.total_fee || 0
-                });
+            if (khaltiParams && Object.keys(khaltiParams).length > 0) {
+                await verifyKhaltiPayment(khaltiParams);
             } else if (esewaData) {
                 await verifyEsewaPayment({ data: esewaData });
             }
-            
+
             // Step 2: Universally verify the booking was actually marked PAID
             if (booking) {
                 const statusRes: any = await checkPaymentStatus(booking.id);
                 const paymentStatus = statusRes.status || statusRes.payment_status;
-                
+
                 if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED' || paymentStatus === 'PENDING') {
                     // It's possible the webhook hasn't fired yet for Stripe, but we can warn the user.
                     if (selectedMethod !== 'stripe') {
-                       Alert.alert('Payment Not Confirmed', 'The payment was not completely verified by our servers.');
-                       return;
+                        Alert.alert('Payment Not Confirmed', 'The payment was not completely verified by our servers.');
+                        return;
                     }
                 }
             }
-            
+
             Alert.alert('Success', 'Payment successful!', [
                 { text: 'OK', onPress: () => router.replace('/(customer)/bookings') }
             ]);
@@ -204,23 +216,26 @@ export default function CheckoutScreen() {
                     <View style={{ width: 40 }} />
                 </View>
                 <LazyLoader>
-                  <PaymentWebView
-                      url={paymentUrl}
-                      html={formHtml}
-                      onSuccess={(data) => {
-                          setShowWebView(false);
-                          const pidx = data.url.split('pidx=')[1]?.split('&')[0];
-                          const esewaData = data.url.split('data=')[1]?.split('&')[0];
-                          handlePaymentSuccess(pidx, esewaData);
-                      }}
-                      onFailure={() => {
-                          setShowWebView(false);
-                          Alert.alert('Payment Failed', 'The payment process was not successful.');
-                      }}
-                      onCancel={() => {
-                          setShowWebView(false);
-                      }}
-                  />
+                    <PaymentWebView
+                        url={paymentUrl}
+                        html={formHtml}
+                        onSuccess={(data) => {
+                            setShowWebView(false);
+                            const params = getQueryParams(data.url);
+                            if (params.pidx) {
+                                handlePaymentSuccess(params, undefined);
+                            } else if (params.data) {
+                                handlePaymentSuccess(undefined, params.data);
+                            }
+                        }}
+                        onFailure={() => {
+                            setShowWebView(false);
+                            Alert.alert('Payment Failed', 'The payment process was not successful.');
+                        }}
+                        onCancel={() => {
+                            setShowWebView(false);
+                        }}
+                    />
                 </LazyLoader>
             </SafeAreaView>
         );
@@ -315,10 +330,10 @@ export default function CheckoutScreen() {
                     >
                         <View style={styles.methodInfo}>
                             <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
-                                <Image 
-                                    source={require('@/assets/images/khalti.png')} 
-                                    style={{ width: '100%', height: '100%' }} 
-                                    resizeMode="contain" 
+                                <Image
+                                    source={require('@/assets/images/khalti.png')}
+                                    style={{ width: '100%', height: '100%' }}
+                                    contentFit="contain"
                                 />
                             </View>
                             <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
@@ -340,10 +355,10 @@ export default function CheckoutScreen() {
                     >
                         <View style={styles.methodInfo}>
                             <View style={[styles.methodIcon, { backgroundColor: '#fff', overflow: 'hidden' }]}>
-                                <Image 
-                                    source={require('@/assets/images/eswa.jpg')} 
-                                    style={{ width: '100%', height: '100%' }} 
-                                    resizeMode="contain" 
+                                <Image
+                                    source={require('@/assets/images/eswa.jpg')}
+                                    style={{ width: '100%', height: '100%' }}
+                                    contentFit="contain"
                                 />
                             </View>
                             <Text style={[styles.methodName, { color: colors.text }]}>eSewa Wallet</Text>

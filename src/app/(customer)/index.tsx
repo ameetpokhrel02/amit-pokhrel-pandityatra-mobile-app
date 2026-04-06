@@ -11,7 +11,8 @@ import {
   RefreshControl,
   FlatList,
   StyleSheet,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -249,6 +250,10 @@ export default function CustomerHomeScreen() {
               </View>
             )}
             keyExtractor={item => item.id.toString()}
+            initialNumToRender={1}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            removeClippedSubviews={Platform.OS === 'android'}
           />
         </View>
 
@@ -493,7 +498,7 @@ export default function CustomerHomeScreen() {
   );
 }
 
-function HeaderActionBtn({ icon, badgeCount, onPress, colors, isDark }: { icon: any, badgeCount: number, onPress: () => void, colors: any, isDark: boolean }) {
+const HeaderActionBtn = React.memo(({ icon, badgeCount, onPress, colors, isDark }: { icon: any, badgeCount: number, onPress: () => void, colors: any, isDark: boolean }) => {
   return (
     <TouchableOpacity
       style={[styles.headerActionBtn, { backgroundColor: isDark ? '#2A2A2E' : '#F4F4F5', borderColor: isDark ? '#3A3A3E' : '#E4E4E7' }]}
@@ -507,9 +512,9 @@ function HeaderActionBtn({ icon, badgeCount, onPress, colors, isDark }: { icon: 
       )}
     </TouchableOpacity>
   );
-}
+});
 
-function UtilityItem({ title, icon, onPress, colors }: { title: string, icon: any, onPress: () => void, colors: any }) {
+const UtilityItem = React.memo(({ title, icon, onPress, colors }: { title: string, icon: any, onPress: () => void, colors: any }) => {
   return (
     <TouchableOpacity
       style={styles.utilityItem}
@@ -521,9 +526,9 @@ function UtilityItem({ title, icon, onPress, colors }: { title: string, icon: an
       <Text style={[styles.utilityText, { color: colors.text + 'A0' }]}>{title}</Text>
     </TouchableOpacity>
   );
-}
+});
 
-function ServiceCard({ service, router, colors, isDark }: any) {
+const ServiceCard = React.memo(({ service, router, colors, isDark }: any) => {
   return (
     <TouchableOpacity
       style={[styles.serviceCard, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
@@ -553,9 +558,9 @@ function ServiceCard({ service, router, colors, isDark }: any) {
       </View>
     </TouchableOpacity>
   );
-}
+});
 
-function SamagriCard({ item, isWishlisted, onToggleWishlist, onAdd, colors, isDark }: { item: SamagriItem, isWishlisted: boolean, onToggleWishlist: () => void, onAdd: () => void, colors: any, isDark: boolean }) {
+const SamagriCard = React.memo(({ item, isWishlisted, onToggleWishlist, onAdd, colors, isDark }: { item: SamagriItem, isWishlisted: boolean, onToggleWishlist: () => void, onAdd: () => void, colors: any, isDark: boolean }) => {
   return (
     <View
       style={[styles.samagriCard, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
@@ -590,7 +595,7 @@ function SamagriCard({ item, isWishlisted, onToggleWishlist, onAdd, colors, isDa
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

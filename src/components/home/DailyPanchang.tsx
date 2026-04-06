@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 
-export const DailyPanchang = () => {
+export const DailyPanchang = React.memo(() => {
   const router = useRouter();
   const { colors, theme } = useTheme();
   
@@ -20,7 +20,7 @@ export const DailyPanchang = () => {
       </TouchableOpacity>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

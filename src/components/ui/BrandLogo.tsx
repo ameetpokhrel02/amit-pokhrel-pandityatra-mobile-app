@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { Image } from 'expo-image';
 
 interface BrandLogoProps {
   size?: number;
@@ -12,7 +13,7 @@ export const BrandLogo = ({ size = 120, style }: BrandLogoProps) => {
       <Image
         source={require('@/assets/images/pandit-logo.png')}
         style={styles.image}
-        resizeMode="contain"
+        contentFit="contain"
       />
     </View>
   );

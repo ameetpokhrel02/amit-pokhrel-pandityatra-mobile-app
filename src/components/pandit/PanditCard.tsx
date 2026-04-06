@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { Pandit } from '@/types/pandit';
@@ -12,7 +13,7 @@ interface PanditCardProps {
   onBook: () => void;
 }
 
-export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, onBook }) => {
+export const PanditCard: React.FC<PanditCardProps> = React.memo(({ pandit, index, onPress, onBook }) => {
   // Handle both mapped frontend type and raw backend user_details
   const imageUri = getImageUrl(pandit.image || (pandit as any).user_details?.profile_pic_url) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
 
@@ -98,7 +99,7 @@ export const PanditCard: React.FC<PanditCardProps> = ({ pandit, index, onPress, 
       </TouchableOpacity>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

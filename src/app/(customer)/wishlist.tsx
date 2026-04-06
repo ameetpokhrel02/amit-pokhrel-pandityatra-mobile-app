@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/theme/colors';
@@ -53,7 +54,7 @@ export default function WishlistScreen() {
       >
         <View style={[styles.imageContainer, { backgroundColor: colors.background }]}>
           {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+            <Image source={{ uri: item.image }} style={styles.image} contentFit="cover" />
           ) : (
             <Ionicons name="image-outline" size={40} color={colors.text + '20'} />
           )}

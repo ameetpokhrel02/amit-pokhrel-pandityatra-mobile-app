@@ -12,7 +12,7 @@ interface UpcomingSessionBannerProps {
   role: 'customer' | 'pandit';
 }
 
-export const UpcomingSessionBanner: React.FC<UpcomingSessionBannerProps> = ({ booking, role }) => {
+export const UpcomingSessionBanner: React.FC<UpcomingSessionBannerProps> = React.memo(({ booking, role }) => {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
@@ -109,7 +109,7 @@ export const UpcomingSessionBanner: React.FC<UpcomingSessionBannerProps> = ({ bo
       </View>
     </MotiView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

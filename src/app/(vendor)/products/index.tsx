@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl, Image
+  ActivityIndicator, Alert, RefreshControl
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -74,7 +75,7 @@ export default function VendorProductsScreen() {
     >
       <View style={[styles.imgWrap, { backgroundColor: isDark ? '#2A2A2E' : '#F9FAFB' }]}>
         {item.image ? (
-          <Image source={{ uri: getImageUrl(item.image) || item.image }} style={styles.img} resizeMode="cover" />
+          <Image source={{ uri: getImageUrl(item.image) || item.image }} style={styles.img} contentFit="cover" />
         ) : (
           <MaterialCommunityIcons name="image-off-outline" size={32} color={colors.text + '40'} />
         )}

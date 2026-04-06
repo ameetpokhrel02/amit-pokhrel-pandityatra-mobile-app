@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +40,20 @@ export default function ShopCheckoutScreen() {
   const deliveryFee = 100;
   const total = totalPrice + deliveryFee;
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+  const getQueryParams = (url: string) => {
+    const params: Record<string, string> = {};
+    const parts = url.split('?');
+    if (parts.length > 1) {
+      const query = parts[1];
+      const pairs = query.split('&');
+      for (const pair of pairs) {
+        const [key, value] = pair.split('=');
+        if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+      }
+    }
+    return params;
+  };
 
   const handleCheckout = async () => {
     if (!formData.full_name || !formData.phone_number || !formData.email || !formData.shipping_address || !formData.city) {
@@ -126,11 +141,11 @@ export default function ShopCheckoutScreen() {
     }
   };
 
-  const handlePaymentSuccess = async (pidx?: string, esewaData?: string) => {
+  const handlePaymentSuccess = async (khaltiParams?: Record<string, any>, esewaData?: string) => {
     try {
       setLoading(true);
-      if (pidx) {
-        await verifyKhaltiPayment({ pidx: pidx, amount: total });
+      if (khaltiParams && Object.keys(khaltiParams).length > 0) {
+        await verifyKhaltiPayment(khaltiParams);
       } else if (esewaData) {
         await verifyEsewaPayment({ data: esewaData });
       }
@@ -163,9 +178,12 @@ export default function ShopCheckoutScreen() {
             html={formHtml}
             onSuccess={(data) => {
               setShowWebView(false);
-              const pidx = data.url.split('pidx=')[1]?.split('&')[0];
-              const esewaData = data.url.split('data=')[1]?.split('&')[0];
-              handlePaymentSuccess(pidx, esewaData);
+              const params = getQueryParams(data.url);
+              if (params.pidx) {
+                handlePaymentSuccess(params, undefined);
+              } else if (params.data) {
+                handlePaymentSuccess(undefined, params.data);
+              }
             }}
             onFailure={() => {
               setShowWebView(false);
@@ -281,7 +299,7 @@ export default function ShopCheckoutScreen() {
                 <Image
                   source={require('@/assets/images/khalti.png')}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
+                  contentFit="contain"
                 />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>Khalti Wallet</Text>
@@ -298,7 +316,7 @@ export default function ShopCheckoutScreen() {
                 <Image
                   source={require('@/assets/images/eswa.jpg')}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
+                  contentFit="contain"
                 />
               </View>
               <Text style={[styles.methodName, { color: colors.text }]}>eSewa</Text>

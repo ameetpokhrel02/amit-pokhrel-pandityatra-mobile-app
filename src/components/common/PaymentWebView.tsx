@@ -28,7 +28,7 @@ export const PaymentWebView: React.FC<PaymentWebViewProps> = ({
             currentUrl.includes('status=Completed') ||
             currentUrl.includes('/payments/khalti/verify') || 
             currentUrl.includes('/payments/esewa/verify') ||
-            currentUrl.includes('pidx=') ||
+            (currentUrl.includes('pidx=') && !currentUrl.includes('pay.khalti.com')) ||
             currentUrl.includes('q=su') || 
             (currentUrl.includes('oid=') && currentUrl.includes('amt=') && !currentUrl.includes('q=fu'))
         ) {

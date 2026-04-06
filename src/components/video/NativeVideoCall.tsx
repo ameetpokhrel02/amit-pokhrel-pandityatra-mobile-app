@@ -49,7 +49,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUBBLE_SIZE = 120;
 const BUBBLE_HEIGHT = 160;
 
-export const NativeVideoCall: React.FC = () => {
+export const NativeVideoCall: React.FC = React.memo(() => {
   const { colors } = useTheme();
   const router = useRouter();
 
@@ -343,7 +343,7 @@ export const NativeVideoCall: React.FC = () => {
       </RNAnimated.View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   fullScreen: {

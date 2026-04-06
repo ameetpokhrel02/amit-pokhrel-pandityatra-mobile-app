@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -137,7 +138,7 @@ export default function ProductDetailScreen() {
         {/* Product Image */}
         <View style={[styles.imageContainer, { backgroundColor: colors.card }]}>
           {product.image ? (
-            <Image source={{ uri: product.image }} style={styles.productImage} resizeMode="cover" />
+            <Image source={{ uri: product.image }} style={styles.productImage} contentFit="cover" />
           ) : (
             <Ionicons name="cube-outline" size={100} color={colors.text + '20'} />
           )}
@@ -234,7 +235,7 @@ export default function ProductDetailScreen() {
                 >
                   <View style={[styles.recommendImageWrapper, { backgroundColor: colors.background }]}>
                     {item.image ? (
-                      <Image source={{ uri: item.image }} style={styles.recommendImg} resizeMode="cover" />
+                      <Image source={{ uri: item.image }} style={styles.recommendImg} contentFit="cover" />
                     ) : (
                       <Ionicons name="image-outline" size={30} color={colors.text + '20'} />
                     )}
