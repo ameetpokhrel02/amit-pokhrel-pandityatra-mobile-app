@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'; // Refreshed for routing
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/store/ThemeContext';
 import { listBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
@@ -54,6 +55,21 @@ export default function BookingsScreen() {
       isMounted = false;
     };
   }, [selectedTab]);
+
+  // Refetch when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const reload = async () => {
+        try {
+          const response = await listBookings({ status: selectedTab });
+          setBookings(Array.isArray(response?.data?.results) ? response.data.results : response?.data || []);
+        } catch (e) {
+          setError(`Unable to load ${selectedTab.toLowerCase()} bookings`);
+        }
+      };
+      reload();
+    }, [selectedTab])
+  );
 
   const renderItem = ({ item }: { item: Booking }) => {
     const statusColor =

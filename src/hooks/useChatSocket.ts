@@ -43,7 +43,11 @@ export function useChatSocket(roomId: string | number | undefined) {
             const wsUrl = getChatWebSocketUrl(roomId, token);
             console.log('[ChatSocket] Connecting to:', wsUrl);
 
-            const socket = new WebSocket(wsUrl);
+            const socket = new (WebSocket as any)(wsUrl, undefined, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
 
             socket.onopen = () => {
                 console.log('[ChatSocket] Connected');
@@ -54,7 +58,7 @@ export function useChatSocket(roomId: string | number | undefined) {
                 }
             };
 
-            socket.onmessage = (event) => {
+            socket.onmessage = (event: any) => {
                 try {
                     const data = JSON.parse(event.data);
                     console.log('[ChatSocket] Received:', data);
@@ -87,12 +91,12 @@ export function useChatSocket(roomId: string | number | undefined) {
                 }
             };
 
-            socket.onerror = (e) => {
+            socket.onerror = (e: any) => {
                 console.error('[ChatSocket] Error:', e);
                 setError('Connection error');
             };
 
-            socket.onclose = (e) => {
+            socket.onclose = (e: any) => {
                 console.log('[ChatSocket] Closed:', e.code, e.reason);
                 setStatus('disconnected');
                 

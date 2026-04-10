@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { fetchCart } from '@/services/samagri.service';
 import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
@@ -11,7 +13,26 @@ const { width } = Dimensions.get('window');
 
 export default function CartScreen() {
   const router = useRouter();
-  const { items, updateQuantity, addToCart, removeFromCart, totalPrice } = useCartStore();
+  const { items, updateQuantity, addToCart, removeFromCart, totalPrice, syncCart } = useCartStore();
+  
+  // Sync with server on focus
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      const loadCart = async () => {
+        try {
+          const data = await fetchCart();
+          if (isMounted) {
+            syncCart(data);
+          }
+        } catch (err) {
+          console.warn('Failed to sync cart with server', err);
+        }
+      };
+      loadCart();
+      return () => { isMounted = false; };
+    }, [syncCart])
+  );
   const { colors, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';

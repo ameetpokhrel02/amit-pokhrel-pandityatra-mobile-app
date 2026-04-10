@@ -120,6 +120,7 @@ export const usePanditDashboard = () => {
     unreadCount,
     totalItems,
     onRefresh,
+    fetchData,
     handleToggleAvailability,
     handleLogout,
     getTimeBasedGreeting

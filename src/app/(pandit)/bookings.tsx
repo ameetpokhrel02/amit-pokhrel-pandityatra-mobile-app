@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -35,6 +36,12 @@ export default function BookingsScreen() {
   useEffect(() => {
     loadBookings();
   }, [activeTab]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadBookings();
+    }, [activeTab])
+  );
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {

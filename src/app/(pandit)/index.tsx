@@ -1,5 +1,6 @@
 // Version: 1.0.1 - Fixed JSX Syntax
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -44,6 +45,7 @@ export default function PanditDashboardScreen() {
     unreadCount: unreadCount,
     totalItems: totalItems,
     onRefresh: onRefresh,
+    fetchData: fetchData,
     handleToggleAvailability,
     handleLogout,
     getTimeBasedGreeting
@@ -51,6 +53,12 @@ export default function PanditDashboardScreen() {
 
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
   const { addToCart, syncCart } = useCartStore();
 
   const handleAddToCart = async (item: any) => {

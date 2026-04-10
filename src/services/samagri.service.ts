@@ -97,7 +97,22 @@ export async function deleteSamagriCategory(id: number) {
 // --- Cart APIs ---
 
 export async function addToCart(itemId: number, quantity: number = 1) {
-    const response = await apiClient.post('samagri/cart/add/', { item_id: itemId, quantity });
+    const response = await apiClient.post('samagri/cart/', { item_id: itemId, quantity });
+    return response.data;
+}
+
+export async function updateCartItem(cartItemId: number, quantity: number) {
+    const response = await apiClient.patch(`samagri/cart/${cartItemId}/`, { quantity });
+    return response.data;
+}
+
+export async function removeFromCartServer(cartItemId: number) {
+    const response = await apiClient.delete(`samagri/cart/${cartItemId}/`);
+    return response.data;
+}
+
+export async function clearCartServer() {
+    const response = await apiClient.delete('samagri/cart/clear/');
     return response.data;
 }
 

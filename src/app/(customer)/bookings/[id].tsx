@@ -11,6 +11,8 @@ import dayjs from 'dayjs';
 import { usePujaRealtime } from '@/hooks/usePujaRealtime';
 import { fetchBookingSamagriRecommendations } from '@/services/recommender.service';
 import { SamagriItem } from '@/services/api';
+import { rescheduleBooking } from '@/services/booking.service';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +24,9 @@ export default function BookingDetailScreen() {
   const [recommendations, setRecommendations] = useState<SamagriItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [showReschedulePicker, setShowReschedulePicker] = useState(false);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -78,6 +83,36 @@ export default function BookingDetailScreen() {
               Alert.alert('Error', error.message || 'Failed to cancel booking');
             } finally {
               setCancelling(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleReschedule = async (date: Date) => {
+    setShowReschedulePicker(false);
+    
+    Alert.alert(
+      'Confirm Reschedule',
+      `Move this puja to ${dayjs(date).format('MMMM D, YYYY [at] hh:mm A')}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              setRescheduleLoading(true);
+              await rescheduleBooking(Number(id), {
+                new_date: dayjs(date).format('YYYY-MM-DD'),
+                new_time: dayjs(date).format('HH:mm')
+              });
+              Alert.alert('Success', 'Puja rescheduled successfully! The fee has been waived as per our policy.');
+              load();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.error || error.message || 'Failed to reschedule');
+            } finally {
+              setRescheduleLoading(false);
             }
           }
         }
@@ -242,9 +277,20 @@ export default function BookingDetailScreen() {
           {isMissed && (
             <View style={styles.missedNotice}>
               <Ionicons name="alert-circle" size={20} color="#DC2626" />
-              <Text style={styles.missedNoticeText}>
-                This session was scheduled for a past time and is now marked as missed.
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.missedNoticeText}>
+                  This session was scheduled for a past time and is now marked as missed.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.rescheduleLink}
+                  onPress={() => setShowReschedulePicker(true)}
+                  disabled={rescheduleLoading}
+                >
+                  <Text style={styles.rescheduleLinkText}>
+                    {rescheduleLoading ? 'Rescheduling...' : 'Click here to Reschedule for FREE (7-day window)'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -292,6 +338,14 @@ export default function BookingDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      <DateTimePickerModal
+        isVisible={showReschedulePicker}
+        mode="datetime"
+        onConfirm={handleReschedule}
+        onCancel={() => setShowReschedulePicker(false)}
+        minimumDate={new Date()}
+      />
     </SafeAreaView>
   );
 }
@@ -411,5 +465,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     flex: 1,
+    marginBottom: 4,
+  },
+  rescheduleLink: {
+    marginTop: 4,
+  },
+  rescheduleLinkText: {
+    color: '#DC2626',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+    fontSize: 14,
   },
 });

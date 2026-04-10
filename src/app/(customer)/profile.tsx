@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, Image, Alert, TextInput, ScrollView } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
@@ -8,6 +8,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -61,6 +62,27 @@ export default function ProfileScreen() {
 
     loadData();
   }, [isAuthenticated]);
+
+  // Refetch on focus
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        const reload = async () => {
+          try {
+            await syncProfile();
+            const bookingsResponse = await listBookings();
+            const bookingsRaw = bookingsResponse?.data || bookingsResponse;
+            const bookingsData = Array.isArray(bookingsRaw) ? bookingsRaw : (bookingsRaw?.results || []);
+            const pending = bookingsData.filter((b: any) => b.status === 'COMPLETED' && !b.is_reviewed);
+            setPendingReviewCount(pending.length);
+          } catch (e) {
+            console.warn('Profile sync failed on focus', e);
+          }
+        };
+        reload();
+      }
+    }, [isAuthenticated, syncProfile])
+  );
 
   const toggleTheme = () => {
     setMode(isDark ? 'light' : 'dark');

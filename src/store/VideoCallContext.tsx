@@ -214,7 +214,11 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 4. Start Signaling
       const token = await SecureStore.getItemAsync('access_token');
       const wsUrl = API_BASE_URL.replace('http', 'ws').replace(/\/api\/?$/, '');
-      const ws = new WebSocket(`${wsUrl}/ws/video/${roomId}/?token=${token}`);
+      const ws = new (WebSocket as any)(`${wsUrl}/ws/video/${roomId}/?token=${token}`, undefined, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
       socket.current = ws;
 
       ws.onopen = () => {
@@ -223,7 +227,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsCallActive(true);
       };
 
-      ws.onmessage = async (e) => {
+      ws.onmessage = async (e: any) => {
         const data = JSON.parse(e.data);
         switch (data.type) {
           case 'offer':
@@ -261,7 +265,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       };
 
-      ws.onerror = (e) => {
+      ws.onerror = (e: any) => {
         console.error('[NativeWebRTC] Socket error:', e);
       };
       

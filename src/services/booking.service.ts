@@ -15,3 +15,5 @@ export const myBookings = () => api.get('bookings/my_bookings/');
 export const availableSlots = (pandit_id: number, date: string, service_id: number) => 
     api.get('bookings/available_slots/', { params: { pandit_id, date, service_id } });
 export const getBookingInvoice = (id: number) => api.get(`bookings/${id}/invoice/`);
+export const rescheduleBooking = (id: number, data: { new_date: string; new_time: string }) => 
+    api.post(`bookings/${id}/reschedule/`, data);

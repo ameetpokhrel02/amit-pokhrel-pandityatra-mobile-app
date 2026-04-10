@@ -48,6 +48,7 @@ export const useVendorDashboard = () => {
     loading,
     refreshing,
     onRefresh,
+    loadData,
     router
   };
 };

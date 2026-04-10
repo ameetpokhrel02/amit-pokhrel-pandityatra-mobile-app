@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl
@@ -25,9 +26,15 @@ const StatCard = ({ icon, label, value, color, colors }: any) => (
 
 export default function VendorDashboard() {
   const insets = useSafeAreaInsets();
-  const { profile, stats, loading, refreshing, onRefresh, router } = useVendorDashboard();
+  const { profile, stats, loading, refreshing, onRefresh, loadData, router } = useVendorDashboard();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const isVerified = profile?.is_verified;
 

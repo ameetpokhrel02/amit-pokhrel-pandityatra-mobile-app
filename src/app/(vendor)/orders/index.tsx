@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl
@@ -37,6 +38,13 @@ export default function VendorOrdersScreen() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [])
+  );
+
   const onRefresh = useCallback(async () => { setRefreshing(true); await load(); setRefreshing(false); }, []);
 
   const filtered = filter === 'ALL' ? orders : orders.filter(o => o.status === filter);

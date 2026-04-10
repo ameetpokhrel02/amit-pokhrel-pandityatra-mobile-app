@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
+import dayjs from 'dayjs';
 
 import { useAuthStore } from "@/store/auth.store";
 import { useNotificationStore } from "@/store/notification.store";
@@ -57,9 +58,17 @@ export const useDashboardData = () => {
 
         // Fetch upcoming bookings for reminders and dashboard
         const bookingsRes = await listBookings({ status: 'ACCEPTED' });
-        const upcomingBookings = (bookingsRes.data || []).filter((b: Booking) => 
-          b.service_location === 'ONLINE' && b.status === 'ACCEPTED'
-        ).sort((a: Booking, b: Booking) => {
+        const now = dayjs();
+        const upcomingBookings = (bookingsRes.data || []).filter((b: Booking) => {
+          const isOnline = b.service_location === 'ONLINE';
+          const isAccepted = b.status === 'ACCEPTED';
+          
+          // Show if the booking is in the future OR started less than 45 mins ago (active session)
+          const sessionStartTime = dayjs(`${b.booking_date} ${b.booking_time}`);
+          const isUpcomingOrActive = sessionStartTime.add(45, 'minute').isAfter(now);
+          
+          return isOnline && isAccepted && isUpcomingOrActive;
+        }).sort((a: Booking, b: Booking) => {
           return new Date(`${a.booking_date} ${a.booking_time}`).getTime() - 
                  new Date(`${b.booking_date} ${b.booking_time}`).getTime();
         });
@@ -128,6 +137,7 @@ export const useDashboardData = () => {
     loading,
     refreshing,
     onRefresh,
+    refetch: loadHomeData, // Added for focus-based refreshing
     handleToggleWishlist,
     handleAuthAction
   };
