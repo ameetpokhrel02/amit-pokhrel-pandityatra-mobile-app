@@ -20,6 +20,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   isLoading: false,
 
   fetchNotifications: async () => {
+    // Auth Guard: Don't fire if not logged in
+    const { isAuthenticated } = (await import('./auth.store')).useAuthStore.getState();
+    if (!isAuthenticated) return;
+
     set({ isLoading: true });
     try {
       const notifications = await fetchNotifications();

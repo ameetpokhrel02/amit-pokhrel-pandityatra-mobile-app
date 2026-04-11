@@ -178,6 +178,25 @@ export default function PanditDashboardScreen() {
           </View>
         </View>
 
+        {/* Pending Approval Banner - Story Requirement */}
+        {profile?.pandit_profile?.is_verified === false && (
+          <View 
+            className="mx-6 mt-6 p-5 rounded-3xl flex-row items-center gap-4 border" 
+            style={{ 
+              backgroundColor: isDark ? '#3B2200' : '#FEF3C7', 
+              borderColor: isDark ? '#4B3F2E' : '#F59E0B' 
+            }}
+          >
+            <View className="w-10 h-10 rounded-2xl items-center justify-center bg-amber-500/10">
+              <Ionicons name="time" size={22} color="#D97706" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-bold" style={{ color: isDark ? '#E5D5C5' : '#92400E' }}>Verification Pending</Text>
+              <Text className="text-xs mt-0.5 opacity-80" style={{ color: isDark ? '#D1BFA9' : '#B45309' }}>Our admin is reviewing your certificates. This usually takes 24 hours.</Text>
+            </View>
+          </View>
+        )}
+
         {/* COMPONENT: VIDEO CALL REMINDER BANNER */}
         {nextSession && <UpcomingSessionBanner booking={nextSession} role="pandit" />}
 

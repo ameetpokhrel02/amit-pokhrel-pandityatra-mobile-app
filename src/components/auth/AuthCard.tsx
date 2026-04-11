@@ -13,6 +13,8 @@ interface AuthCardProps {
   onToggleMode?: () => void;
   onChangeRole?: () => void;
   children?: React.ReactNode;
+  titleOverride?: string;
+  hideFooter?: boolean;
 }
 
 export const AuthCard = ({
@@ -21,6 +23,8 @@ export const AuthCard = ({
   onToggleMode,
   onChangeRole,
   children,
+  titleOverride,
+  hideFooter,
 }: AuthCardProps) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
@@ -35,31 +39,33 @@ export const AuthCard = ({
     <View style={[styles.container, { backgroundColor: colors.card }]}>
       <BrandLogo size={100} />
       
-      <Text style={[styles.title, { color: colors.text }]}>{getTitle()}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{titleOverride || getTitle()}</Text>
       
       {children}
       
-      <View style={styles.footer}>
-        {onToggleMode && (
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-            {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
-            <Text 
-              style={[styles.link, { color: colors.primary }]} 
-              onPress={onToggleMode}
-            >
-              {mode === 'login' ? `Register as ${role === 'customer' ? 'Devotee' : role.charAt(0).toUpperCase() + role.slice(1)}` : 'Login'}
+      {!hideFooter && (
+        <View style={styles.footer}>
+          {onToggleMode && (
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+              {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+              <Text 
+                style={[styles.link, { color: colors.primary }]} 
+                onPress={onToggleMode}
+              >
+                {mode === 'login' ? `Register as ${role === 'customer' ? 'Devotee' : role.charAt(0).toUpperCase() + role.slice(1)}` : 'Login'}
+              </Text>
             </Text>
-          </Text>
-        )}
-        
-        {onChangeRole && (
-          <TouchableOpacity onPress={onChangeRole} style={styles.changeRoleBtn}>
-            <Text style={[styles.changeRoleText, { color: colors.textSecondary }]}>
-              ← Change Role
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          )}
+          
+          {onChangeRole && (
+            <TouchableOpacity onPress={onChangeRole} style={styles.changeRoleBtn}>
+              <Text style={[styles.changeRoleText, { color: colors.textSecondary }]}>
+                ← Change Role
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </View>
   );
 };

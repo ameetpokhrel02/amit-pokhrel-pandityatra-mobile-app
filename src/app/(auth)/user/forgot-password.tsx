@@ -12,9 +12,10 @@ import {
   StatusBar
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
+import { AppContainer } from '@/components/ui/AppContainer';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { requestPasswordResetOTP } from '@/services/auth.service';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -33,11 +34,8 @@ export default function ForgotPasswordScreen() {
     try {
       setLoading(true);
       await requestPasswordResetOTP({ email });
-      Alert.alert(
-        'Success', 
-        'Reset code sent to your email!',
-        [{ text: 'OK', onPress: () => router.push({ pathname: '/(auth)/user/reset-password', params: { email } }) }]
-      );
+      // Silent navigation instead of popup
+      router.push({ pathname: '/(auth)/user/verify-forgot-otp', params: { email } });
     } catch (e: any) {
       console.error(e);
       Alert.alert('Error', e.response?.data?.detail || e.message || 'Failed to send reset code');
@@ -47,61 +45,59 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"} 
-      className="flex-1 bg-zinc-50"
-    >
-      <StatusBar barStyle="dark-content" />
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
+    <AppContainer hideFab>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        <View className="bg-white rounded-[32px] p-8 shadow-xl shadow-black/10 w-full max-w-[450px] self-center">
-          <View className="items-center mb-8">
-            <Image
-              source={require('@/assets/images/pandit-logo.png')}
-              className="w-[140px] h-[140px] mb-2"
-              contentFit="contain"
-            />
-            <Text className="text-[20px] font-[800] text-primary text-center">Forgot Password?</Text>
-            <Text className="text-zinc-500 text-center font-medium mt-2 leading-5 px-4">
-              Don&apos;t worry! Enter your email below to receive a password reset code.
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40 }}
+          showsVerticalScrollIndicator={false}
+          centerContent
+        >
+          <AuthCard
+            role="customer"
+            mode="login"
+            titleOverride="Forgot Password?"
+            hideFooter
+          >
+            <Text style={{ textAlign: 'center', marginBottom: 24, fontSize: 14, color: '#666', marginTop: -16, lineHeight: 20 }}>
+              Don't worry! Enter your email or phone below to receive a password reset code.
             </Text>
-          </View>
 
-          <View className="gap-4">
-            <Input
-              label="Email Address"
-              placeholder="you@example.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Ionicons name="mail-outline" size={20} color="#9CA3AF" />}
-            />
+            <View style={{ gap: 16 }}>
+              <Input
+                label="Email Address / Phone"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                leftIcon={<Ionicons name="mail-outline" size={20} color="#9CA3AF" />}
+              />
 
-            <TouchableOpacity
-              className={`w-full h-14 bg-primary rounded-2xl items-center justify-center mt-6 shadow-lg shadow-primary/30 active:opacity-80 ${loading ? 'opacity-70' : ''}`}
-              onPress={handleSendOTP}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text className="text-white text-lg font-bold">Send Verification Code</Text>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={{ width: '100%', height: 56, backgroundColor: '#F97316', borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 8, opacity: loading ? 0.7 : 1 }}
+                onPress={handleSendOTP}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>Send Verification Code</Text>
+                )}
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              className="items-center mt-8" 
-              onPress={() => router.back()}
-            >
-              <Text className="text-zinc-400 font-semibold px-4 py-2">← Back to Login</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              <TouchableOpacity 
+                style={{ alignItems: 'center', marginTop: 16 }} 
+                onPress={() => router.back()}
+              >
+                <Text style={{ color: '#9CA3AF', fontWeight: '600' }}>← Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </AuthCard>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </AppContainer>
   );
 }

@@ -576,6 +576,14 @@ export default function BookingScreen() {
               ) : (
                 <Text className="opacity-50 italic">No additional suggestions.</Text>
               )}
+
+              <TouchableOpacity 
+                className="mt-4 p-5 rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-800 flex-row items-center justify-center gap-3 active:bg-gray-50 dark:active:bg-zinc-900"
+                onPress={() => router.push('/(customer)/shop' as any)}
+              >
+                <Ionicons name="cart-outline" size={20} color={colors.primary} />
+                <Text className="font-bold" style={{ color: colors.primary }}>Looking for more? Visit the Shop</Text>
+              </TouchableOpacity>
             </View>
           )}
 

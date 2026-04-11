@@ -8,6 +8,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { listBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
 import { useChat } from '@/store/chat.store';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function BookingsScreen() {
   const { colors, theme } = useTheme();
@@ -15,6 +16,7 @@ export default function BookingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { openChat } = useChat();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,13 @@ export default function BookingsScreen() {
   ];
 
   useEffect(() => {
+    if (isAuthLoading) return;
+    
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
     setLoading(true);
     setError(null);
@@ -54,11 +63,13 @@ export default function BookingsScreen() {
     return () => {
       isMounted = false;
     };
-  }, [selectedTab]);
+  }, [selectedTab, isAuthenticated, isAuthLoading]);
 
   // Refetch when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      if (!isAuthenticated || isAuthLoading) return;
+
       const reload = async () => {
         try {
           const response = await listBookings({ status: selectedTab });
@@ -68,7 +79,7 @@ export default function BookingsScreen() {
         }
       };
       reload();
-    }, [selectedTab])
+    }, [selectedTab, isAuthenticated, isAuthLoading])
   );
 
   const renderItem = ({ item }: { item: Booking }) => {
@@ -210,7 +221,25 @@ export default function BookingsScreen() {
         ))}
       </View>
 
-      {loading ? (
+      {!isAuthenticated ? (
+        <View style={styles.guestContainer}>
+          <View style={[styles.guestCard, { backgroundColor: colors.card, borderColor: colors.border + '30' }]}>
+            <View style={styles.guestIconWrap}>
+              <Ionicons name="lock-closed" size={40} color={colors.primary} />
+            </View>
+            <Text style={[styles.guestTitle, { color: colors.text }]}>Sign in to view bookings</Text>
+            <Text style={[styles.guestSubtitle, { color: colors.text + '80' }]}>
+              You need to be logged in to manage your ritual schedules, track pandit arrivals, and join video calls.
+            </Text>
+            <TouchableOpacity 
+              style={[styles.loginBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push('/(public)/role-selection')}
+            >
+              <Text style={styles.loginBtnText}>Sign In / Register</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -395,6 +424,49 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '600',
     fontSize: 14,
+  },
+  guestContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  guestCard: {
+    padding: 32,
+    borderRadius: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  guestIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FF6F0015',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  guestTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  guestSubtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  loginBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loginBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
 

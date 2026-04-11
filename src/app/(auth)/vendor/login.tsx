@@ -120,6 +120,12 @@ export default function VendorLoginScreen() {
                     </TouchableOpacity>
                   }
                 />
+                
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: -4 }}>
+                  <TouchableOpacity onPress={() => router.push('/(auth)/user/forgot-password' as any)}>
+                    <Text style={{ fontSize: 13, fontWeight: '500', color: colors.primary }}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <Button 
                   title="Sign In to Dashboard" 

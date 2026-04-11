@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getVendorStats, VendorStats, getVendorProfile, VendorProfile } from '@/services/vendor.service';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'expo-router';
@@ -11,8 +11,26 @@ export const useVendorDashboard = () => {
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const isMounted = useRef(true);
+  const isFetching = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const loadData = useCallback(async () => {
+    if (isFetching.current) return;
+    
+    // Auth Guard
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+        if (isMounted.current) setLoading(false);
+        return;
+    }
+
+    isFetching.current = true;
     try {
       const [statsRes, profileRes] = await Promise.all([
         getVendorStats(),
@@ -27,7 +45,10 @@ export const useVendorDashboard = () => {
     } catch (err) {
       console.error('Failed to load vendor dashboard data:', err);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+      isFetching.current = false;
     }
   }, []);
 
@@ -37,9 +58,8 @@ export const useVendorDashboard = () => {
     setRefreshing(false);
   }, [loadData]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Removed mount Effect to prevent infinite loops.
+  // Screens should use useFocusEffect to trigger loadData.
 
   return {
     user,

@@ -106,6 +106,11 @@ export default function LoginScreen() {
                     }
                   />
                 </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
+                  <TouchableOpacity onPress={() => router.push('/(auth)/user/forgot-password' as any)}>
+                    <Text style={{ ...Typography.captionMedium, color: Colors.light.primary }}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
                 
                 <Button
                   title="Login"

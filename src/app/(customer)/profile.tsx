@@ -36,9 +36,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     // Only fetch profile data if the user is authenticated
-    if (!isAuthenticated) {
-      return;
-    }
+    if (!isAuthenticated) return;
 
     const loadData = async () => {
       try {
@@ -61,26 +59,26 @@ export default function ProfileScreen() {
     };
 
     loadData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, syncProfile]);
 
   // Refetch on focus
   useFocusEffect(
     useCallback(() => {
-      if (isAuthenticated) {
-        const reload = async () => {
-          try {
-            await syncProfile();
-            const bookingsResponse = await listBookings();
-            const bookingsRaw = bookingsResponse?.data || bookingsResponse;
-            const bookingsData = Array.isArray(bookingsRaw) ? bookingsRaw : (bookingsRaw?.results || []);
-            const pending = bookingsData.filter((b: any) => b.status === 'COMPLETED' && !b.is_reviewed);
-            setPendingReviewCount(pending.length);
-          } catch (e) {
-            console.warn('Profile sync failed on focus', e);
-          }
-        };
-        reload();
-      }
+      if (!isAuthenticated) return;
+      
+      const reload = async () => {
+        try {
+          await syncProfile();
+          const bookingsResponse = await listBookings();
+          const bookingsRaw = bookingsResponse?.data || bookingsResponse;
+          const bookingsData = Array.isArray(bookingsRaw) ? bookingsRaw : (bookingsRaw?.results || []);
+          const pending = bookingsData.filter((b: any) => b.status === 'COMPLETED' && !b.is_reviewed);
+          setPendingReviewCount(pending.length);
+        } catch (e) {
+          console.warn('Profile sync failed on focus', e);
+        }
+      };
+      reload();
     }, [isAuthenticated, syncProfile])
   );
 

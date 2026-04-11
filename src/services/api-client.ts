@@ -140,6 +140,27 @@ const processQueue = (error: any, token: string | null = null) => {
     failedQueue = [];
 };
 
+/**
+ * Safely triggers logout by reaching into the auth store without causing a circular dependency.
+ * This ensures the UI state (Zustand) is updated alongside storage cleanup.
+ */
+const triggerLogout = async () => {
+    try {
+        // We use a dynamic require to avoid direct import circular dependency
+        const { useAuthStore } = require('@/store/auth.store');
+        if (useAuthStore?.getState()?.logout) {
+            await useAuthStore.getState().logout();
+        }
+    } catch (e) {
+        console.error('[API] Failed to trigger dynamic logout:', e);
+        // Fallback to manual storage cleanup if store is unreachable
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync('user');
+        await SecureStore.deleteItemAsync('role');
+    }
+};
+
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -163,9 +184,7 @@ apiClient.interceptors.response.use(
             const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
             if (!refreshToken) {
-                // useAuthStore.getState().logout();
-                await SecureStore.deleteItemAsync('access_token');
-                await SecureStore.deleteItemAsync('refresh_token');
+                await triggerLogout();
                 return Promise.reject(error);
             }
 
@@ -183,9 +202,7 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (err) {
                 processQueue(err, null);
-                // useAuthStore.getState().logout();
-                await SecureStore.deleteItemAsync('access_token');
-                await SecureStore.deleteItemAsync('refresh_token');
+                await triggerLogout();
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchVideoRecordings } from '@/services/video.service';
 import { getImageUrl } from '@/utils/image';
@@ -29,11 +30,16 @@ export default function MyRecordingsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const { isAuthenticated } = useAuthStore();
+
   const loadRecordings = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const data = await fetchVideoRecordings();
-      // data expected to be a list of recording objects
       setRecordings(data.results || data || []);
     } catch (error) {
       console.error('Error fetching recordings:', error);
@@ -43,6 +49,7 @@ export default function MyRecordingsScreen() {
   };
 
   const onRefresh = async () => {
+    if (!isAuthenticated) return;
     setRefreshing(true);
     await loadRecordings();
     setRefreshing(false);
@@ -50,7 +57,38 @@ export default function MyRecordingsScreen() {
 
   useEffect(() => {
     loadRecordings();
-  }, []);
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: isDark ? '#333' : '#EEE' }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>My Recordings</Text>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <View style={styles.emptyContainer}>
+          <View style={[styles.emptyIconCircle, { backgroundColor: colors.primary + '10' }]}>
+            <Ionicons name="lock-closed-outline" size={60} color={colors.primary + '40'} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>View Your Sessions</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.text + '60' }]}>
+            Join as a Customer to access your recordings, watch sacred sessions again, and download them.
+          </Text>
+          
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/(public)/role-selection' as any)}
+          >
+            <Text style={styles.loginBtnText}>Join as Customer</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const renderRecordingItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
@@ -279,5 +317,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: 32,
+  },
+  loginBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  loginBtnText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

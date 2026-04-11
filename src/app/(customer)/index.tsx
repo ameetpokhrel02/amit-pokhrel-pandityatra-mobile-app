@@ -91,10 +91,15 @@ export default function CustomerHomeScreen() {
     handleAuthAction,
   } = useDashboardData();
 
-  // Fresh fetch on every screen focus
+  // Fresh fetch on every screen focus, with a 30s throttle to prevent loop pressure
+  const lastFetchRef = useRef<number>(0);
   useFocusEffect(
     useCallback(() => {
-      refetch();
+      const now = Date.now();
+      if (now - lastFetchRef.current > 30000) { // 30 seconds
+        refetch();
+        lastFetchRef.current = now;
+      }
     }, [refetch])
   );
 

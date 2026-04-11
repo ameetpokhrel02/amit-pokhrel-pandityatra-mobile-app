@@ -21,16 +21,15 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   
-  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleReset = async () => {
-    if (!otp || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -78,24 +77,14 @@ export default function ResetPasswordScreen() {
               className="w-[140px] h-[140px] mb-2"
               contentFit="contain"
             />
-            <Text className="text-[20px] font-[800] text-primary text-center">Reset Password</Text>
+            <Text className="text-[20px] font-[800] text-primary text-center">Set New Password</Text>
             <Text className="text-zinc-500 text-center font-medium mt-2 leading-5 px-4">
-              Enter the 6-digit code sent to{"\n"}
+              Enter a strong new password for your account using {"\n"}
               <Text className="text-zinc-800 font-bold">{email}</Text>
             </Text>
           </View>
 
           <View className="gap-4">
-            <Input
-              label="Reset Code"
-              placeholder="123456"
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-              leftIcon={<Ionicons name="shield-outline" size={20} color="#9CA3AF" />}
-            />
-
             <View>
               <Input
                 label="New Password"

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import dayjs from 'dayjs';
@@ -28,9 +28,24 @@ export const useDashboardData = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Prevention of memory leaks and redundant fetches
+  const isMounted = useRef(true);
+  const isFetching = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   // We memoize loadHomeData to satisfy eslint dependency rules
-  const loadHomeData = useCallback(async () => {
+  const loadHomeData = useCallback(async (isPublicOnly = false) => {
+    if (isFetching.current) return;
+    isFetching.current = true;
+
     try {
+      // 1. Public Data (Always available)
       const [servicesData, categoriesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
         fetchServices(),
         fetchCategories(),
@@ -38,17 +53,23 @@ export const useDashboardData = () => {
         getSamagriItems(),
         getSamagriCategories(),
       ]);
+
+      if (!isMounted.current) return;
+
       setServices(servicesData);
       setCategories(categoriesData.slice(0, 6));
       setPandits(panditsRes.data?.results || panditsRes.data?.slice(0, 6) || []);
       setSamagriItems(samagriItemsRes);
       setSamagriCategories(samagriCategoriesRes);
 
-      if (isAuthenticated && user) {
+      // 2. Protected Data (Authenticated Users Only)
+      if (isAuthenticated && user && !isPublicOnly) {
         fetchStoreNotifications();
         
         try {
             const wishlistRes = await getWishlist();
+            if (!isMounted.current) return;
+            
             const wishlistData = Array.isArray(wishlistRes) ? wishlistRes : (wishlistRes as any)?.results || [];
             const ids = wishlistData.map((w: any) => w.item?.id || w.samagri_item?.id || w.id).filter(Boolean);
             setWishlist(ids);
@@ -56,17 +77,15 @@ export const useDashboardData = () => {
             console.warn("Could not fetch wishlist", wishlistErr);
         }
 
-        // Fetch upcoming bookings for reminders and dashboard
         const bookingsRes = await listBookings({ status: 'ACCEPTED' });
+        if (!isMounted.current) return;
+
         const now = dayjs();
         const upcomingBookings = (bookingsRes.data || []).filter((b: Booking) => {
           const isOnline = b.service_location === 'ONLINE';
           const isAccepted = b.status === 'ACCEPTED';
-          
-          // Show if the booking is in the future OR started less than 45 mins ago (active session)
           const sessionStartTime = dayjs(`${b.booking_date} ${b.booking_time}`);
           const isUpcomingOrActive = sessionStartTime.add(45, 'minute').isAfter(now);
-          
           return isOnline && isAccepted && isUpcomingOrActive;
         }).sort((a: Booking, b: Booking) => {
           return new Date(`${a.booking_date} ${a.booking_time}`).getTime() - 
@@ -78,6 +97,7 @@ export const useDashboardData = () => {
         if (upcomingBookings.length > 0) {
           try {
             const recoData = await fetchBookingSamagriRecommendations(upcomingBookings[0].id);
+            if (!isMounted.current) return;
             setRecommendations(recoData);
           } catch (recoErr) {
             console.warn("Could not fetch recommendations", recoErr);
@@ -87,7 +107,10 @@ export const useDashboardData = () => {
     } catch (error) {
       console.error("Failed to load home data", error);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+      isFetching.current = false;
     }
   }, [isAuthenticated, user, fetchStoreNotifications]);
 
@@ -121,9 +144,8 @@ export const useDashboardData = () => {
     }
   };
 
-  useEffect(() => {
-    loadHomeData();
-  }, [loadHomeData]);
+  // Removed redundant mount Effect to prevent infinite loops.
+  // Screens should use refetch() or onRefresh() explicitly via useFocusEffect.
 
   return {
     services,

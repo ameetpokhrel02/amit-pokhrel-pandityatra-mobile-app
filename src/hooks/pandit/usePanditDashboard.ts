@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { fetchProfile } from '@/services/auth.service';
 import { togglePanditAvailability, fetchPanditMyServices } from '@/services/pandit.service';
@@ -11,7 +11,7 @@ import { Booking } from '@/services/api';
 
 export const usePanditDashboard = () => {
   const router = useRouter();
-  const { user, logout: storeLogout } = useAuthStore();
+  const { user, isAuthenticated, logout: storeLogout } = useAuthStore();
   const { unreadCount, fetchNotifications } = useNotificationStore();
   const { totalItems } = useCartStore();
 
@@ -29,8 +29,28 @@ export const usePanditDashboard = () => {
   const [samagriItems, setSamagriItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [nextSession, setNextSession] = useState<Booking | null>(null);
+  
+  // Prevention of memory leaks and redundant fetches
+  const isMounted = useRef(true);
+  const isFetching = useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const fetchData = useCallback(async () => {
+    if (isFetching.current) return;
+    
+    // Auth Guard: Only fetch if authenticated
+    if (!isAuthenticated) {
+      if (isMounted.current) setLoading(false);
+      return;
+    }
+    
+    isFetching.current = true;
     try {
       if (!refreshing) setLoading(true);
       const profileRes = await fetchProfile();
@@ -69,20 +89,20 @@ export const usePanditDashboard = () => {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (isMounted.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+      isFetching.current = false;
     }
-  }, [refreshing, fetchNotifications]);
+  }, [fetchNotifications]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
   };
 
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once
+  // Removed mount useEffect because fetchData is triggered by useFocusEffect in the screen
 
   const handleToggleAvailability = async (value: boolean) => {
     try {

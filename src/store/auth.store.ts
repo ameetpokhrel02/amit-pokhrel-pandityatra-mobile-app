@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { router } from 'expo-router';
+// import { router } from 'expo-router'; // Removed to centralize navigation in layouts
 import { fetchProfile } from '@/services/auth.service';
 
 interface User {
@@ -98,13 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false 
       });
 
-      // Optional: Dynamic redirect based on role (customize if needed)
-      let redirectPath = '/user/login'; // default
-      const currentRole = get().role;
-      if (currentRole === 'pandit') redirectPath = '/pandit/login';
-      else if (currentRole === 'vendor') redirectPath = '/vendor/login';
-
-      router.replace(redirectPath as any);
+      // Navigation is now handled by _layout.tsx based on state changes
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -160,6 +154,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           status: error.response.status,
           data: error.response.data,
         });
+        
+        // If the token is invalid/blacklisted, log out immediately
+        if (error.response.status === 401) {
+          get().logout();
+        }
       } else {
         console.error('Error during profile sync:', error);
       }
