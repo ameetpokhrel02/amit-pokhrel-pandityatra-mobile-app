@@ -43,7 +43,6 @@ export default function LoginScreen() {
     handleSendOtp,
     handlePasswordLogin,
     handleGooglePress,
-    handleGooglePress,
     navToSignup,
     exploreAsGuest,
     otpCode,
