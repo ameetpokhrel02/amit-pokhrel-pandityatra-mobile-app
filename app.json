@@ -26,6 +26,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
@@ -41,6 +42,13 @@
         "expo-router",
         {
           "asyncRoutes": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PanditYatra needs camera access for video puja and document verification.",
+          "microphonePermission": "PanditYatra needs microphone access for audio during video calls."
         }
       ],
       [
@@ -71,12 +79,6 @@
       "expo-video",
       "@react-native-community/datetimepicker",
       [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.741720641739-r771p005vit95lmbmnvjocdqggcfvk2f"
-        }
-      ],
-      [
         "@config-plugins/react-native-webrtc",
         {
           "cameraPermission": "Allow PanditYatra to access your camera for sacred live video sessions.",
@@ -86,20 +88,21 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow PanditYatra to use your location to provide personalized pricing, rituals, and pandits near you.",
+          "locationAlwaysAndWhenInUsePermission": "Allow PanditYatra to access your location to find nearby pandits and calculate delivery charges.",
           "isAndroidBackgroundLocationEnabled": false
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": false
     },
     "extra": {
-      "expoPublicGoogleClientId": "741720641739-kat0ucp7uqnud1kfnuehrjhaid017hes.apps.googleusercontent.com",
-      "androidClientId": "741720641739-kat0ucp7uqnud1kfnuehrjhaid017hes.apps.googleusercontent.com",
-      "webClientId": "741720641739-kat0ucp7uqnud1kfnuehrjhaid017hes.apps.googleusercontent.com",
-      "iosClientId": "741720641739-r771p005vit95lmbmnvjocdqggcfvk2f.apps.googleusercontent.com",
+      "expoPublicGoogleClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
+      "androidClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
+      "webClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
+      "iosClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
       "eas": {
         "projectId": "09230ecd-edac-4390-a27a-0afd616923c7"
       }

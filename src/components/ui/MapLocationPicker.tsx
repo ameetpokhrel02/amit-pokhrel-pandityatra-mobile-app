@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -45,6 +45,15 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
         };
         setRegion(newRegion);
         setMarkerCoord({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } else {
+        Alert.alert(
+          'Location Access Recommended',
+          'PanditYatra uses your location to easily find your address. You can manually enter it or enable location in settings.',
+          [
+            { text: 'Enter Manually', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
       }
     } catch (e) {
       // Silently fail — default region will be used

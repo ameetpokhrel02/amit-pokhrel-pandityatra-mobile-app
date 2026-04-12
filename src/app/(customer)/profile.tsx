@@ -210,6 +210,9 @@ export default function ProfileScreen() {
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Settings</Text>
           
+          {renderSettingItem("shield-half-outline", "Two-Factor Auth (2FA)", () => router.push('/(customer)/security' as any))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          
           {renderSettingItem("notifications-outline", "Notifications", () => router.push('/notifications'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 

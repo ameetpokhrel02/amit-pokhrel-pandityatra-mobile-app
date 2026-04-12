@@ -43,8 +43,12 @@ export default function LoginScreen() {
     handleSendOtp,
     handlePasswordLogin,
     handleGooglePress,
+    handleGooglePress,
     navToSignup,
     exploreAsGuest,
+    otpCode,
+    setOtpCode,
+    handleTotpVerify
   } = useLogin();
 
   return (
@@ -148,6 +152,42 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             )}
+
+            {step === "totp_verify" && (
+              <View style={styles.stepContainer}>
+                <View style={{ alignItems: "center", marginBottom: 24 }}>
+                  <Ionicons name="shield-checkmark" size={64} color={Colors.light.primary} />
+                  <Text style={{ ...Typography.h3, marginTop: 16 }}>Two-Factor Auth</Text>
+                  <Text style={{ ...Typography.bodyMedium, color: Colors.light.textSecondary, textAlign: "center", marginTop: 8 }}>
+                    Please enter the 6-digit verification code from your Authenticator app.
+                  </Text>
+                </View>
+                
+                <Input
+                  label="Authenticator Code"
+                  placeholder="123456"
+                  value={otpCode}
+                  onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  style={{ textAlign: "center", fontSize: 24, paddingVertical: 12, letterSpacing: 8 }}
+                />
+
+                <Button
+                  title="Verify Identity"
+                  variant="primary"
+                  isLoading={loading}
+                  onPress={handleTotpVerify}
+                  style={{ marginTop: 24 }}
+                  disabled={otpCode.length !== 6}
+                />
+
+                <TouchableOpacity style={styles.backButton} onPress={() => setStep("email_login")}>
+                  <Text style={styles.backText}>← Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
           </AuthCard>
         </ScrollView>
       </KeyboardAvoidingView>

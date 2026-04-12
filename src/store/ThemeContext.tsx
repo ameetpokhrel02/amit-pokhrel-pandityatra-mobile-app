@@ -27,19 +27,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mode, setModeState] = useState<ThemeMode>('system');
 
   useEffect(() => {
-    loadTheme();
-  }, []);
-
-  const loadTheme = async () => {
-    try {
-      const savedMode = await AsyncStorage.getItem('themeMode');
-      if (savedMode) {
-        setModeState(savedMode as ThemeMode);
+    let mounted = true;
+    const loadTheme = async () => {
+      try {
+        const savedMode = await AsyncStorage.getItem('themeMode');
+        if (mounted && savedMode) {
+          setModeState(savedMode as ThemeMode);
+        }
+      } catch (e) {
+        console.error('Failed to load theme', e);
       }
-    } catch (e) {
-      console.error('Failed to load theme', e);
-    }
-  };
+    };
+    
+    loadTheme();
+    return () => { mounted = false; };
+  }, []);
 
   const setMode = async (newMode: ThemeMode) => {
     setModeState(newMode);

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { Camera } from 'expo-camera';
+import { Audio } from 'expo-av';
 import { API_BASE_URL } from '@/services/api-client';
 import { 
   startVideoRoom, 
@@ -150,6 +152,28 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isCallActive) return;
     
     setIsConnecting(true);
+
+    try {
+      // 0. Pre-warm Native Permissions on Android/iOS
+      const camPerm = await Camera.requestCameraPermissionsAsync();
+      const micPerm = await Audio.requestPermissionsAsync();
+      
+      if (camPerm.status !== 'granted' || micPerm.status !== 'granted') {
+        Alert.alert(
+          "Camera & Microphone Access Required",
+          "PanditYatra needs camera and microphone access for video puja with pandits. You can enable it in settings.",
+          [
+            { text: "Not Now", style: "cancel", onPress: () => cleanup() },
+            { text: "Open Settings", onPress: () => { Linking.openSettings(); cleanup(); } }
+          ]
+        );
+        setIsConnecting(false);
+        return;
+      }
+    } catch (permErr) {
+       console.error('[VideoContext] Error requesting native permissions:', permErr);
+    }
+
     setActiveBookingId(bookingId);
     setIsPandit(panditRole);
     if (name) setPeerName(name);
@@ -185,11 +209,17 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       // 2. Start Media
-      const stream = await mediaDevices.getUserMedia({
-        audio: true,
-        video: { facingMode: 'user' },
-      });
-      setLocalStream(stream);
+      let stream;
+      try {
+        stream = await mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: 'user' },
+        });
+        setLocalStream(stream);
+      } catch (mediaErr) {
+        console.error('[NativeWebRTC] Failed to get user media pipeline:', mediaErr);
+        throw mediaErr; // Forward safely to catch block to prevent stuck screen
+      }
 
       // 3. Start Peer Connection
       const peerConn = new RTCPeerConnection(configuration);

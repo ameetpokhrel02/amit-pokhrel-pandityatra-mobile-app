@@ -1,43 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import { isExpoGo } from "@/utils/expo-go";
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 
-import { requestOTP, googleLogin, loginPassword } from "@/services/auth.service";
+import { requestOTP, googleLogin, loginPassword, verifyTOTP } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 
-// Conditionally import GoogleSignin to prevent crashing in Expo Go
-let GoogleSignin: any = null;
-let statusCodes: any = {};
-try {
-  if (!isExpoGo()) {
-    const GoogleAuth = require("@react-native-google-signin/google-signin");
-    GoogleSignin = GoogleAuth.GoogleSignin;
-    statusCodes = GoogleAuth.statusCodes;
-  }
-} catch (e) {
-  console.warn("Google Sign-In native module not found.");
-}
+WebBrowser.maybeCompleteAuthSession();
 
 const EXTRA = (Constants.expoConfig?.extra as any) || {};
 const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
 const IOS_CLIENT_ID = EXTRA.iosClientId || "";
 const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
 
-if (GoogleSignin) {
-  GoogleSignin.configure({
-    webClientId: WEB_CLIENT_ID || undefined,
-    iosClientId: IOS_CLIENT_ID || undefined,
-  });
-}
-
-export type AuthStep = "initial" | "email_login" | "phone_login" | "email_signup";
+export type AuthStep = "initial" | "email_login" | "phone_login" | "email_signup" | "totp_verify" | "totp_setup";
 
 export const useLogin = () => {
   const router = useRouter();
   const loginStore = useAuthStore();
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    webClientId: WEB_CLIENT_ID,
+    androidClientId: EXTRA.androidClientId || WEB_CLIENT_ID,
+    iosClientId: IOS_CLIENT_ID || WEB_CLIENT_ID,
+  });
 
   const [step, setStep] = useState<AuthStep>("initial");
   const [email, setEmail] = useState("");
@@ -46,6 +35,52 @@ export const useLogin = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // 2FA States
+  const [otpCode, setOtpCode] = useState("");
+  const [preAuthId, setPreAuthId] = useState("");
+  const [qrCodeData, setQrCodeData] = useState<{ qr_code: string, secret: string } | null>(null);
+
+  useEffect(() => {
+    const handleGoogleResponse = async () => {
+      if (response?.type === 'success') {
+        try {
+          if (!response.params.id_token) throw new Error("No id_token received.");
+          setLoading(true);
+          const res = await googleLogin({ id_token: response.params.id_token }); 
+          
+          if (res.data?.requires_2fa) {
+            setPreAuthId(res.data.pre_auth_id);
+            setStep("totp_verify");
+            setLoading(false);
+            return;
+          } else if (res.data?.requires_setup) {
+            setPreAuthId(res.data.pre_auth_id);
+            // Auto fetch setup QR (Optional based on backend approach)
+            setStep("totp_setup");
+            setLoading(false);
+            return;
+          }
+
+          const userData = res.data.user;
+          const tokens = { access: res.data.access, refresh: res.data.refresh };
+          await loginStore.login(userData, tokens);
+
+          if (userData.role === "pandit") router.replace("/(pandit)" as any);
+          else router.replace("/(customer)" as any);
+        } catch (e: any) {
+          console.error(e);
+          Toast.show({ type: 'error', text1: 'Google Login Failed', text2: e?.message || "Please try again." });
+        } finally {
+          setLoading(false);
+        }
+      } else if (response?.type === 'error') {
+        Toast.show({ type: 'error', text1: 'Google Login Canceled', text2: response.error?.message || "Something went wrong." });
+      }
+    };
+
+    if (response) handleGoogleResponse();
+  }, [response]);
 
   const handleSendOtp = async () => {
     try {
@@ -87,6 +122,18 @@ export const useLogin = () => {
 
       const res = await loginPassword({ email, password });
       
+      if (res.data?.requires_2fa) {
+        setPreAuthId(res.data.pre_auth_id);
+        setStep("totp_verify");
+        setLoading(false);
+        return;
+      } else if (res.data?.requires_setup) {
+        setPreAuthId(res.data.pre_auth_id);
+        setStep("totp_setup");
+        setLoading(false);
+        return;
+      }
+      
       const tokens = { access: res.data.access, refresh: res.data.refresh };
       const userData = res.data.user || { 
         id: res.data.user_id, 
@@ -115,70 +162,50 @@ export const useLogin = () => {
   };
 
   const handleGooglePress = async () => {
-    if (!GOOGLE_CLIENT_ID && !WEB_CLIENT_ID) {
+    if (!request) {
       Toast.show({
-        type: 'error',
-        text1: 'Config Error',
-        text2: 'Missing Google client id.',
+        type: 'info',
+        text1: 'Not Ready',
+        text2: 'Google login is still initializing...',
       });
       return;
     }
     
-    if (isExpoGo()) {
-      Toast.show({
-        type: 'info',
-        text1: 'Expo Go Limited',
-        text2: 'Google Sign-In is not available in Expo Go. Please use Email/Phone login or use a native development build.',
-      });
-      setLoading(false);
-      return;
-    }
-
-    if (!GoogleSignin) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Google Sign-In module is not available.',
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
-      setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      
-      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
-      if (!idToken) {
-         Toast.show({
-           type: 'error',
-           text1: 'Google Sign-In',
-           text2: 'No id_token returned from Google.',
-         });
-         return;
-      }
-
-      const res = await googleLogin({ id_token: idToken }); 
-        
-      const userData = res.data.user;
-      const tokens = { access: res.data.access, refresh: res.data.refresh };
-      await loginStore.login(userData, tokens);
-
-      if (userData.role === "pandit") router.replace("/(pandit)" as any);
-      else router.replace("/(customer)" as any);
-      
+      await promptAsync();
     } catch (error: any) {
       console.error(error);
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // user cancelled the login flow
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // operation is in progress already
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Toast.show({ type: 'error', text1: 'Error', text2: 'Play services are not available or are outdated.' });
+      Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Could not start Google login.' });
+    }
+  };
+
+  const handleTotpVerify = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      Toast.show({ type: 'error', text1: 'Invalid Code', text2: 'Please enter a 6-digit code.' });
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await verifyTOTP(otpCode, preAuthId);
+      
+      const tokens = { access: res.data.access, refresh: res.data.refresh };
+      const userData = res.data.user || { 
+        id: res.data.user_id, 
+        name: res.data.full_name, 
+        role: res.data.role,
+        email: email 
+      };
+      
+      await loginStore.login(userData, tokens);
+
+      if (userData.role === "pandit") {
+        router.replace("/(pandit)" as any);
       } else {
-        Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error.message || 'Please try again.' });
+        router.replace("/(customer)" as any);
       }
+    } catch (e: any) {
+      console.error(e);
+      Toast.show({ type: 'error', text1: 'Verification Failed', text2: e?.message || 'Invalid authenticator code.' });
     } finally {
       setLoading(false);
     }
@@ -210,6 +237,13 @@ export const useLogin = () => {
     handlePasswordLogin,
     handleGooglePress,
     navToSignup,
-    exploreAsGuest
+    exploreAsGuest,
+    otpCode,
+    setOtpCode,
+    preAuthId,
+    setPreAuthId,
+    qrCodeData,
+    setQrCodeData,
+    handleTotpVerify
   };
 };
