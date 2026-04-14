@@ -124,7 +124,8 @@ function LayoutContent() {
           'shop/ai-recommend',
           'shop/[id]',
           'shop/orders',
-          'shop/order/[id]'
+          'shop/order/[id]',
+          'security'
         ].map(screen => (
           <Tabs.Screen
             key={screen}

@@ -111,7 +111,7 @@ export default function SecurityScreen() {
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={{ ...Typography.h4, color: colors.text }}>Two-Factor Authentication</Text>
-                <Text style={{ ...Typography.bodySmall, color: colors.textSecondary, marginTop: 4 }}>
+                <Text style={{ ...Typography.bodySm, color: colors.textSecondary, marginTop: 4 }}>
                   {has2FA ? "Your account is highly secure." : "Add an extra layer of security."}
                 </Text>
               </View>
@@ -147,7 +147,7 @@ export default function SecurityScreen() {
                   <Image source={{ uri: setupData.qr_code }} style={styles.qr} />
                 </View>
                 
-                <Text style={{ ...Typography.bodySmall, color: colors.textSecondary, textAlign: 'center', marginTop: 16 }}>
+                <Text style={{ ...Typography.bodySm, color: colors.textSecondary, textAlign: 'center', marginTop: 16 }}>
                   Can't scan? Copy this secret key manually:
                 </Text>
                 <TouchableOpacity onPress={handleCopySecret} style={[styles.secretBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -177,7 +177,7 @@ export default function SecurityScreen() {
                   />
                   <Button 
                     title="Cancel" 
-                    variant="ghost" 
+                    variant="text" 
                     style={{ marginTop: 8 }} 
                     onPress={() => { setSetupData(null); setOtpCode(''); }}
                   />
