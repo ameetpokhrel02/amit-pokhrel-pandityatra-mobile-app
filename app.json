@@ -42,7 +42,7 @@
       [
         "expo-router",
         {
-          "asyncRoutes": true
+          "asyncRoutes": false
         }
       ],
       [

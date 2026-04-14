@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as Clipboard from 'expo-clipboard';
+
 import Toast from 'react-native-toast-message';
 
 import { useTheme } from '@/store/ThemeContext';
@@ -55,8 +55,13 @@ export default function SecurityScreen() {
 
   const handleCopySecret = async () => {
     if (setupData?.secret) {
-      await Clipboard.setStringAsync(setupData.secret);
-      Toast.show({ type: 'success', text1: 'Copied!', text2: 'Paste this into your Authenticator app.' });
+      try {
+        const { setStringAsync } = await import('expo-clipboard');
+        await setStringAsync(setupData.secret);
+        Toast.show({ type: 'success', text1: 'Copied!', text2: 'Paste this into your Authenticator app.' });
+      } catch (e) {
+        Toast.show({ type: 'info', text1: 'Copy Manually', text2: 'Long-press the key below to copy it.' });
+      }
     }
   };
 
