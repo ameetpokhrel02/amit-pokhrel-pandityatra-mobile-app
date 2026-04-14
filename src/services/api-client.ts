@@ -17,7 +17,7 @@ const getBaseUrl = () => {
         return url;
     }
 
-    const LOCAL_IP = '192.168.1.83'; // Fallback machine's LAN IP
+    const LOCAL_IP = '65.2.181.195'; // Production server IP
     const PORT = '8000';
 
     // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
