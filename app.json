@@ -101,10 +101,10 @@
       "reactCompiler": false
     },
     "extra": {
-      "expoPublicGoogleClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
-      "androidClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
-      "webClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
-      "iosClientId": "993632978293-r8vkjjvqctnhe5qujdje8c4d2hf7om1o.apps.googleusercontent.com",
+      "expoPublicGoogleClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
+      "androidClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
+      "webClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
+      "iosClientId": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com",
       "eas": {
         "projectId": "09230ecd-edac-4390-a27a-0afd616923c7"
       }

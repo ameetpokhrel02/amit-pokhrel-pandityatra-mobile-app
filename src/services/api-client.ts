@@ -17,8 +17,8 @@ const getBaseUrl = () => {
         return url;
     }
 
-    const LOCAL_IP = '65.2.181.195'; // Production server IP
-    const PORT = '8000';
+    const LOCAL_IP = 'amit-pokhrel-pandityatra.onrender.com'; // Production server IP
+    const PORT = '443';
 
     // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
     const expoConfig = Constants.expoConfig;

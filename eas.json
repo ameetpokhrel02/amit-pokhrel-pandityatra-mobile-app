@@ -11,13 +11,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://65.2.181.195:8000/api/"
+        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://65.2.181.195:8000/api/"
+        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/"
       }
     }
   },
