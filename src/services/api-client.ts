@@ -18,7 +18,7 @@ const getBaseUrl = () => {
     }
 
     const LOCAL_IP = 'amit-pokhrel-pandityatra.onrender.com'; // Production server IP
-    const PORT = '443';
+    const PORT = '8000'; // Keep port 8000 for local dev if LOCAL_IP changes back
 
     // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
     const expoConfig = Constants.expoConfig;
@@ -44,7 +44,8 @@ const getBaseUrl = () => {
     }
 
     // 3. Last fallback
-    const url = `http://${LOCAL_IP}:${PORT}/api/`;
+    const isProdIP = LOCAL_IP.includes('onrender.com');
+    const url = isProdIP ? `https://${LOCAL_IP}/api/` : `http://${LOCAL_IP}:${PORT}/api/`;
     console.log('[API] 📍 Using last fallback URL:', url);
     return url;
 };
