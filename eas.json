@@ -11,13 +11,15 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/"
+        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/"
+        "EXPO_PUBLIC_API_URL": "https://amit-pokhrel-pandityatra.onrender.com/api/",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "993632978293-112fmct4s5ka6hctm8nk9hh8r7kuc9l1.apps.googleusercontent.com"
       }
     }
   },

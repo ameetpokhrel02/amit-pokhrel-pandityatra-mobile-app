@@ -17,35 +17,43 @@ const getBaseUrl = () => {
         return url;
     }
 
-    const LOCAL_IP = 'amit-pokhrel-pandityatra.onrender.com'; // Production server IP
-    const PORT = '8000'; // Keep port 8000 for local dev if LOCAL_IP changes back
+    const PROD_DOMAIN = 'amit-pokhrel-pandityatra.onrender.com';
+    const DEFAULT_PORT = '8000';
 
-    // 2. Dynamic detection: Use local IP address from Expo manifest (Development)
     const expoConfig = Constants.expoConfig;
+    
+    // Helper to format URL
+    const formatUrl = (host: string, port: string) => {
+        if (host.includes('onrender.com')) {
+            return `https://${host}/api/`;
+        }
+        // For local development, if host is not a production domain
+        return `http://${host}:${port}/api/`;
+    };
+
     if (expoConfig?.hostUri) {
         const host = expoConfig.hostUri.split(':')[0];
 
-        // Fix for tunnel mode: tunnel URL usually doesn't forward the backend port (8000)
+        // Tunnel mode (exp.direct)
         if (host.includes('exp.direct')) {
-            console.log('[API] ⚠️ TUNNEL MODE DETECTED. Using fallback LOCAL_IP:', LOCAL_IP);
-            return `http://${LOCAL_IP}:${PORT}/api/`;
+            console.log('[API] ⚠️ TUNNEL MODE DETECTED. Using production fallback.');
+            return formatUrl(PROD_DOMAIN, DEFAULT_PORT);
         }
 
-        // Handle Android Emulator case
+        // Android Emulator
         if (host === 'localhost' || host === '127.0.0.1') {
-            const url = `http://10.0.2.2:${PORT}/api/`;
+            const url = `http://10.0.2.2:${DEFAULT_PORT}/api/`;
             console.log('[API] 📱 Emulator detected, using:', url);
             return url;
         }
 
-        const url = `http://${host}:${PORT}/api/`;
+        const url = formatUrl(host, DEFAULT_PORT);
         console.log('[API] 🌐 Using dynamic host URL:', url);
         return url;
     }
 
     // 3. Last fallback
-    const isProdIP = LOCAL_IP.includes('onrender.com');
-    const url = isProdIP ? `https://${LOCAL_IP}/api/` : `http://${LOCAL_IP}:${PORT}/api/`;
+    const url = formatUrl(PROD_DOMAIN, DEFAULT_PORT);
     console.log('[API] 📍 Using last fallback URL:', url);
     return url;
 };
