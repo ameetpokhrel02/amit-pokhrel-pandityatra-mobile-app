@@ -8,6 +8,7 @@ import { useNotificationStore } from "@/store/notification.store";
 import { fetchServices, fetchCategories } from "@/services/puja.service";
 import { listPandits } from "@/services/pandit.service";
 import { listBookings } from "@/services/booking.service";
+import { fetchBanners, Banner } from "@/services/banner.service";
 import { fetchBookingSamagriRecommendations } from "@/services/recommender.service";
 import { getSamagriItems, getSamagriCategories, getWishlist, toggleWishlist } from "@/services/samagri.service";
 import { Service, Category, Pandit, Booking, SamagriItem, SamagriCategory } from "@/services/api";
@@ -17,6 +18,7 @@ export const useDashboardData = () => {
   const { user, isAuthenticated } = useAuthStore();
   const { fetchNotifications: fetchStoreNotifications } = useNotificationStore();
 
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [pandits, setPandits] = useState<Pandit[]>([]);
@@ -46,12 +48,13 @@ export const useDashboardData = () => {
 
     try {
       // 1. Public Data (Always available)
-      const [servicesData, categoriesData, panditsRes, samagriItemsRes, samagriCategoriesRes] = await Promise.all([
+      const [servicesData, categoriesData, panditsRes, samagriItemsRes, samagriCategoriesRes, bannersRes] = await Promise.all([
         fetchServices(),
         fetchCategories(),
         listPandits(),
         getSamagriItems(),
         getSamagriCategories(),
+        fetchBanners().catch(() => []) // Graceful fallback if banners fail
       ]);
 
       if (!isMounted.current) return;
@@ -61,6 +64,7 @@ export const useDashboardData = () => {
       setPandits(panditsRes.data?.results || panditsRes.data?.slice(0, 6) || []);
       setSamagriItems(samagriItemsRes);
       setSamagriCategories(samagriCategoriesRes);
+      setBanners(Array.isArray(bannersRes) ? bannersRes : (bannersRes as any)?.results || []);
 
       // 2. Protected Data (Authenticated Users Only)
       if (isAuthenticated && user && !isPublicOnly) {
@@ -148,6 +152,7 @@ export const useDashboardData = () => {
   // Screens should use refetch() or onRefresh() explicitly via useFocusEffect.
 
   return {
+    banners,
     services,
     categories,
     pandits,

@@ -31,10 +31,25 @@ export default function VendorOrdersScreen() {
   const load = async () => {
     try {
       const res = await listVendorOrders();
-      const data = res.data?.results || res.data;
+      // Handle various response structures (paginated results, flat list, or nested orders key)
+      const data = res.data?.results || res.data?.orders || res.data?.data || res.data;
+      
+      console.log('[VendorOrders] Loaded data structure:', {
+        hasData: !!res.data,
+        isResults: !!res.data?.results,
+        isOrders: !!res.data?.orders,
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        length: Array.isArray(data) ? data.length : 0
+      });
+
       setOrders(Array.isArray(data) ? data : []);
-    } catch { setOrders([]); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      console.error('[VendorOrders] Failed to load orders:', err);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);

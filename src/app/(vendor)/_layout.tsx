@@ -21,7 +21,7 @@ export default function VendorTabLayout() {
           title: 'Dashboard',
           tabBarLabel: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons name={focused ? 'view-dashboard' : 'view-dashboard-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -31,7 +31,7 @@ export default function VendorTabLayout() {
           title: 'Products',
           tabBarLabel: 'Products',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons name={focused ? 'package-variant-closed' : 'package-variant-closed'} size={22} color={color} />
+            <Ionicons name={focused ? 'cube' : 'cube-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -51,7 +51,7 @@ export default function VendorTabLayout() {
           title: 'Profile',
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons name={focused ? 'store' : 'store-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'business' : 'business-outline'} size={22} color={color} />
           ),
         }}
       />

@@ -324,10 +324,31 @@ export const NativeVideoCall: React.FC = React.memo(() => {
             </TouchableOpacity>
           )}
 
-          {isConnecting && !isMinimized && (
+          {(isConnecting || !remoteStream) && !isMinimized && (
             <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Connecting sacred session...</Text>
+              <View style={styles.loadingHeader}>
+                 <ActivityIndicator size="large" color={colors.primary} />
+                 <Text style={styles.loadingText}>
+                   {isConnecting ? 'Connecting sacred session...' : `Waiting for ${peerName}...`}
+                 </Text>
+              </View>
+
+              <View style={styles.preCallControls}>
+                <TouchableOpacity onPress={toggleMic} style={[styles.preCallBtn, !isMicOn && styles.btnOff]}>
+                  <Ionicons name={isMicOn ? "mic" : "mic-off"} size={24} color="white" />
+                  <Text style={styles.preCallBtnText}>{isMicOn ? 'Mic On' : 'Muted'}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={toggleVideo} style={[styles.preCallBtn, !isVideoOn && styles.btnOff]}>
+                  <Ionicons name={isVideoOn ? "videocam" : "videocam-off"} size={24} color="white" />
+                  <Text style={styles.preCallBtnText}>{isVideoOn ? 'Video On' : 'Off'}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={flipCamera} style={styles.preCallBtn}>
+                  <Ionicons name="camera-reverse" size={24} color="white" />
+                  <Text style={styles.preCallBtnText}>Flip</Text>
+                </TouchableOpacity>
+              </View>
               
               <TouchableOpacity 
                 style={styles.exitBtn} 
@@ -545,31 +566,57 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#111',
+    backgroundColor: '#0D0D0E',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 5,
+    zIndex: 10,
+    padding: 20,
+  },
+  loadingHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
   loadingText: {
     color: 'white',
     marginTop: 20,
-    fontSize: 16,
-    opacity: 0.8,
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  preCallControls: {
+    flexDirection: 'row',
+    gap: 20,
+    marginBottom: 60,
+  },
+  preCallBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  preCallBtnText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   exitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    marginTop: 20,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingHorizontal: 30,
+    paddingVertical: 14,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
   },
   exitBtnText: {
-    color: 'white',
+    color: '#EF4444',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   chatWindow: {
     position: 'absolute',

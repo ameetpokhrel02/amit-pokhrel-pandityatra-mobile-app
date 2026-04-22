@@ -381,6 +381,8 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
           {renderSettingItem("help-circle-outline", "Help & Support", () => router.push('/(pandit)/help'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("bug-outline", "Report a Bug", () => router.push('/support/bug-report'))}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
         </View>
 

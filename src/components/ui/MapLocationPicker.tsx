@@ -1,8 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, Platform, Linking, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+
+// Dynamically import MapView to prevent crash if not available
+let MapView: any;
+let Marker: any;
+try {
+    const Maps = require('react-native-maps');
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+} catch (e) {
+    console.warn('[MapPicker] react-native-maps not available');
+}
 
 interface MapLocationPickerProps {
   value: string;
@@ -22,10 +32,11 @@ const DEFAULT_REGION = {
 
 export default function MapLocationPicker({ value, onSelect, placeholder = 'Select location on map', colors, isDark, label }: MapLocationPickerProps) {
   const [visible, setVisible] = useState(false);
-  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
+  const [region, setRegion] = useState(DEFAULT_REGION);
   const [markerCoord, setMarkerCoord] = useState({ latitude: DEFAULT_REGION.latitude, longitude: DEFAULT_REGION.longitude });
   const [addressText, setAddressText] = useState(value || '');
-  const mapRef = useRef<MapView>(null);
+  const [mapError, setMapError] = useState(false);
+  const mapRef = useRef<any>(null);
 
   useEffect(() => {
     if (value) setAddressText(value);
@@ -45,18 +56,9 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
         };
         setRegion(newRegion);
         setMarkerCoord({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-      } else {
-        Alert.alert(
-          'Location Access Recommended',
-          'PanditYatra uses your location to easily find your address. You can manually enter it or enable location in settings.',
-          [
-            { text: 'Enter Manually', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() }
-          ]
-        );
       }
     } catch (e) {
-      // Silently fail — default region will be used
+      console.warn('[MapPicker] Location fetch failed', e);
     }
   };
 
@@ -68,7 +70,6 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
   const handleConfirm = async () => {
     let address = addressText;
     
-    // Try reverse geocoding
     try {
       const results = await Location.reverseGeocodeAsync(markerCoord);
       if (results && results.length > 0) {
@@ -79,7 +80,7 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
         }
       }
     } catch (e) {
-      // Use manually entered address
+        // Fallback to coordinates
     }
 
     if (!address.trim()) {
@@ -122,25 +123,41 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
             </TouchableOpacity>
           </View>
 
-          {/* Map */}
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            initialRegion={region}
-            region={region}
-            onPress={handleMapPress}
-            showsUserLocation
-            showsMyLocationButton
-          >
-            <Marker
-              coordinate={markerCoord}
-              draggable
-              onDragEnd={(e) => {
-                const { latitude, longitude } = e.nativeEvent.coordinate;
-                setMarkerCoord({ latitude, longitude });
-              }}
-            />
-          </MapView>
+          {/* Map Section with Error Fallback */}
+          <View style={styles.mapContainer}>
+            {MapView && !mapError ? (
+                <MapView
+                    ref={mapRef}
+                    style={styles.map}
+                    initialRegion={region}
+                    region={region}
+                    onPress={handleMapPress}
+                    showsUserLocation
+                    showsMyLocationButton
+                    onError={(e: any) => {
+                        console.error('[MapPicker] MapView Error:', e);
+                        setMapError(true);
+                    }}
+                >
+                    <Marker
+                        coordinate={markerCoord}
+                        draggable
+                        onDragEnd={(e: any) => {
+                            const { latitude, longitude } = e.nativeEvent.coordinate;
+                            setMarkerCoord({ latitude, longitude });
+                        }}
+                    />
+                </MapView>
+            ) : (
+                <View style={styles.fallbackContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color={colors.primary} />
+                    <Text style={[styles.fallbackTitle, { color: colors.text }]}>Map Unavailable</Text>
+                    <Text style={[styles.fallbackText, { color: colors.text + '80' }]}>
+                        We encountered an error loading the map. Please enter your birth location manually in the box below.
+                    </Text>
+                </View>
+            )}
+          </View>
 
           {/* Address Input Overlay */}
           <View style={[styles.addressOverlay, { backgroundColor: colors.card }]}>
@@ -148,14 +165,15 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
               <Ionicons name="search-outline" size={18} color={isDark ? '#9CA3AF' : '#999'} />
               <TextInput
                 style={[styles.addressInput, { color: colors.text }]}
-                placeholder="Enter address or tap map"
+                placeholder="Enter address manually..."
                 placeholderTextColor={isDark ? '#9CA3AF' : '#999'}
                 value={addressText}
                 onChangeText={setAddressText}
+                autoFocus={mapError || !MapView}
               />
             </View>
             <Text style={[styles.hintText, { color: colors.text + '60' }]}>
-              Tap on the map to drop a pin, or drag the marker to adjust.
+              {mapError ? "Manual entry is required for birth calculations." : "Tap on the map to drop a pin, or drag the marker."}
             </Text>
           </View>
         </View>
@@ -209,8 +227,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+  mapContainer: {
+    flex: 1,
+  },
   map: {
     flex: 1,
+  },
+  fallbackContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    gap: 16
+  },
+  fallbackTitle: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  fallbackText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20
   },
   addressOverlay: {
     position: 'absolute',

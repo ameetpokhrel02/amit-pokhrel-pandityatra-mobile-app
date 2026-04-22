@@ -1,79 +1,126 @@
-import { useEffect } from 'react';
-import { Platform, Alert } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { registerPushToken } from '@/services/notification.service';
 import { useAuthStore } from '@/store/auth.store';
+import { registerPushToken } from '@/services/notification.service';
+import Constants from 'expo-constants';
 
-/**
- * useNotifications
- * Handles push notification registration and messaging.
- * Uses dynamic require to avoid crashing in Expo Go when Firebase is missing.
- */
+// Safe dynamic imports for native-only modules
+let Device: any;
+try {
+  Device = require('expo-device');
+} catch (e) {
+  console.warn('[Notifications] expo-device module not available');
+}
+
+// Configure how notifications are displayed when the app is in the foreground
+try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+} catch (e) {
+    console.warn('[Notifications] Failed to set notification handler');
+}
+
 export function useNotifications() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, role } = useAuthStore();
   const router = useRouter();
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    let messaging: any;
-    try {
-        // Dynamic require to prevent crash on module evaluation in Expo Go
-        messaging = require('@react-native-firebase/messaging').default;
-    } catch (e) {
-        console.warn('[Notifications] Native Firebase modules not found. Push notifications disabled in this environment.');
-        return;
-    }
-
-    const setupNotifications = async () => {
-      try {
-        // 1. Request Permission (iOS only, Android is handled in manifest)
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === 1 || // AUTHORIZED
-          authStatus === 2;   // PROVISIONAL
-
-        if (enabled) {
-          console.log('[Notifications] Authorization status:', authStatus);
-          
-          // 2. Get Token
-          const token = await messaging().getToken();
-          if (token) {
-            const deviceType = Platform.OS === 'ios' ? 'ios' : 'android';
-            console.log(`[Notifications] Firebase Token (${deviceType}):`, token);
-            
-            // 3. Register with backend
-            await registerPushToken(token, deviceType).catch(err => {
+    const setup = async () => {
+        try {
+            const token = await registerForPushNotificationsAsync();
+            if (token) {
+              const deviceType = Platform.OS === 'ios' ? 'ios' : 'android';
+              console.log(`[Notifications] Expo Push Token: ${token}`);
+              registerPushToken(token, deviceType).catch(err => {
                 console.error('[Notifications] Backend registration failed:', err);
+              });
+            }
+
+            // This listener is fired whenever a notification is received while the app is foregrounded
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+              console.log('[Notifications] Foreground Notification Received:', notification);
             });
-          }
+
+            // This listener is fired whenever a user taps on or interacts with a notification
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+              const data: any = response.notification.request.content.data;
+              console.log('[Notifications] Notification Response:', data);
+              
+              if (data && typeof data === 'object' && 'route' in data) {
+                const targetRoute = String(data.route).includes('admin') ? '/notifications' : data.route;
+                router.push(targetRoute as any);
+              } else {
+                router.push('/notifications' as any);
+              }
+            });
+        } catch (err) {
+            console.warn('[Notifications] Setup failed:', err);
         }
-      } catch (error) {
-        console.error('[Notifications] Setup failed:', error);
-      }
     };
 
-    setupNotifications();
+    setup();
 
-    const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
-      console.log('[Notifications] Foreground Message:', JSON.stringify(remoteMessage));
-      Alert.alert(
-        remoteMessage.notification?.title || 'Notification',
-        remoteMessage.notification?.body || ''
-      );
-    });
-
-    // Listen for background message clicks
-    messaging().onNotificationOpenedApp((remoteMessage: any) => {
-      console.log('[Notifications] Notification caused app to open from background:', remoteMessage.data);
-      if (remoteMessage.data?.route) {
-          const targetRoute = remoteMessage.data.route.includes('admin') ? '/notifications' : remoteMessage.data.route;
-          router.push(targetRoute as any);
-      } else {
-          router.push('/notifications' as any);
+    return () => {
+      if (notificationListener.current?.remove) {
+        notificationListener.current.remove();
       }
-    });
+      if (responseListener.current?.remove) {
+        responseListener.current.remove();
+      }
+    };
+  }, [isAuthenticated, role, router]);
+}
 
-    return unsubscribe;
-  }, [isAuthenticated, router]);
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  try {
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      }
+
+      if (Device?.isDevice) {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+          console.warn('[Notifications] Failed to get push token for push notification!');
+          return;
+        }
+        
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
+        if (!projectId) {
+            console.error('[Notifications] Project ID not found in config. Check app.json/eas.json');
+        }
+
+        token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      } else {
+        console.warn('[Notifications] Must use physical device for Push Notifications');
+      }
+  } catch (err) {
+      console.warn('[Notifications] Error in registration:', err);
+  }
+
+  return token;
 }

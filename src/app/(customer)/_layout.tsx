@@ -9,13 +9,14 @@ import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
 function ShopIcon({ color, focused }: { color: string, focused: boolean }) {
   const { totalItems } = useCartStore();
+  const { colors } = useTheme();
   return (
     <View className="items-center justify-center">
       <Ionicons name={focused ? 'bag-handle' : 'bag-handle-outline'} size={22} color={color} />
       {totalItems > 0 && (
         <View
-          style={{ backgroundColor: '#FF6F00' }}
-          className="absolute -right-2 -top-1 rounded-full min-w-[16px] h-4 justify-center items-center px-0.5 border-1.5 border-white"
+          style={{ backgroundColor: '#FF6F00', borderColor: colors.card }}
+          className="absolute -right-2 -top-1 rounded-full min-w-[16px] h-4 justify-center items-center px-0.5 border-1.5"
         >
           <Text className="text-white text-[9px] font-bold">{totalItems}</Text>
         </View>

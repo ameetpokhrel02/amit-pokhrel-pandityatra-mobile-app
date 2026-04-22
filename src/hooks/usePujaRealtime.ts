@@ -37,14 +37,10 @@ export function usePujaRealtime(bookingId: number | undefined, onUpdate?: (data:
        * If /ws/puja/ is failing with 404/Handshake error, it might be /ws/booking/ (singular) 
        * or /ws/bookings/ (plural) to match REST endpoints.
        */
-      const wsUrl = `${wsBase}/puja/${bookingId}/?token=${token}`;
+      const fullWsUrl = `${wsBase}/puja/${bookingId}/?token=${token}`;
       
-      console.log(`[WS] Connecting to: ${wsUrl}`);
-      const socket = new (WebSocket as any)(wsUrl, undefined, {
-        headers: {
-          'ngrok-skip-browser-warning': 'true'
-        }
-      });
+      console.log(`[WS] Connecting to: ${fullWsUrl}`);
+      const socket = new WebSocket(fullWsUrl);
 
       socket.onopen = () => {
         console.log('[WS] Connected to puja updates');

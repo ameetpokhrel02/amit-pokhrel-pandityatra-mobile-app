@@ -70,7 +70,7 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
           <Ionicons name={iconName} size={24} color={color} />
         )}
         {role === 'customer' && (routeName === 'shop' || routeName === 'shop/index') && totalItems > 0 && (
-          <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+          <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.card }]}>
             <Text style={styles.badgeText}>{totalItems > 9 ? '9+' : totalItems}</Text>
           </View>
         )}
@@ -126,8 +126,8 @@ export const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, 
         styles.container,
         {
           paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-          backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-          borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F0F0',
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
         }
       ]}
     >

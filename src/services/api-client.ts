@@ -220,7 +220,7 @@ apiClient.interceptors.response.use(
 
         const status = error.response?.status;
         const configUrl = error.config?.url || '';
-        if (!(status === 404 && configUrl.includes('pandits/wallet/'))) {
+        if (!(status === 404 && (configUrl.includes('pandits/wallet/') || configUrl.includes('analytics/track/')))) {
             const details = error.response?.data || error.message;
             const safeDetails = typeof details === 'string'
                 ? (details.length > 500 ? details.substring(0, 500) + '... (truncated)' : details)

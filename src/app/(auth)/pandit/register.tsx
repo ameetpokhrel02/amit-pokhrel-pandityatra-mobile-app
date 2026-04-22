@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   Platform, 
   ActivityIndicator,
   Dimensions,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
@@ -17,12 +18,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerPandit } from '@/services/pandit.service';
+import { googleLogin } from '@/services/auth.service';
+import { useAuthStore } from "@/store/auth.store";
 import * as ImagePicker from 'expo-image-picker';
+import Constants from 'expo-constants';
+import { isExpoGo } from "@/utils/expo-go";
+
+// Conditionally import GoogleSignin
+let GoogleSignin: any = null;
+try {
+  if (!isExpoGo()) {
+    const GoogleAuth = require("@react-native-google-signin/google-signin");
+    GoogleSignin = GoogleAuth.GoogleSignin;
+  }
+} catch (e) {
+  console.warn("Google Sign-In native module not found.");
+}
+
+const EXTRA = (Constants.expoConfig?.extra as any) || {};
+const WEB_CLIENT_ID = EXTRA.webClientId || EXTRA.expoPublicGoogleClientId || "";
+const IOS_CLIENT_ID = EXTRA.iosClientId || "";
+
+if (GoogleSignin) {
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID || undefined,
+    iosClientId: IOS_CLIENT_ID || undefined,
+  });
+}
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function PanditRegister() {
   const router = useRouter();
+  const loginStore = useAuthStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +70,50 @@ export default function PanditRegister() {
   // Step 3: Certification
   const [certificate, setCertificate] = useState<any>(null);
 
+  const handleGoogleSignup = async () => {
+    if (isExpoGo()) {
+      Alert.alert("Expo Go Limited", "Google Sign-In is not available in Expo Go.");
+      return;
+    }
+    if (!GoogleSignin) return;
+
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+      
+      if (!idToken) {
+         Alert.alert("Google Sign-In", "No id_token returned.");
+         return;
+      }
+
+      const res = await googleLogin({ id_token: idToken }); 
+      const userData = res.data.user;
+      
+      // If user exists and is a pandit, log them in
+      if (res.data.access) {
+         const tokens = { access: res.data.access, refresh: res.data.refresh };
+         await loginStore.login(userData, tokens);
+         router.replace(userData.role === 'pandit' ? "/(pandit)" : "/(customer)");
+         return;
+      }
+
+      // If user doesn't exist, pre-fill step 1
+      if (userInfo.data?.user) {
+         setFullName(userInfo.data.user.name || '');
+         setEmail(userInfo.data.user.email || '');
+         setPassword('GOOGLE_AUTH_SESSION'); // Dummy password for backend if needed
+         Toast.show({ type: 'success', text1: 'Success', text2: 'Basic info pre-filled from Google!' });
+      }
+      
+    } catch (error: any) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -56,8 +128,8 @@ export default function PanditRegister() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!fullName || !email || !password) {
-        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in name, email and password' });
+      if (!fullName || !email) {
+        Toast.show({ type: 'error', text1: 'Required', text2: 'Please fill in name and email' });
         return;
       }
       setStep(2);
@@ -80,7 +152,7 @@ export default function PanditRegister() {
     formData.append('full_name', fullName);
     formData.append('phone_number', formattedPhone || phone);
     formData.append('email', email);
-    formData.append('password', password);
+    formData.append('password', password || 'GOOGLE_AUTH_SESSION');
     formData.append('expertise', expertise);
     formData.append('language', language);
     formData.append('experience_years', experience);
@@ -100,7 +172,7 @@ export default function PanditRegister() {
     try {
       setLoading(true);
       await registerPandit(formData);
-      Toast.show({ type: 'success', text1: 'Success', text2: 'Registration submitted! Your profile is pending admin approval.' });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Registration submitted! Pending admin approval.' });
       router.replace('/(public)/role-selection');
     } catch (e: any) {
       console.error(e);
@@ -115,6 +187,20 @@ export default function PanditRegister() {
       case 1:
         return (
           <View className="gap-4">
+            <TouchableOpacity 
+              onPress={handleGoogleSignup}
+              className="w-full h-14 border border-zinc-200 rounded-2xl flex-row items-center justify-center gap-3 active:bg-zinc-50"
+            >
+              <Ionicons name="logo-google" size={18} color="#EA4335" />
+              <Text className="text-zinc-700 font-semibold">Sign up with Google</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row items-center my-1">
+              <View className="flex-1 h-[1px] bg-zinc-200" />
+              <Text className="px-4 text-xs text-zinc-400 font-semibold">OR FILL MANUALLY</Text>
+              <View className="flex-1 h-[1px] bg-zinc-200" />
+            </View>
+
             <Input label="Full Name *" placeholder="Aacharya Name" value={fullName} onChangeText={setFullName} />
             <View>
               <Text className="text-sm font-semibold text-zinc-700 mb-2">Phone Number</Text>
@@ -190,7 +276,7 @@ export default function PanditRegister() {
             
             <View className="flex-row gap-3 p-4 bg-orange-50 rounded-xl border border-orange-100">
                 <Ionicons name="information-circle-outline" size={20} color="#FF6F00" />
-                <Text className="flex-1 text-[13px] text-orange-900 leading-[18px] font-medium">Your profile will be reviewed by our admin team before you can start providing services.</Text>
+                <Text className="flex-1 text-[13px] text-orange-900 leading-[18px] font-medium">Your profile will be reviewed by our admin team.</Text>
             </View>
 
             <View className="flex-row mt-2 gap-3">

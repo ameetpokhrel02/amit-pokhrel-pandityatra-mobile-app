@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   TextInput, 
   ActivityIndicator, 
-  ScrollView 
+  ScrollView,
+  Dimensions
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,9 @@ import { useTheme } from '@/store/ThemeContext';
 import { fetchCategories, fetchServices } from '@/services/puja.service';
 import { getImageUrl } from '@/utils/image';
 import { Category, Service } from '@/services/api';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const COLUMN_WIDTH = (SCREEN_WIDTH - 52) / 2; // (Width - paddingHorizontal*2 - gap) / 2
 
 export default function ServicesListingScreen() {
   const router = useRouter();
@@ -77,32 +81,20 @@ export default function ServicesListingScreen() {
           style={styles.serviceImage}
           contentFit="cover"
         />
-        <View style={styles.priceBadge}>
-            <Text style={styles.priceText}>Starting NPR {item.base_price}</Text>
+        <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
+            <Text style={styles.priceText}>NPR {item.base_price}</Text>
         </View>
       </View>
       <View style={styles.serviceInfo}>
-        <View style={styles.nameRow}>
-            <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-            <View style={[styles.featuredTag, { backgroundColor: colors.primary + '15' }]}>
-                <Text style={[styles.featuredTagText, { color: colors.primary }]}>Best Value</Text>
-            </View>
-        </View>
-        <Text style={[styles.serviceDesc, { color: colors.text + '90' }]} numberOfLines={2}>
-          {item.description || 'Traditional ritual performed with full devotion and sacred mantras by verified Pandits.'}
-        </Text>
+        <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
         <View style={styles.cardFooter}>
             <View style={styles.durationWrap}>
-                <Ionicons name="time-outline" size={16} color={colors.primary} />
-                <Text style={[styles.durationText, { color: colors.text }]}>{item.base_duration_minutes || 60} mins</Text>
+                <Ionicons name="time-outline" size={12} color={colors.primary} />
+                <Text style={[styles.durationText, { color: colors.text + '80' }]}>{item.base_duration_minutes || 60} mins</Text>
             </View>
-            <TouchableOpacity 
-                style={[styles.bookBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push({ pathname: '/(customer)/pandits', params: { searchQuery: item.name } })}
-            >
-                <Text style={styles.bookBtnText}>Find Pandit</Text>
-                <Ionicons name="chevron-forward" size={14} color="#FFF" />
-            </TouchableOpacity>
+            <View style={[styles.arrowBtn, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+            </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -125,7 +117,7 @@ export default function ServicesListingScreen() {
           <Ionicons name="search" size={20} color={colors.primary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search Rituals (Satyanarayan, Havan...)"
+            placeholder="Search Rituals..."
             placeholderTextColor={isDark ? '#555' : '#999'}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -138,31 +130,29 @@ export default function ServicesListingScreen() {
         </View>
       </View>
 
-      <View style={{ height: 50, marginBottom: 20 }}>
+      <View style={{ height: 44, marginBottom: 16 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
           <TouchableOpacity 
             style={[
               styles.categoryBtn, 
-              !selectedCategoryId && { backgroundColor: Number(colors.primary) ? colors.primary : '#FF6F00', borderColor: colors.primary },
+              !selectedCategoryId && { backgroundColor: colors.primary, borderColor: colors.primary },
               { borderColor: isDark ? '#2A2A2E' : '#E5E7EB' }
             ]}
             onPress={() => setSelectedCategoryId(null)}
           >
-            <Text style={[styles.categoryText, !selectedCategoryId ? { color: '#FFF' } : { color: colors.text }]}>All Rituals</Text>
+            <Text style={[styles.categoryText, !selectedCategoryId ? { color: '#FFF' } : { color: colors.text }]}>All</Text>
           </TouchableOpacity>
           {categories.map(cat => (
             <TouchableOpacity 
               key={cat.id}
               style={[
                 styles.categoryBtn, 
-                selectedCategoryId === cat.id && { backgroundColor: Number(colors.primary) ? colors.primary : '#FF6F00', borderColor: colors.primary },
+                selectedCategoryId === cat.id && { backgroundColor: colors.primary, borderColor: colors.primary },
                 { borderColor: isDark ? '#2A2A2E' : '#E5E7EB' }
               ]}
               onPress={() => setSelectedCategoryId(cat.id)}
             >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[styles.categoryText, selectedCategoryId === cat.id ? { color: '#FFF' } : { color: colors.text }]}>{cat.name}</Text>
-                </View>
+                <Text style={[styles.categoryText, selectedCategoryId === cat.id ? { color: '#FFF' } : { color: colors.text }]}>{cat.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -171,29 +161,27 @@ export default function ServicesListingScreen() {
       {loading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: isDark ? '#AAA' : '#666' }]}>Preparing Sacred Rituals...</Text>
         </View>
       ) : (
         <FlatList
           data={filteredServices}
           renderItem={renderServiceItem}
           keyExtractor={(item) => String(item.id)}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
               <View style={styles.listHeader}>
                   <Text style={[styles.listSubtitle, { color: isDark ? '#AAA' : '#666' }]}>
-                      Available {filteredServices.length} Ritual Services
+                      Available {filteredServices.length} Rituals
                   </Text>
               </View>
           }
           ListEmptyComponent={
             <View style={styles.centerContainer}>
-              <View style={[styles.emptyIconWrap, { backgroundColor: isDark ? '#2A2A2E' : '#F9FAFB' }]}>
-                <Ionicons name="search-outline" size={48} color={isDark ? '#444' : '#DDD'} />
-              </View>
+              <Ionicons name="search-outline" size={48} color={isDark ? '#444' : '#DDD'} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No Rituals Found</Text>
-              <Text style={[styles.emptyText, { color: isDark ? '#AAA' : '#666' }]}>Try searching for a different ritual or clear filters.</Text>
             </View>
           }
         />
@@ -209,91 +197,60 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
-  backBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-  searchWrap: { paddingHorizontal: 20, marginBottom: 20 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '900' },
+  searchWrap: { paddingHorizontal: 20, marginBottom: 16 },
   searchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 16, 
-    height: 60, 
-    borderRadius: 20, 
+    height: 52, 
+    borderRadius: 16, 
     borderWidth: 1,
+  },
+  searchInput: { flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '600' },
+  categoryList: { paddingHorizontal: 20, gap: 8, alignItems: 'center' },
+  categoryBtn: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+  },
+  categoryText: { fontSize: 12, fontWeight: '800' },
+  listContent: { paddingHorizontal: 20, paddingBottom: 60 },
+  columnWrapper: { justifyContent: 'space-between', marginBottom: 16 },
+  listHeader: { marginBottom: 12 },
+  listSubtitle: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
+  serviceCard: { 
+    width: COLUMN_WIDTH,
+    borderRadius: 24, 
+    overflow: 'hidden', 
+    borderWidth: 1,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 2,
   },
-  searchInput: { flex: 1, marginLeft: 12, fontSize: 16, fontWeight: '600' },
-  categoryList: { paddingHorizontal: 20, gap: 10, alignItems: 'center' },
-  categoryBtn: { 
-    paddingHorizontal: 20, 
-    paddingVertical: 10, 
-    borderRadius: 16, 
-    borderWidth: 1, 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryText: { fontSize: 13, fontWeight: '800' },
-  listContent: { paddingHorizontal: 20, paddingBottom: 60 },
-  listHeader: { marginBottom: 16 },
-  listSubtitle: { fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
-  serviceCard: { 
-    borderRadius: 32, 
-    overflow: 'hidden', 
-    marginBottom: 24, 
-    borderWidth: 1,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-  },
-  serviceImageWrap: { width: '100%', height: 220, position: 'relative' },
+  serviceImageWrap: { width: '100%', height: 140, position: 'relative' },
   serviceImage: { width: '100%', height: '100%' },
   priceBadge: { 
     position: 'absolute', 
-    bottom: 16, 
-    left: 16, 
-    backgroundColor: 'rgba(255,255,255,0.95)', 
-    paddingHorizontal: 14, 
-    paddingVertical: 8, 
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    bottom: 8, 
+    left: 8, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 8,
   },
-  priceText: { color: '#000', fontWeight: '900', fontSize: 13 },
-  serviceInfo: { padding: 24 },
-  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  serviceName: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5, flex: 1 },
-  featuredTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  featuredTagText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
-  serviceDesc: { fontSize: 14, lineHeight: 22, marginBottom: 24, fontWeight: '500' },
+  priceText: { color: '#FFF', fontWeight: '900', fontSize: 10 },
+  serviceInfo: { padding: 12 },
+  serviceName: { fontSize: 15, fontWeight: '900', marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  durationWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  durationText: { fontSize: 14, fontWeight: '900' },
-  bookBtn: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingVertical: 14, 
-    borderRadius: 18,
-    gap: 8,
-    shadowColor: '#FF6F00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  bookBtnText: { color: '#FFF', fontWeight: '900', fontSize: 14 },
+  durationWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  durationText: { fontSize: 11, fontWeight: '700' },
+  arrowBtn: { width: 28, height: 28, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 100 },
-  loadingText: { marginTop: 16, fontSize: 14, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
-  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  emptyTitle: { fontSize: 20, fontWeight: '900', marginBottom: 8 },
-  emptyText: { textAlign: 'center', width: '80%', lineHeight: 20, fontWeight: '500' },
+  emptyTitle: { fontSize: 16, fontWeight: '900', marginTop: 12 },
 });

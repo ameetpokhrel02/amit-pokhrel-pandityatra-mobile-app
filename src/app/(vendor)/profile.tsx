@@ -212,6 +212,14 @@ export default function VendorProfileScreen() {
           </View>
         </View>
 
+        {/* Support Section */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Support</Text>
+          {renderSettingItem("help-circle-outline", "Help & Support", () => {})}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          {renderSettingItem("bug-outline", "Report a Bug", () => router.push('/support/bug-report'))}
+        </View>
+
         {/* Account Actions Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: '#FF3B30' }]}>Account Actions</Text>

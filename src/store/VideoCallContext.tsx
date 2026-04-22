@@ -172,12 +172,19 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     } catch (permErr) {
        console.error('[VideoContext] Error requesting native permissions:', permErr);
+       // We continue anyway, getUserMedia will throw if permissions are truly missing
     }
 
     setActiveBookingId(bookingId);
     setIsPandit(panditRole);
     if (name) setPeerName(name);
     if (avatar) setPeerAvatar(avatar);
+
+    const abortCall = (msg: string) => {
+      console.error(`[VideoContext] Aborting call: ${msg}`);
+      setIsConnecting(false);
+      cleanup();
+    };
 
     try {
       // 1. Get Room ID
@@ -211,14 +218,27 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // 2. Start Media
       let stream;
       try {
-        stream = await mediaDevices.getUserMedia({
+        // Add a timeout for getUserMedia as it can hang on some Android devices
+        const mediaPromise = mediaDevices.getUserMedia({
           audio: true,
-          video: { facingMode: 'user' },
+          video: { 
+            facingMode: 'user',
+            width: 640,
+            height: 480,
+            frameRate: 30
+          },
         });
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Media access timeout')), 15000)
+        );
+
+        stream = await Promise.race([mediaPromise, timeoutPromise]);
         setLocalStream(stream);
       } catch (mediaErr) {
         console.error('[NativeWebRTC] Failed to get user media pipeline:', mediaErr);
-        throw mediaErr; // Forward safely to catch block to prevent stuck screen
+        Alert.alert('Media Error', 'Could not access camera or microphone. Please check permissions.');
+        return abortCall('media_fail');
       }
 
       // 3. Start Peer Connection
@@ -243,16 +263,29 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       // 4. Start Signaling
       const token = await SecureStore.getItemAsync('access_token');
-      const wsUrl = API_BASE_URL.replace('http', 'ws').replace(/\/api\/?$/, '');
-      const ws = new (WebSocket as any)(`${wsUrl}/ws/video/${roomId}/?token=${token}`, undefined, {
-        headers: {
-          'ngrok-skip-browser-warning': 'true'
-        }
-      });
+      
+      // IMPROVEMENT: Robust WS URL detection
+      let wsBase = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/?$/, '');
+      if (wsBase.endsWith('/')) wsBase = wsBase.slice(0, -1);
+      
+      const fullWsUrl = `${wsBase}/ws/video/${roomId}/?token=${token}`;
+      console.log(`[VideoContext] Connecting to: ${fullWsUrl}`);
+      
+      const ws = new WebSocket(fullWsUrl);
       socket.current = ws;
+
+      // Safety timeout: If connection doesn't open in 30s, abort
+      const connectionTimeout = setTimeout(() => {
+        if (isConnecting) {
+          console.error('[VideoContext] Connection timeout');
+          Alert.alert('Connection Timeout', 'Could not establish connection to the sacred session server.');
+          cleanup();
+        }
+      }, 30000);
 
       ws.onopen = () => {
         console.log('[NativeWebRTC] Signaling connected');
+        clearTimeout(connectionTimeout);
         setIsConnecting(false);
         setIsCallActive(true);
       };
@@ -297,12 +330,13 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       ws.onerror = (e: any) => {
         console.error('[NativeWebRTC] Socket error:', e);
+        abortCall('socket_error');
       };
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('[VideoContext] Error starting call:', err);
-      Alert.alert('Call Error', 'Could not initialize video call.');
-      cleanup();
+      Alert.alert('Call Error', err.message || 'Could not initialize video call.');
+      abortCall('general_error');
     }
   };
 

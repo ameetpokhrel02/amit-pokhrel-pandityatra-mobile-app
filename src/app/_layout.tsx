@@ -118,8 +118,15 @@ export default function RootLayout() {
     // 2. Persistent Security guards
     const currentPath = segments.join('/');
     
+    // Track Page View
+    import('@/services/analytics.service').then(m => {
+        m.trackPageView(currentPath || 'index', { role, isAuthenticated });
+    });
+
     // Prevent double navigation to the same target
     if (lastNavPath.current === currentPath) return;
+
+    const subSegment = segments[1];
 
     if (!isAuthenticated) {
       // Guests are allowed in (customer), (public), and (auth)
@@ -131,19 +138,39 @@ export default function RootLayout() {
       
       // Guest sub-route protection
       const guestForbiddenSubRoutes = ['recordings', 'kundali', 'preferences', 'edit-profile', 'kundali-history', 'wishlist'];
-      const subSegment = segments[1];
       if (segment0 === '(customer)' && guestForbiddenSubRoutes.includes(subSegment as string)) {
         lastNavPath.current = '(customer)';
         safeReplace('/(customer)');
       }
     } else {
       // Authenticated User Guards
-      if (role === 'pandit' && segment0 === '(customer)') {
-        lastNavPath.current = '(pandit)';
-        safeReplace('/(pandit)');
-      } else if (role === 'vendor' && (segment0 === '(customer)' || segment0 === '(pandit)')) {
-        lastNavPath.current = '(vendor)';
-        safeReplace('/(vendor)' as any);
+      
+      // 1. Move user OUT of auth/public screens if they are already authenticated
+      if (segment0 === '(auth)' || segment0 === '(public)') {
+        if (role === 'pandit') {
+            lastNavPath.current = '(pandit)';
+            safeReplace('/(pandit)');
+        } else if (role === 'vendor') {
+            lastNavPath.current = '(vendor)';
+            safeReplace('/(vendor)' as any);
+        } else {
+            lastNavPath.current = '(customer)';
+            safeReplace('/(customer)');
+        }
+        return;
+      }
+
+      // 2. Cross-role protection
+      const isSharedRoute = subSegment === 'reviews';
+      
+      if (!isSharedRoute) {
+        if (role === 'pandit' && segment0 === '(customer)') {
+          lastNavPath.current = '(pandit)';
+          safeReplace('/(pandit)');
+        } else if (role === 'vendor' && (segment0 === '(customer)' || segment0 === '(pandit)')) {
+          lastNavPath.current = '(vendor)';
+          safeReplace('/(vendor)' as any);
+        }
       }
     }
 

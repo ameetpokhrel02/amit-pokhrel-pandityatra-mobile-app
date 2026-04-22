@@ -112,7 +112,7 @@ export default function RoleSelectionScreen() {
           <RoleCard 
             title="Join as Vendor"
             description="Sell Samagri, Books & more"
-            icon={{ name: 'store' }}
+            icon="business"
             color="#1A6B3C"
             onPress={() => selectRole('vendor')}
           />
