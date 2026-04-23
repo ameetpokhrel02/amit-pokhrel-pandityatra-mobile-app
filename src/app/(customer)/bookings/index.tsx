@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,19 +16,92 @@ export default function BookingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { openChat } = useChat();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED'>('PENDING');
+  const [selectedTab, setSelectedTab] = useState<'pending' | 'accepted' | 'completed' | 'cancelled'>('pending');
+  const requestSeq = useRef(0);
 
   const tabs = [
-    { id: 'PENDING', label: 'Pending' },
-    { id: 'ACCEPTED', label: 'Accepted' },
-    { id: 'COMPLETED', label: 'Completed' },
-    { id: 'CANCELLED', label: 'Cancelled' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'accepted', label: 'Accepted' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'cancelled', label: 'Cancelled' },
   ];
+
+  const normalizeStatus = (status: unknown): 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'MISSED' | 'UNKNOWN' => {
+    const value = String(status || '').trim().toLowerCase();
+
+    if (['pending', 'awaiting', 'requested'].includes(value)) return 'PENDING';
+    if (['accepted', 'confirmed', 'approved'].includes(value)) return 'ACCEPTED';
+    if (['completed', 'done', 'finished'].includes(value)) return 'COMPLETED';
+    if (['cancelled', 'canceled', 'rejected'].includes(value)) return 'CANCELLED';
+    if (['missed', 'no_show', 'no-show'].includes(value)) return 'MISSED';
+
+    return 'UNKNOWN';
+  };
+
+  const statusMatchesTab = (status: ReturnType<typeof normalizeStatus>, tab: typeof selectedTab) => {
+    if (tab === 'pending') return status === 'PENDING';
+    if (tab === 'accepted') return status === 'ACCEPTED';
+    if (tab === 'completed') return status === 'COMPLETED';
+    return status === 'CANCELLED';
+  };
+
+  const extractBookings = (response: any): Booking[] => {
+    const payload = response?.data ?? response;
+
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.results)) return payload.data.results;
+
+    return [];
+  };
+
+  const isPaidBooking = (paymentStatus: unknown) => {
+    if (paymentStatus === true) return true;
+    const normalized = String(paymentStatus || '').trim().toUpperCase();
+    return ['PAID', 'SUCCESS', 'COMPLETED'].includes(normalized);
+  };
+
+  const loadBookings = useCallback(
+    async (tab: typeof selectedTab, showFullLoader: boolean) => {
+      const reqId = ++requestSeq.current;
+      setError(null);
+
+      if (showFullLoader) {
+        setLoading(true);
+      } else {
+        setTabLoading(true);
+      }
+
+      try {
+        // Use API filter if backend supports it, then enforce client-side status filtering as fallback.
+        const response = await listBookings({ status: tab });
+        if (reqId !== requestSeq.current) return;
+
+        const allBookings = extractBookings(response);
+        const filtered = allBookings.filter((booking) => statusMatchesTab(normalizeStatus(booking.status), tab));
+        setBookings(filtered);
+      } catch (e) {
+        if (reqId !== requestSeq.current) return;
+        setBookings([]);
+        setError(`Unable to load ${tab} bookings`);
+      } finally {
+        if (reqId !== requestSeq.current) return;
+
+        if (showFullLoader) {
+          setLoading(false);
+        }
+        setTabLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -38,59 +111,35 @@ export default function BookingsScreen() {
       return;
     }
 
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
-
-    const load = async () => {
-      try {
-        const response = await listBookings({ status: selectedTab });
-        if (isMounted) {
-          setBookings(Array.isArray(response?.data?.results) ? response.data.results : response?.data || []);
-        }
-      } catch (e) {
-        if (isMounted) {
-          setError(`Unable to load ${selectedTab.toLowerCase()} bookings`);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedTab, isAuthenticated, isAuthLoading]);
+    loadBookings(selectedTab, true);
+  }, [selectedTab, isAuthenticated, isAuthLoading, loadBookings]);
 
   // Refetch when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       if (!isAuthenticated || isAuthLoading) return;
 
-      const reload = async () => {
-        try {
-          const response = await listBookings({ status: selectedTab });
-          setBookings(Array.isArray(response?.data?.results) ? response.data.results : response?.data || []);
-        } catch (e) {
-          setError(`Unable to load ${selectedTab.toLowerCase()} bookings`);
-        }
-      };
-      reload();
-    }, [selectedTab, isAuthenticated, isAuthLoading])
+      loadBookings(selectedTab, false);
+    }, [selectedTab, isAuthenticated, isAuthLoading, loadBookings])
   );
 
   const renderItem = ({ item }: { item: Booking }) => {
+    const normalizedStatus = normalizeStatus(item.status);
+    const statusLabel =
+      normalizedStatus === 'UNKNOWN'
+        ? String(item.status || 'Unknown')
+        : normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase();
+
     const statusColor =
-      item.status === 'ACCEPTED'
+      normalizedStatus === 'ACCEPTED'
         ? '#16A34A'
-        : item.status === 'COMPLETED'
+        : normalizedStatus === 'COMPLETED'
           ? '#2563EB'
-          : item.status === 'CANCELLED'
+          : normalizedStatus === 'CANCELLED'
             ? '#DC2626'
             : '#D97706';
+
+    const isPaid = isPaidBooking(item.payment_status);
 
     return (
       <TouchableOpacity
@@ -102,7 +151,7 @@ export default function BookingsScreen() {
             {item.service_name || 'Puja Booking'}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
+            <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
           </View>
         </View>
 
@@ -118,13 +167,13 @@ export default function BookingsScreen() {
               {item.pandit_name || item.pandit_full_name || 'Assigned Pandit'}
             </Text>
           </View>
-          {item.payment_status && (
+          {isPaid && (
             <View style={styles.paidBadge}>
               <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
               <Text style={styles.paidText}>Paid</Text>
             </View>
           )}
-          {item.status !== 'CANCELLED' && (
+          {normalizedStatus !== 'CANCELLED' && (
             <TouchableOpacity
               style={[styles.chatIconButton, { backgroundColor: colors.primary + '15' }]}
               onPress={() => openChat(item.id, item.pandit_name || item.pandit_full_name)}
@@ -136,9 +185,9 @@ export default function BookingsScreen() {
         </View>
 
         {/* Quick Action Buttons for Payment and Video Call */}
-        {item.status !== 'CANCELLED' && (
+        {normalizedStatus !== 'CANCELLED' && (
           <View style={styles.quickActionRow}>
-            {!item.payment_status && (
+            {!isPaid && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: '#F59E0B' }]}
                 onPress={() => router.push(`/(customer)/payments/checkout?bookingId=${item.id}` as any)}
@@ -148,7 +197,7 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             )}
 
-            {item.status === 'ACCEPTED' && item.service_location === 'ONLINE' && (
+            {normalizedStatus === 'ACCEPTED' && item.service_location === 'ONLINE' && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: '#FF6F00', marginLeft: 8 }]}
                 onPress={() => router.push({
@@ -166,7 +215,7 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             )}
 
-            {item.payment_status === 'PAID' && (
+            {isPaid && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: '#3B82F6', marginLeft: 8 }]}
                 onPress={() => router.push(`/(customer)/invoice?bookingId=${item.id}` as any)}
@@ -176,7 +225,7 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             )}
 
-            {item.status === 'ACCEPTED' && (
+            {normalizedStatus === 'ACCEPTED' && (
               <TouchableOpacity
                 style={[styles.quickActionButton, { backgroundColor: colors.primary, marginLeft: 8 }]}
                 onPress={() => router.push(`/(customer)/bookings/samagri-recommendations?bookingId=${item.id}` as any)}
@@ -198,11 +247,11 @@ export default function BookingsScreen() {
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabContainer, { backgroundColor: '#FFF' }]}>
+      <View style={[styles.tabContainer, { backgroundColor: colors.card }]}> 
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.id}
-            onPress={() => setSelectedTab(tab.id as any)}
+            onPress={() => setSelectedTab(tab.id)}
             style={[
               styles.tab,
               selectedTab === tab.id && { borderBottomColor: '#FF6F00', borderBottomWidth: 3 }
@@ -220,6 +269,13 @@ export default function BookingsScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {tabLoading && !loading ? (
+        <View style={[styles.tabLoadingWrap, { backgroundColor: colors.background }]}> 
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.tabLoadingText, { color: colors.text + 'A6' }]}>Refreshing {selectedTab} bookings...</Text>
+        </View>
+      ) : null}
 
       {!isAuthenticated ? (
         <View style={styles.guestContainer}>
@@ -269,7 +325,7 @@ export default function BookingsScreen() {
                   },
                 ]}
               >
-                No {selectedTab.toLowerCase()} bookings found
+                No {selectedTab} bookings found
               </Text>
             </View>
           }
@@ -311,6 +367,19 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  tabLoadingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 4,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  tabLoadingText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   center: {
     flex: 1,

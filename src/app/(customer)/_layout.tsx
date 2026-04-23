@@ -126,7 +126,9 @@ function LayoutContent() {
           'shop/[id]',
           'shop/orders',
           'shop/order/[id]',
-          'security'
+          'security',
+          'legal/privacy-policy',
+          'legal/terms-of-service'
         ].map(screen => (
           <Tabs.Screen
             key={screen}

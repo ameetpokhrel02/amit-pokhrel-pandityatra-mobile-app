@@ -63,6 +63,14 @@ export const HelpContactView = () => {
                     <Ionicons name="mail-outline" size={24} color={colors.primary} />
                     <Text style={[styles.contactText, { color: colors.text }]}>pandityatra9@gmail.com</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.contactCard, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#F0F0F0' }]}
+                    onPress={() => openLink('https://wa.me/9779847226995')}
+                >
+                    <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+                    <Text style={[styles.contactText, { color: colors.text }]}>WhatsApp Support</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.section}>
@@ -124,50 +132,37 @@ export const HelpContactView = () => {
                         rightIcon={<Ionicons name="send" size={18} color="#FFF" />}
                         style={{ marginTop: 8 }}
                     />
+
+                    <View style={[styles.socialIconsWrap, { backgroundColor: colors.card, borderColor: isDark ? '#333' : '#ECECEC' }]}>
+                        <TouchableOpacity
+                            onPress={() => openLink('https://instagram.com')}
+                            style={[styles.socialIconOnly, { backgroundColor: '#FDF2F8' }]}
+                        >
+                            <Ionicons name="logo-instagram" size={22} color="#E4405F" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => openLink('https://facebook.com')}
+                            style={[styles.socialIconOnly, { backgroundColor: '#EFF6FF' }]}
+                        >
+                            <Ionicons name="logo-facebook" size={22} color="#1877F2" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => openLink('https://github.com/ameetpokhrel02')}
+                            style={[styles.socialIconOnly, { backgroundColor: '#F3F4F6' }]}
+                        >
+                            <Ionicons name="logo-github" size={22} color="#111827" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => openLink('https://wa.me/9779847226995')}
+                            style={[styles.socialIconOnly, { backgroundColor: '#ECFDF3' }]}
+                        >
+                            <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Social Media</Text>
-                
-                <TouchableOpacity 
-                    style={[styles.socialItem, { backgroundColor: colors.card }]}
-                    onPress={() => openLink('https://facebook.com')}
-                >
-                    <View style={[styles.socialIcon, { backgroundColor: '#1877F2' }]}>
-                        <Ionicons name="logo-facebook" size={20} color="#FFF" />
-                    </View>
-                    <View style={styles.socialTextContainer}>
-                        <Text style={[styles.socialLabel, { color: colors.text }]}>Facebook</Text>
-                        <Text style={[styles.socialSub, { color: isDark ? '#AAA' : '#666' }]}>Stay updated, connect, and engage with us on Facebook.</Text>
-                    </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                    style={[styles.socialItem, { backgroundColor: colors.card }]}
-                    onPress={() => openLink('https://instagram.com')}
-                >
-                    <View style={[styles.socialIcon, { backgroundColor: '#E4405F' }]}>
-                        <Ionicons name="logo-instagram" size={20} color="#FFF" />
-                    </View>
-                    <View style={styles.socialTextContainer}>
-                        <Text style={[styles.socialLabel, { color: colors.text }]}>Instagram</Text>
-                        <Text style={[styles.socialSub, { color: isDark ? '#AAA' : '#666' }]}>Explore our visual world and discover beauty of our brand.</Text>
-                    </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                    style={[styles.socialItem, { backgroundColor: colors.card }]}
-                    onPress={() => openLink('https://github.com/ameetpokhrel02')}
-                >
-                    <View style={[styles.socialIcon, { backgroundColor: '#333' }]}>
-                        <Ionicons name="logo-github" size={20} color="#FFF" />
-                    </View>
-                    <View style={styles.socialTextContainer}>
-                        <Text style={[styles.socialLabel, { color: colors.text }]}>Github</Text>
-                        <Text style={[styles.socialSub, { color: isDark ? '#AAA' : '#666' }]}>Follow us for real-time updates and lively discussions.</Text>
-                    </View>
-                </TouchableOpacity>
             </View>
 
             <View style={{ height: 40 }} />
@@ -235,30 +230,21 @@ const styles = StyleSheet.create({
         height: '100%',
         paddingTop: 16,
     },
-    socialItem: {
-        flexDirection: 'row',
-        padding: 16,
+    socialIconsWrap: {
+        marginTop: 16,
         borderRadius: 16,
-        marginBottom: 12,
-        gap: 16,
-    },
-    socialIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    socialTextContainer: {
-        flex: 1,
-    },
-    socialLabel: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    socialSub: {
-        fontSize: 12,
-        lineHeight: 18,
+    socialIconOnly: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

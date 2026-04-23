@@ -14,8 +14,6 @@ import {
 import Toast from 'react-native-toast-message';
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import Constants from "expo-constants";
-import { isExpoGo } from "@/utils/expo-go";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -25,36 +23,9 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { AuthButtons } from "@/components/auth/AuthButtons";
 import { AppContainer } from "@/components/ui/AppContainer";
 import { Colors } from "@/theme/colors";
-import { requestOTP, googleLogin, getProfile, loginPassword } from "@/services/auth.service";
+import { requestOTP, loginPassword } from "@/services/auth.service";
 import { Ionicons } from "@expo/vector-icons";
-
-// Conditionally import GoogleSignin to prevent crashing in Expo Go
-let GoogleSignin: any = null;
-let statusCodes: any = {};
-try {
-  if (!isExpoGo()) {
-    const GoogleAuth = require("@react-native-google-signin/google-signin");
-    GoogleSignin = GoogleAuth.GoogleSignin;
-    statusCodes = GoogleAuth.statusCodes;
-  }
-} catch (e) {
-  console.warn("Google Sign-In native module not found.");
-}
-
-// WebBrowser.maybeCompleteAuthSession();
-
-const EXTRA = (Constants.expoConfig?.extra as any) || {};
-const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
-const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
-const IOS_CLIENT_ID = EXTRA.iosClientId || "";
-const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
-
-if (GoogleSignin) {
-  GoogleSignin.configure({
-    webClientId: WEB_CLIENT_ID || undefined,
-    iosClientId: IOS_CLIENT_ID || undefined,
-  });
-}
+import { signInWithGoogleWebBrowser } from "@/features/auth/google-web-auth";
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -137,60 +108,34 @@ export default function LoginScreen() {
   };
 
   const handleGooglePress = async () => {
-    if (!GOOGLE_CLIENT_ID && !WEB_CLIENT_ID) {
-      Alert.alert("Config Error", "Missing Google client id.");
-      return;
-    }
-    
-    if (isExpoGo()) {
-      Alert.alert(
-        "Expo Go Limited", 
-        "Google Sign-In is not available in Expo Go. Please use Email/Phone login or use a native development build (npx expo run:android)."
-      );
-      setLoading(false);
-      return;
-    }
-
-    if (!GoogleSignin) {
-      Alert.alert("Error", "Google Sign-In module is not available.");
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
+      const res = await signInWithGoogleWebBrowser();
 
-      
-      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
-      if (!idToken) {
-         Alert.alert("Google Sign-In", "No id_token returned from Google.");
-         return;
+      if (!res.access || !res.refresh) {
+        throw new Error('Google login did not return app tokens.');
       }
 
-      const res = await googleLogin({ id_token: idToken }); 
-        
-      const userData = res.data.user;
-      const tokens = { access: res.data.access, refresh: res.data.refresh };
+      const userData = res.user;
+      const tokens = { access: res.access, refresh: res.refresh };
       await loginStore.login(userData, tokens);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Google Sign-In successful',
+        text2: 'Welcome back to your pandit dashboard.',
+      });
 
       if (userData.role === "pandit") router.replace("/(pandit)" as any);
       else router.replace("/(customer)" as any);
       
     } catch (error: any) {
       console.error(error);
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // user cancelled the login flow
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // operation (e.g. sign in) is in progress already
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // play services not available or outdated
-        Alert.alert("Error", "Play services are not available or are outdated.");
-      } else {
-        // some other error happened
-        Alert.alert("Google Sign-In failed", error.message || "Please try again.");
-      }
+      Toast.show({
+        type: 'error',
+        text1: 'Google Sign-In failed',
+        text2: error?.message || 'Please try again.',
+      });
     } finally {
       setLoading(false);
     }

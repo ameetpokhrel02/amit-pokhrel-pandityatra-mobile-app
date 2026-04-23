@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, Image, Alert, ScrollView, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
 import { useRouter } from 'expo-router';
@@ -160,16 +161,25 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    setShowLogoutModal(false);
-    await logout();
-    router.replace('/(public)/role-selection');
+    try {
+      setShowLogoutModal(false);
+      await logout();
+      Toast.show({ type: 'success', text1: 'Logged out', text2: 'You have been signed out successfully.' });
+      router.replace('/(public)/role-selection');
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Logout failed', text2: error?.message || 'Please try again.' });
+    }
   };
 
-  const handleDeleteAccount = () => {
-    setShowDeleteModal(false);
-    Alert.alert("Account Deleted", "Your account has been queued for deletion.");
-    logout();
-    router.replace('/(public)/role-selection');
+  const handleDeleteAccount = async () => {
+    try {
+      setShowDeleteModal(false);
+      await logout();
+      Toast.show({ type: 'success', text1: 'Account deleted', text2: 'Your account has been queued for deletion.' });
+      router.replace('/(public)/role-selection');
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Delete failed', text2: error?.message || 'Please try again.' });
+    }
   };
 
   const handleEditPressBasic = () => {

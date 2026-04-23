@@ -27,6 +27,8 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { getImageUrl } from '@/utils/image';
 import { MotiView } from 'moti';
 
+const MapLocationPicker = React.lazy(() => import('@/components/ui/MapLocationPicker'));
+
 const PaymentWebView = React.lazy(() =>
   import('@/components/common/PaymentWebView').then(m => ({ default: m.PaymentWebView }))
 );
@@ -222,14 +224,28 @@ export default function ShopCheckoutScreen() {
                   colors={colors}
                   isDark={isDark}
                 />
-                <InputItem 
-                  label="Shipping Address" 
-                  value={formData.shipping_address} 
-                  onChange={(t: string) => setFormData({...formData, shipping_address: t})} 
-                  placeholder="Street, Ward, Area"
-                  colors={colors}
-                  isDark={isDark}
-                />
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: colors.text + '60' }]}>Choose Delivery Location</Text>
+                  <LazyLoader height={54}>
+                    <MapLocationPicker
+                      value={formData.shipping_address}
+                      label="Select Delivery Location"
+                      placeholder="Pick your delivery point on the map"
+                      colors={colors}
+                      isDark={isDark}
+                      onSelect={(location) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          shipping_address: location.address,
+                          city: location.city || prev.city,
+                        }));
+                      }}
+                    />
+                  </LazyLoader>
+                  <Text style={[styles.locationHelp, { color: colors.text + '60' }]}>
+                    Tap the picker to choose your delivery point on the map.
+                  </Text>
+                </View>
                 <InputItem 
                   label="City" 
                   value={formData.city} 
@@ -401,6 +417,7 @@ const styles = StyleSheet.create({
   inputGrid: { gap: 16 },
   inputGroup: { gap: 6 },
   inputLabel: { fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
+  locationHelp: { fontSize: 12, marginLeft: 4, marginTop: 2 },
   inputField: { height: 54, borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, fontSize: 15, fontWeight: '500' },
   methodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   methodItem: { width: '47%', height: 64, borderRadius: 16, borderWidth: 1, position: 'relative', overflow: 'hidden' },

@@ -16,7 +16,7 @@ try {
 
 interface MapLocationPickerProps {
   value: string;
-  onSelect: (location: { address: string; latitude: number; longitude: number }) => void;
+  onSelect: (location: { address: string; latitude: number; longitude: number; city?: string; region?: string; country?: string }) => void;
   placeholder?: string;
   colors: any;
   isDark: boolean;
@@ -69,11 +69,17 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
 
   const handleConfirm = async () => {
     let address = addressText;
+    let city: string | undefined;
+    let region: string | undefined;
+    let country: string | undefined;
     
     try {
       const results = await Location.reverseGeocodeAsync(markerCoord);
       if (results && results.length > 0) {
         const r = results[0];
+        city = r.city || r.subregion || r.district;
+        region = r.region || undefined;
+        country = r.country || undefined;
         const parts = [r.name, r.street, r.city, r.region, r.country].filter(Boolean);
         if (parts.length > 0 && !addressText.trim()) {
           address = parts.join(', ');
@@ -92,6 +98,9 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
       address,
       latitude: markerCoord.latitude,
       longitude: markerCoord.longitude,
+      city,
+      region,
+      country,
     });
     setVisible(false);
   };
@@ -153,7 +162,7 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
                     <Ionicons name="alert-circle-outline" size={48} color={colors.primary} />
                     <Text style={[styles.fallbackTitle, { color: colors.text }]}>Map Unavailable</Text>
                     <Text style={[styles.fallbackText, { color: colors.text + '80' }]}>
-                        We encountered an error loading the map. Please enter your birth location manually in the box below.
+                      We encountered an error loading the map. Please enter the location manually in the box below.
                     </Text>
                 </View>
             )}
@@ -173,7 +182,7 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
               />
             </View>
             <Text style={[styles.hintText, { color: colors.text + '60' }]}>
-              {mapError ? "Manual entry is required for birth calculations." : "Tap on the map to drop a pin, or drag the marker."}
+              {mapError ? "Manual entry is required if the map is unavailable." : "Tap on the map to drop a pin, or drag the marker."}
             </Text>
           </View>
         </View>

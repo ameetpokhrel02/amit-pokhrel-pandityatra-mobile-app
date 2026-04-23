@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -15,13 +15,10 @@ export default function PanchangScreen() {
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
     const router = useRouter();
-    const insets = useSafeAreaInsets();
-
     const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
     const [data, setData] = useState<PanchangData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [showFullCalendar, setShowFullCalendar] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
 
     useEffect(() => {
         loadPanchang(selectedDate);
@@ -33,7 +30,7 @@ export default function PanchangScreen() {
             const res = await fetchPanchang(dateStr);
             setData(res);
         } catch (e) {
-            setError('Unable to load Panchang data');
+            // Fallback UI already handles missing values gracefully.
         } finally {
             setLoading(false);
         }
@@ -57,41 +54,13 @@ export default function PanchangScreen() {
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Daily Panchang</Text>
-                <TouchableOpacity onPress={() => setShowFullCalendar(!showFullCalendar)} style={styles.calendarToggle}>
+                <TouchableOpacity onPress={() => setShowCalendarModal(true)} style={styles.calendarToggle}>
                     <Ionicons name="calendar-outline" size={24} color={colors.primary} />
                 </TouchableOpacity>
             </View>
 
-            {showFullCalendar && (
-                <View style={[styles.calendarContainer, { backgroundColor: colors.card }]}>
-                    <Calendar
-                        current={selectedDate}
-                        onDayPress={(day: any) => {
-                            setSelectedDate(day.dateString);
-                            setShowFullCalendar(false);
-                        }}
-                        markedDates={{
-                            [selectedDate]: { selected: true, selectedColor: colors.primary }
-                        }}
-                        theme={{
-                            backgroundColor: colors.card,
-                            calendarBackground: colors.card,
-                            textSectionTitleColor: colors.primary,
-                            selectedDayBackgroundColor: colors.primary,
-                            selectedDayTextColor: '#ffffff',
-                            todayTextColor: colors.primary,
-                            dayTextColor: colors.text,
-                            textDisabledColor: isDark ? '#444' : '#d9e1e8',
-                            dotColor: colors.primary,
-                            monthTextColor: colors.text,
-                            indicatorColor: colors.primary,
-                        }}
-                    />
-                </View>
-            )}
-
             {/* Quick Week Picker */}
-            <View style={[styles.weekStrip, { borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}>
+            <View style={[styles.weekStripWrap, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#F0F0F0' }]}>
                 {weekDates.map((date) => {
                     const isSelected = date.format('YYYY-MM-DD') === selectedDate;
                     return (
@@ -100,7 +69,7 @@ export default function PanchangScreen() {
                             onPress={() => setSelectedDate(date.format('YYYY-MM-DD'))}
                             style={[
                                 styles.weekDayItem,
-                                isSelected && { backgroundColor: colors.primary }
+                                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
                             ]}
                         >
                             <Text style={[styles.weekDayLabel, { color: isSelected ? '#FFF' : colors.text + '80' }]}>
@@ -116,12 +85,13 @@ export default function PanchangScreen() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Date Header */}
-                <View style={[styles.dateCard, { backgroundColor: isDark ? '#1F2937' : '#FFF7ED' }]}>
-                    <Text style={styles.nepaliDate}>{data?.nepali_date || '—'}</Text>
+                <View style={[styles.dateCard, { backgroundColor: isDark ? '#1F2937' : '#FFF', borderColor: isDark ? '#374151' : '#ECECEC' }]}>
+                    <View style={[styles.nepaliDateAccent, { backgroundColor: colors.primary }]} />
+                    <Text style={styles.nepaliDate}>{data?.nepali_date || dayjs(selectedDate).format('D')}</Text>
                     <Text style={[styles.englishDate, { color: colors.text }]}>
                         {dayjs(selectedDate).format('dddd, MMMM D, YYYY')}
                     </Text>
-                    <View style={styles.tithiBadge}>
+                    <View style={[styles.tithiBadge, { backgroundColor: '#D97706' }]}> 
                         <Text style={styles.tithiText}>{data?.tithi || '—'}</Text>
                     </View>
                     
@@ -177,6 +147,55 @@ export default function PanchangScreen() {
                     </Text>
                 </View>
             </ScrollView>
+
+            <Modal visible={showCalendarModal} animationType="fade" transparent onRequestClose={() => setShowCalendarModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Date</Text>
+                            <TouchableOpacity onPress={() => setShowCalendarModal(false)} style={styles.modalCloseBtn}>
+                                <Ionicons name="close" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Calendar
+                            current={selectedDate}
+                            onDayPress={(day: any) => {
+                                setSelectedDate(day.dateString);
+                                setShowCalendarModal(false);
+                            }}
+                            markedDates={{
+                                [selectedDate]: {
+                                    selected: true,
+                                    selectedColor: colors.primary,
+                                    selectedTextColor: '#FFF',
+                                },
+                                [dayjs().format('YYYY-MM-DD')]: {
+                                    marked: true,
+                                    dotColor: colors.primary,
+                                },
+                            }}
+                            hideExtraDays={false}
+                            theme={{
+                                backgroundColor: colors.card,
+                                calendarBackground: colors.card,
+                                textSectionTitleColor: '#D97706',
+                                selectedDayBackgroundColor: colors.primary,
+                                selectedDayTextColor: '#ffffff',
+                                todayTextColor: colors.primary,
+                                dayTextColor: colors.text,
+                                textDisabledColor: isDark ? '#5A5A5A' : '#D1D5DB',
+                                monthTextColor: colors.text,
+                                indicatorColor: colors.primary,
+                                arrowColor: '#06B6D4',
+                                textDayFontWeight: '600',
+                                textMonthFontWeight: '700',
+                                textDayHeaderFontWeight: '700',
+                            }}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -227,6 +246,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
+        backgroundColor: '#FFF8E7',
     },
     backButton: {
         width: 40,
@@ -246,12 +266,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    calendarContainer: {
-        overflow: 'hidden',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    weekStrip: {
+    weekStripWrap: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
@@ -262,6 +277,8 @@ const styles = StyleSheet.create({
         width: 44,
         height: 54,
         borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
         gap: 2,
@@ -292,6 +309,7 @@ const styles = StyleSheet.create({
     dateCard: {
         padding: 24,
         borderRadius: 24,
+        borderWidth: 1,
         alignItems: 'center',
         marginBottom: 20,
         shadowColor: '#000',
@@ -300,11 +318,17 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 2,
     },
+    nepaliDateAccent: {
+        width: 32,
+        height: 4,
+        borderRadius: 10,
+        marginBottom: 12,
+    },
     nepaliDate: {
-        fontSize: 24,
+        fontSize: 36,
         fontWeight: 'bold',
         color: '#D97706',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     englishDate: {
         fontSize: 14,
@@ -417,5 +441,36 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontStyle: 'italic',
         lineHeight: 18,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    modalCard: {
+        borderRadius: 20,
+        borderWidth: 1,
+        paddingTop: 12,
+        paddingBottom: 8,
+        overflow: 'hidden',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 6,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    modalCloseBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

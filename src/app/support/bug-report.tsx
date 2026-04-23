@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Image as RNImage } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform, Image as RNImage, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,10 +32,12 @@ const SEVERITIES = [
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const BUG_SUCCESS_ICON = 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776945463/image-Photoroom_ohcynd.png';
 
 export default function BugReportScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
+  const isDark = theme === 'dark';
   const { user } = useAuthStore();
   
   const [form, setForm] = useState({ 
@@ -46,6 +48,7 @@ export default function BugReportScreen() {
   });
   const [attachment, setAttachment] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -97,8 +100,14 @@ export default function BugReportScreen() {
         attachment: attachment
       });
 
-      Alert.alert('Success', 'Bug report submitted. Thank you for helping us improve!');
-      router.back();
+      setForm({
+        title: '',
+        description: '',
+        category: 'FUNCTIONAL',
+        severity: 'MEDIUM',
+      });
+      setAttachment(null);
+      setShowSuccessModal(true);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to submit bug report');
     } finally {
@@ -108,7 +117,7 @@ export default function BugReportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}> 
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -116,13 +125,22 @@ export default function BugReportScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.subtitle, { color: colors.text + '90' }]}>
-          Found something that's not working? Describe it below and attach a screenshot if possible.
-        </Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border + '55' }]}> 
+          <View style={[styles.heroIconWrap, { backgroundColor: colors.primary + '15' }]}> 
+            <Ionicons name="bug-outline" size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, { color: colors.text }]}>Help Us Fix Faster</Text>
+            <Text style={[styles.subtitle, { color: colors.text + '90' }]}> 
+              Share what happened, when it happened, and attach a screenshot if you can.
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border + '55' }]}> 
+            <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Category</Text>
             <View style={styles.chipContainer}>
               {CATEGORIES.map((cat) => (
@@ -130,7 +148,7 @@ export default function BugReportScreen() {
                   key={cat.value}
                   style={[
                     styles.chip, 
-                    { borderColor: colors.border },
+                    { borderColor: colors.border, backgroundColor: isDark ? '#111827' : '#FFF' },
                     form.category === cat.value && { backgroundColor: colors.primary, borderColor: colors.primary }
                   ]}
                   onPress={() => setForm({...form, category: cat.value})}
@@ -141,9 +159,11 @@ export default function BugReportScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+            </View>
 
-          <View style={styles.inputGroup}>
+            <View style={[styles.divider, { backgroundColor: colors.border + '66' }]} />
+
+            <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Severity</Text>
             <View style={styles.chipContainer}>
               {SEVERITIES.map((sev) => (
@@ -151,7 +171,7 @@ export default function BugReportScreen() {
                   key={sev.value}
                   style={[
                     styles.chip, 
-                    { borderColor: colors.border },
+                    { borderColor: colors.border, backgroundColor: isDark ? '#111827' : '#FFF' },
                     form.severity === sev.value && { backgroundColor: getSeverityColor(sev.value), borderColor: getSeverityColor(sev.value) }
                   ]}
                   onPress={() => setForm({...form, severity: sev.value})}
@@ -162,50 +182,57 @@ export default function BugReportScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Issue Title</Text>
-            <TextInput 
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]} 
-              placeholder="e.g., App crashes on checkout"
-              placeholderTextColor={colors.text + '40'}
-              value={form.title}
-              onChangeText={(v) => setForm({...form, title: v})}
-            />
-          </View>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border + '55' }]}> 
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Issue Title</Text>
+              <TextInput 
+                style={[styles.input, { backgroundColor: isDark ? '#111827' : '#F9FAFB', color: colors.text, borderColor: colors.border }]}
+                placeholder="e.g., App crashes on checkout"
+                placeholderTextColor={colors.text + '50'}
+                value={form.title}
+                onChangeText={(v) => setForm({...form, title: v})}
+              />
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Description</Text>
-            <TextInput 
-              style={[styles.input, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]} 
-              placeholder="Describe the steps to reproduce the bug..."
-              placeholderTextColor={colors.text + '40'}
-              multiline
-              numberOfLines={6}
-              value={form.description}
-              onChangeText={(v) => setForm({...form, description: v})}
-            />
-          </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Description</Text>
+              <TextInput 
+                style={[styles.input, styles.textArea, { backgroundColor: isDark ? '#111827' : '#F9FAFB', color: colors.text, borderColor: colors.border }]}
+                placeholder="Describe steps to reproduce, expected result, and what happened instead..."
+                placeholderTextColor={colors.text + '50'}
+                multiline
+                numberOfLines={7}
+                value={form.description}
+                onChangeText={(v) => setForm({...form, description: v})}
+              />
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Attachment (Optional)</Text>
-            {attachment ? (
-              <View style={styles.attachmentPreview}>
-                <RNImage source={{ uri: attachment.uri }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.removeAttachment} onPress={() => setAttachment(null)}>
-                  <Ionicons name="close-circle" size={24} color="#EF4444" />
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Attachment (Optional)</Text>
+              {attachment ? (
+                <View style={[styles.attachmentPreview, { borderColor: colors.border }]}> 
+                  <RNImage source={{ uri: attachment.uri }} style={styles.previewImage} />
+                  <View style={[styles.attachmentMeta, { backgroundColor: isDark ? 'rgba(17,24,39,0.85)' : 'rgba(255,255,255,0.9)' }]}> 
+                    <Text numberOfLines={1} style={[styles.attachmentName, { color: colors.text }]}>{attachment.name}</Text>
+                    <TouchableOpacity style={styles.removeAttachment} onPress={() => setAttachment(null)}>
+                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.uploadBox, { borderColor: colors.primary + 'AA', backgroundColor: colors.primary + '08' }]}
+                  onPress={pickImage}
+                >
+                  <Ionicons name="cloud-upload-outline" size={30} color={colors.primary} />
+                  <Text style={[styles.uploadText, { color: colors.primary }]}>Upload Screenshot</Text>
+                  <Text style={[styles.uploadSubText, { color: colors.text + '70' }]}>PNG/JPG up to 5MB</Text>
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity 
-                style={[styles.uploadBox, { borderColor: colors.primary, backgroundColor: colors.primary + '05' }]} 
-                onPress={pickImage}
-              >
-                <Ionicons name="cloud-upload-outline" size={32} color={colors.primary} />
-                <Text style={[styles.uploadText, { color: colors.primary }]}>Upload Screenshot (Max 5MB)</Text>
-              </TouchableOpacity>
-            )}
+              )}
+            </View>
           </View>
 
           <TouchableOpacity 
@@ -216,18 +243,51 @@ export default function BugReportScreen() {
             {submitting ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.submitText}>Submit Report</Text>
+              <View style={styles.submitRow}>
+                <Text style={styles.submitText}>Submit Report</Text>
+                <Ionicons name="send" size={16} color="#FFF" />
+              </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <View style={styles.deviceInfoBox}>
+        <View style={[styles.deviceInfoBox, { backgroundColor: isDark ? '#111827' : '#F7F7F8', borderColor: colors.border + '66' }]}> 
           <Ionicons name="phone-portrait-outline" size={20} color={colors.text + '60'} />
           <Text style={[styles.deviceInfoText, { color: colors.text + '60' }]}>
             Device metadata and role will be included for faster debugging.
           </Text>
         </View>
       </ScrollView>
+
+      <Modal
+        transparent
+        visible={showSuccessModal}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          router.back();
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+            <RNImage source={{ uri: BUG_SUCCESS_ICON }} style={styles.modalIcon} resizeMode="contain" />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Thanks for reporting this bug</Text>
+            <Text style={[styles.modalMessage, { color: colors.text + 'B3' }]}>
+              Our system has received your report. Our team will review it shortly.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.back();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -250,58 +310,118 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20, 
     paddingTop: 60,
-    paddingBottom: 20
+    paddingBottom: 16,
+    borderBottomWidth: 1,
   },
   backButton: { padding: 4 },
-  title: { fontSize: 20, fontWeight: 'bold' },
-  content: { padding: 20 },
-  subtitle: { fontSize: 15, marginBottom: 30 },
+  title: { fontSize: 28, fontWeight: '800' },
+  content: { padding: 20, paddingBottom: 36 },
+  heroCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  heroIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  subtitle: { fontSize: 14, lineHeight: 20 },
   form: { gap: 20 },
+  sectionCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+    gap: 16,
+  },
+  divider: {
+    height: 1,
+  },
   inputGroup: { gap: 12 },
-  label: { fontSize: 14, fontWeight: 'bold' },
+  label: { fontSize: 15, fontWeight: '700' },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { 
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
+    paddingHorizontal: 14, 
+    paddingVertical: 8, 
     borderRadius: 20, 
-    borderWidth: 1 
+    borderWidth: 1,
+    minHeight: 38,
+    justifyContent: 'center',
   },
   chipText: { fontSize: 12, fontWeight: '600' },
   input: { 
     padding: 14, 
     borderRadius: 12, 
     borderWidth: 1, 
-    fontSize: 15
+    fontSize: 15,
+    fontWeight: '500',
   },
-  textArea: { height: 100, textAlignVertical: 'top' },
+  textArea: { height: 130, textAlignVertical: 'top' },
   uploadBox: {
     borderWidth: 2,
     borderStyle: 'dashed',
     borderRadius: 16,
-    padding: 24,
+    paddingVertical: 26,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    gap: 12
+    gap: 8,
   },
-  uploadText: { fontSize: 14, fontWeight: 'bold' },
+  uploadText: { fontSize: 15, fontWeight: '800' },
+  uploadSubText: { fontSize: 12, fontWeight: '500' },
   attachmentPreview: {
     borderRadius: 16,
     overflow: 'hidden',
-    height: 200,
-    position: 'relative'
+    height: 220,
+    position: 'relative',
+    borderWidth: 1,
   },
   previewImage: { width: '100%', height: '100%' },
-  removeAttachment: {
+  attachmentMeta: {
     position: 'absolute',
-    top: 10,
+    left: 10,
     right: 10,
+    bottom: 10,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  attachmentName: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  removeAttachment: {
     backgroundColor: '#FFF',
-    borderRadius: 12
+    borderRadius: 999,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitButton: { 
     padding: 16, 
-    borderRadius: 12, 
+    borderRadius: 14, 
     alignItems: 'center', 
-    marginTop: 10
+    marginTop: 2,
+  },
+  submitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   submitText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   deviceInfoBox: { 
@@ -309,10 +429,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 15, 
-    backgroundColor: '#0001', 
     borderRadius: 12,
+    borderWidth: 1,
     gap: 12,
     marginBottom: 40
   },
   deviceInfoText: { fontSize: 13, flex: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 18,
+    alignItems: 'center',
+  },
+  modalIcon: {
+    width: 86,
+    height: 86,
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  modalButton: {
+    minWidth: 120,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

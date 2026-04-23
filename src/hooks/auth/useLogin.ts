@@ -2,31 +2,16 @@ import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
-import Constants from "expo-constants";
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 
-import { requestOTP, googleLogin, loginPassword, verifyTOTP } from "@/services/auth.service";
+import { requestOTP, loginPassword, verifyTOTP } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-
-WebBrowser.maybeCompleteAuthSession();
-
-const EXTRA = (Constants.expoConfig?.extra as any) || {};
-const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
-const IOS_CLIENT_ID = EXTRA.iosClientId || "";
-const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
+import { signInWithGoogleWebBrowser } from "@/features/auth/google-web-auth";
 
 export type AuthStep = "initial" | "email_login" | "phone_login" | "email_signup" | "totp_verify" | "totp_setup";
 
 export const useLogin = () => {
   const router = useRouter();
   const loginStore = useAuthStore();
-
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId: WEB_CLIENT_ID,
-    androidClientId: EXTRA.androidClientId || WEB_CLIENT_ID,
-    iosClientId: IOS_CLIENT_ID || WEB_CLIENT_ID,
-  });
 
   const [step, setStep] = useState<AuthStep>("initial");
   const [email, setEmail] = useState("");
@@ -40,47 +25,6 @@ export const useLogin = () => {
   const [otpCode, setOtpCode] = useState("");
   const [preAuthId, setPreAuthId] = useState("");
   const [qrCodeData, setQrCodeData] = useState<{ qr_code: string, secret: string } | null>(null);
-
-  useEffect(() => {
-    const handleGoogleResponse = async () => {
-      if (response?.type === 'success') {
-        try {
-          if (!response.params.id_token) throw new Error("No id_token received.");
-          setLoading(true);
-          const res = await googleLogin({ id_token: response.params.id_token }); 
-          
-          if (res.data?.requires_2fa) {
-            setPreAuthId(res.data.pre_auth_id);
-            setStep("totp_verify");
-            setLoading(false);
-            return;
-          } else if (res.data?.requires_setup) {
-            setPreAuthId(res.data.pre_auth_id);
-            // Auto fetch setup QR (Optional based on backend approach)
-            setStep("totp_setup");
-            setLoading(false);
-            return;
-          }
-
-          const userData = res.data.user;
-          const tokens = { access: res.data.access, refresh: res.data.refresh };
-          await loginStore.login(userData, tokens);
-
-          if (userData.role === "pandit") router.replace("/(pandit)" as any);
-          else router.replace("/(customer)" as any);
-        } catch (e: any) {
-          console.error(e);
-          Toast.show({ type: 'error', text1: 'Google Login Failed', text2: e?.message || "Please try again." });
-        } finally {
-          setLoading(false);
-        }
-      } else if (response?.type === 'error') {
-        Toast.show({ type: 'error', text1: 'Google Login Canceled', text2: response.error?.message || "Something went wrong." });
-      }
-    };
-
-    if (response) handleGoogleResponse();
-  }, [response]);
 
   const handleSendOtp = async () => {
     try {
@@ -144,6 +88,12 @@ export const useLogin = () => {
       
       await loginStore.login(userData, tokens);
 
+      Toast.show({
+        type: 'success',
+        text1: 'Welcome back',
+        text2: 'You have signed in successfully.',
+      });
+
       if (userData.role === "pandit") {
         router.replace("/(pandit)" as any);
       } else {
@@ -162,20 +112,46 @@ export const useLogin = () => {
   };
 
   const handleGooglePress = async () => {
-    if (!request) {
-      Toast.show({
-        type: 'info',
-        text1: 'Not Ready',
-        text2: 'Google login is still initializing...',
-      });
-      return;
-    }
-    
     try {
-      await promptAsync();
+      setLoading(true);
+      const data = await signInWithGoogleWebBrowser();
+
+      if (data?.requires_2fa) {
+        setPreAuthId(data.pre_auth_id || '');
+        setStep("totp_verify");
+        return;
+      }
+
+      if (data?.requires_setup) {
+        setPreAuthId(data.pre_auth_id || '');
+        setStep("totp_setup");
+        return;
+      }
+
+      if (!data?.access || !data?.refresh) {
+        throw new Error('Google login did not return app tokens.');
+      }
+
+      const userData = data.user;
+      const tokens = { access: data.access, refresh: data.refresh };
+      await loginStore.login(userData, tokens);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Google Sign-In successful',
+        text2: 'Your account is now logged in.',
+      });
+
+      if (userData?.role === "pandit") {
+        router.replace("/(pandit)" as any);
+      } else {
+        router.replace("/(customer)" as any);
+      }
     } catch (error: any) {
       console.error(error);
-      Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Could not start Google login.' });
+      Toast.show({ type: 'error', text1: 'Google Login Failed', text2: error.message || 'Could not complete Google login.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -197,6 +173,12 @@ export const useLogin = () => {
       };
       
       await loginStore.login(userData, tokens);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Verification successful',
+        text2: 'You are now signed in.',
+      });
 
       if (userData.role === "pandit") {
         router.replace("/(pandit)" as any);

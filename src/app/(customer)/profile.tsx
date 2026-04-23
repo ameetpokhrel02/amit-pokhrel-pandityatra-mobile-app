@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, Image, Alert, TextInput, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
 import { DeleteAccountModal } from '@/components/ui/DeleteAccountModal';
@@ -93,9 +94,14 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
-    setShowLogoutModal(false);
-    await logout();
-    router.replace('/(public)/role-selection');
+    try {
+      setShowLogoutModal(false);
+      await logout();
+      Toast.show({ type: 'success', text1: 'Logged out', text2: 'You have been signed out successfully.' });
+      router.replace('/(public)/role-selection');
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Logout failed', text2: error?.message || 'Please try again.' });
+    }
   };
 
   const handleEditPress = () => {
@@ -103,16 +109,16 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = async () => {
-    setShowDeleteModal(false);
     try {
+      setShowDeleteModal(false);
       setLoading(true);
       await import('@/services/auth.service').then(m => m.deleteProfile());
       await logout();
-      Alert.alert("Success", "Your account has been deleted.");
+      Toast.show({ type: 'success', text1: 'Account deleted', text2: 'Your account has been removed successfully.' });
       router.replace('/(public)/role-selection');
     } catch (error: any) {
       console.error('Delete account error:', error);
-      Alert.alert("Error", error.message || "Failed to delete account");
+      Toast.show({ type: 'error', text1: 'Delete failed', text2: error?.message || 'Failed to delete account.' });
     } finally {
       setLoading(false);
     }
@@ -286,9 +292,9 @@ export default function ProfileScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           {renderSettingItem("bug-outline", "Report a Bug", () => router.push('/support/bug-report'))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          {renderSettingItem("lock-closed-outline", "Privacy Policy", () => { })}
+          {renderSettingItem("lock-closed-outline", "Privacy Policy", () => router.push('/(customer)/legal/privacy-policy' as any))}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          {renderSettingItem("document-text-outline", "Terms of Service", () => { })}
+          {renderSettingItem("document-text-outline", "Terms of Service", () => router.push('/(customer)/legal/terms-of-service' as any))}
         </View>
 
         {/* Account Section */}

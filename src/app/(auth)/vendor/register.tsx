@@ -18,32 +18,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerVendor } from '@/services/vendor.service';
-import { googleLogin } from '@/services/auth.service';
 import { useAuthStore } from "@/store/auth.store";
-import Constants from 'expo-constants';
-import { isExpoGo } from "@/utils/expo-go";
-
-// Conditionally import GoogleSignin
-let GoogleSignin: any = null;
-try {
-  if (!isExpoGo()) {
-    const GoogleAuth = require("@react-native-google-signin/google-signin");
-    GoogleSignin = GoogleAuth.GoogleSignin;
-  }
-} catch (e) {
-  console.warn("Google Sign-In native module not found.");
-}
-
-const EXTRA = (Constants.expoConfig?.extra as any) || {};
-const WEB_CLIENT_ID = EXTRA.webClientId || EXTRA.expoPublicGoogleClientId || "";
-const IOS_CLIENT_ID = EXTRA.iosClientId || "";
-
-if (GoogleSignin) {
-  GoogleSignin.configure({
-    webClientId: WEB_CLIENT_ID || undefined,
-    iosClientId: IOS_CLIENT_ID || undefined,
-  });
-}
+import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUSINESS_TYPES = ['Samagri Store', 'Book Store', 'Gift & Accessories', 'Devotional Items', 'Other'];
@@ -73,42 +49,29 @@ export default function VendorRegister() {
   const [accountHolder, setAccountHolder] = useState('');
 
   const handleGoogleSignup = async () => {
-    if (isExpoGo()) {
-      Alert.alert("Expo Go Limited", "Google Sign-In is not available in Expo Go.");
-      return;
-    }
-    if (!GoogleSignin) return;
-
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
-      
-      if (!idToken) {
-         Alert.alert("Google Sign-In", "No id_token returned.");
-         return;
-      }
+      const res = await signInWithGoogleWebBrowser();
+      const userData = res.user;
 
-      const res = await googleLogin({ id_token: idToken }); 
-      const userData = res.data.user;
-      
-      if (res.data.access) {
-         const tokens = { access: res.data.access, refresh: res.data.refresh };
+      if (res.access && res.refresh) {
+         const tokens = { access: res.access, refresh: res.refresh };
          await loginStore.login(userData, tokens);
+         Toast.show({ type: 'success', text1: 'Google Sign-In successful', text2: 'Welcome back to your vendor dashboard.' });
          router.replace(userData.role === 'vendor' ? "/(vendor)" : "/(customer)");
          return;
       }
 
-      if (userInfo.data?.user) {
-         setFullName(userInfo.data.user.name || '');
-         setEmail(userInfo.data.user.email || '');
+      if (userData) {
+         setFullName(userData.name || userData.full_name || '');
+         setEmail(userData.email || '');
          setPassword('GOOGLE_AUTH_SESSION');
          Toast.show({ type: 'success', text1: 'Success', text2: 'Info pre-filled from Google!' });
       }
       
     } catch (error: any) {
       console.error(error);
+      Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error?.message || 'Please try again.' });
     } finally {
       setLoading(false);
     }

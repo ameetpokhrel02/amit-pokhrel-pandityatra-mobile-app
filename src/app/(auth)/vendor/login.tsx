@@ -7,10 +7,9 @@ import {
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Constants from 'expo-constants';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
-import { loginPassword, googleLogin, requestOTP } from '@/services/auth.service';
+import { loginPassword, requestOTP } from '@/services/auth.service';
 import { AppContainer } from '@/components/ui/AppContainer';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,31 +17,7 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { AuthButtons } from '@/components/auth/AuthButtons';
 import { CustomPhoneInput } from '@/components/ui/CustomPhoneInput';
 import { Ionicons } from '@expo/vector-icons';
-import { isExpoGo } from "@/utils/expo-go";
-
-// Conditionally import GoogleSignin
-let GoogleSignin: any = null;
-let statusCodes: any = {};
-try {
-  if (!isExpoGo()) {
-    const GoogleAuth = require("@react-native-google-signin/google-signin");
-    GoogleSignin = GoogleAuth.GoogleSignin;
-    statusCodes = GoogleAuth.statusCodes;
-  }
-} catch (e) {
-  console.warn("Google Sign-In native module not found.");
-}
-
-const EXTRA = (Constants.expoConfig?.extra as any) || {};
-const WEB_CLIENT_ID = EXTRA.webClientId || EXTRA.expoPublicGoogleClientId || "";
-const IOS_CLIENT_ID = EXTRA.iosClientId || "";
-
-if (GoogleSignin) {
-  GoogleSignin.configure({
-    webClientId: WEB_CLIENT_ID || undefined,
-    iosClientId: IOS_CLIENT_ID || undefined,
-  });
-}
+import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
 
 export default function VendorLoginScreen() {
   const router = useRouter();
@@ -92,44 +67,28 @@ export default function VendorLoginScreen() {
   };
 
   const handleGooglePress = async () => {
-    if (isExpoGo()) {
-      Alert.alert("Expo Go Limited", "Google Sign-In is not available in Expo Go. Please use a native build.");
-      return;
-    }
-
-    if (!GoogleSignin) {
-      Alert.alert("Error", "Google Sign-In module is not available.");
-      return;
-    }
-
     try {
       setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
-      
-      if (!idToken) {
-         Alert.alert("Google Sign-In", "No id_token returned from Google.");
-         return;
-      }
-
-      const res = await googleLogin({ id_token: idToken }); 
-      const userData = res.data.user;
+      const res = await signInWithGoogleWebBrowser();
+      const userData = res.user;
       
       if (userData.role !== 'vendor') {
         Toast.show({ type: 'error', text1: 'Access Denied', text2: 'This account is not registered as a Vendor.' });
         return;
       }
 
-      const tokens = { access: res.data.access, refresh: res.data.refresh };
+      if (!res.access || !res.refresh) {
+        throw new Error('Google login did not return app tokens.');
+      }
+
+      const tokens = { access: res.access, refresh: res.refresh };
       await loginStore.login(userData, tokens);
+      Toast.show({ type: 'success', text1: 'Google Sign-In successful', text2: 'Welcome back to your vendor dashboard.' });
       router.replace("/(vendor)" as any);
       
     } catch (error: any) {
       console.error(error);
-      if (error.code !== statusCodes?.SIGN_IN_CANCELLED) {
-        Alert.alert("Google Sign-In failed", error.message || "Please try again.");
-      }
+      Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error?.message || 'Please try again.' });
     } finally {
       setLoading(false);
     }

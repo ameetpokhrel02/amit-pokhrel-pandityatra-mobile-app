@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -16,20 +16,9 @@ import { Image } from "expo-image";
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
-import { registerUser, googleLogin } from '@/services/auth.service';
+import { registerUser } from '@/services/auth.service';
 import { useAuthStore } from "@/store/auth.store";
-import Constants from "expo-constants";
-import * as WebBrowser from "expo-web-browser";
-import * as AuthSession from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
-
-WebBrowser.maybeCompleteAuthSession();
-
-const EXTRA = (Constants.expoConfig?.extra as any) || {};
-const GOOGLE_CLIENT_ID = EXTRA.expoPublicGoogleClientId || "";
-const ANDROID_CLIENT_ID = EXTRA.androidClientId || "";
-const IOS_CLIENT_ID = EXTRA.iosClientId || "";
-const WEB_CLIENT_ID = EXTRA.webClientId || GOOGLE_CLIENT_ID || "";
+import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -45,54 +34,6 @@ export default function CustomerRegister() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const redirectUri = useMemo(
-    () => AuthSession.makeRedirectUri({}),
-    []
-  );
-
-  const [googleRequest, googleResponse, googlePromptAsync] =
-    Google.useIdTokenAuthRequest({
-      clientId: GOOGLE_CLIENT_ID || undefined,
-      androidClientId: ANDROID_CLIENT_ID || undefined,
-      iosClientId: IOS_CLIENT_ID || undefined,
-      webClientId: WEB_CLIENT_ID || undefined,
-      redirectUri,
-      scopes: ["profile", "email"],
-    });
-
-  useEffect(() => {
-    const handleGoogle = async () => {
-      if (googleResponse?.type !== "success") return;
-
-      const idToken =
-        (googleResponse.authentication as any)?.idToken ||
-        (googleResponse.params as any)?.id_token;
-      if (!idToken) {
-        Toast.show({ type: 'error', text1: 'Google Sign-In', text2: 'No id_token returned from Google.' });
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const res = await googleLogin({ id_token: idToken }); 
-        
-        const userData = res.data.user;
-        const tokens = { access: res.data.access, refresh: res.data.refresh };
-        await loginStore.login(userData, tokens);
-
-        if (userData.role === "pandit") router.replace("/(pandit)" as any);
-        else router.replace("/(customer)" as any);
-      } catch (e: any) {
-        console.error(e);
-        Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: e?.message || 'Please try again.' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleGoogle();
-  }, [googleResponse, router]);
 
   const handleSubmit = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -115,6 +56,12 @@ export default function CustomerRegister() {
         password,
         role: 'user',
       });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Account created',
+        text2: 'Please verify your phone number to continue.',
+      });
       
       router.push({
         pathname: '/(auth)/user/otp',
@@ -129,11 +76,26 @@ export default function CustomerRegister() {
   };
 
   const handleGooglePress = async () => {
-    if (!GOOGLE_CLIENT_ID) {
-      Toast.show({ type: 'error', text1: 'Config Error', text2: 'Missing Google client id.' });
-      return;
+    try {
+      setLoading(true);
+      const data = await signInWithGoogleWebBrowser();
+
+      if (!data?.access || !data?.refresh) {
+        throw new Error('Google login did not return app tokens.');
+      }
+
+      const userData = data.user;
+      const tokens = { access: data.access, refresh: data.refresh };
+      await loginStore.login(userData, tokens);
+
+      if (userData?.role === "pandit") router.replace("/(pandit)" as any);
+      else router.replace("/(customer)" as any);
+    } catch (e: any) {
+      console.error(e);
+      Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: e?.message || 'Please try again.' });
+    } finally {
+      setLoading(false);
     }
-    await googlePromptAsync();
   };
 
   return (
