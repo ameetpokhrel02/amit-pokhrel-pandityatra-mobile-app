@@ -158,7 +158,7 @@ export default function KundaliScreen() {
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Vedic AI Kundali</Text>
                         <TouchableOpacity onPress={() => router.push('/(customer)/kundali-history' as any)} style={styles.iconCircle}>
-                            <Ionicons name="history" size={22} color="#FFF" />
+                            <Ionicons name="time-outline" size={22} color="#FFF" />
                         </TouchableOpacity>
                     </View>
 
@@ -190,7 +190,7 @@ export default function KundaliScreen() {
                             label="Full Name" 
                             icon="person-outline" 
                             value={formData.name}
-                            onChange={(t) => setFormData({...formData, name: t})}
+                            onChange={(t: string) => setFormData({...formData, name: t})}
                             placeholder="Enter Name"
                             colors={colors}
                             isDark={isDark}
@@ -202,7 +202,7 @@ export default function KundaliScreen() {
                                     label="Date of Birth" 
                                     icon="calendar-outline" 
                                     value={formData.dob}
-                                    onChange={(t) => setFormData({...formData, dob: t})}
+                                    onChange={(t: string) => setFormData({...formData, dob: t})}
                                     placeholder="DD/MM/YYYY"
                                     colors={colors}
                                     isDark={isDark}
@@ -213,7 +213,7 @@ export default function KundaliScreen() {
                                     label="Time" 
                                     icon="time-outline" 
                                     value={formData.tob}
-                                    onChange={(t) => setFormData({...formData, tob: t})}
+                                    onChange={(t: string) => setFormData({...formData, tob: t})}
                                     placeholder="HH:MM"
                                     colors={colors}
                                     isDark={isDark}
@@ -287,8 +287,12 @@ export default function KundaliScreen() {
 
                         <View style={[styles.chartWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                             <KundaliChart 
-                                planets={result.planets || []}
-                                houses={result.houses || []}
+                                planets={Array.isArray(result.planets) ? result.planets.map((p: any) => ({
+                                    planet: p.planet || p.name || '',
+                                    house: parseInt(String(p.house || p.house_number || 1)),
+                                    sign: p.sign || p.rashi || ''
+                                })) : []}
+                                houses={Array.isArray(result.houses) ? result.houses.map((h: any) => parseInt(String(h.house_number || h.sign_number || 1))) : []}
                                 colors={colors}
                                 isDark={isDark}
                             />
