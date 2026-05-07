@@ -68,8 +68,8 @@ export async function autoAddSamagri(bookingId: number) {
 /**
  * Manually add an item to a booking's samagri list via recommender logic
  */
-export async function addSamagriItem(bookingId: number, itemId: number) {
-    const response = await apiClient.post(`recommender/bookings/${bookingId}/samagri/add-item/`, { item_id: itemId });
+export async function addSamagriItem(bookingId: number, recommendationId: number) {
+    const response = await apiClient.post(`recommender/bookings/${bookingId}/samagri/add-item/`, { recommendation_id: recommendationId });
     return response.data;
 }
 

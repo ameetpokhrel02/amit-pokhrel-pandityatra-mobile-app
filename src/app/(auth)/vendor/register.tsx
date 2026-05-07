@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerVendor } from '@/services/vendor.service';
 import { useAuthStore } from "@/store/auth.store";
-import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
+import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUSINESS_TYPES = ['Samagri Store', 'Book Store', 'Gift & Accessories', 'Devotional Items', 'Other'];
@@ -51,7 +51,7 @@ export default function VendorRegister() {
   const handleGoogleSignup = async () => {
     try {
       setLoading(true);
-      const res = await signInWithGoogleWebBrowser();
+      const res = await signInWithFirebaseGoogle();
       const userData = res.user;
 
       if (res.access && res.refresh) {

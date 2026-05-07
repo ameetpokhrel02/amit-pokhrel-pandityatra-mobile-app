@@ -132,6 +132,35 @@ export interface RecommendedPandit extends Pandit {
     recommendation_score: number;
 }
 
+export interface AISamagriRecommendation {
+    id?: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    is_essential: boolean;
+    confidence: number;
+    reason: string;
+    price: number;
+    image?: string;
+    in_stock?: boolean;
+    category?: string;
+}
+
+export interface SamagriRecommendation {
+    id: number;
+    puja: number;
+    puja_name: string;
+    samagri_item: SamagriItem;
+    confidence_score: number;
+    is_essential: boolean;
+    is_optional: boolean;
+    priority: number;
+    category: string;
+    quantity_default: number;
+    unit: string;
+    reason: string;
+}
+
 // Booking APIs moved to booking.service.ts
 
 export interface Booking {

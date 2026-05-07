@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerUser } from '@/services/auth.service';
 import { useAuthStore } from "@/store/auth.store";
-import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
+import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -78,7 +78,7 @@ export default function CustomerRegister() {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const data = await signInWithGoogleWebBrowser();
+      const data = await signInWithFirebaseGoogle();
 
       if (!data?.access || !data?.refresh) {
         throw new Error('Google login did not return app tokens.');

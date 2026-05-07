@@ -20,7 +20,7 @@ import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerPandit } from '@/services/pandit.service';
 import { useAuthStore } from "@/store/auth.store";
 import * as ImagePicker from 'expo-image-picker';
-import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
+import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -49,7 +49,7 @@ export default function PanditRegister() {
   const handleGoogleSignup = async () => {
     try {
       setLoading(true);
-      const res = await signInWithGoogleWebBrowser();
+      const res = await signInWithFirebaseGoogle();
       const userData = res.user;
       
       // If user exists and is a pandit, log them in

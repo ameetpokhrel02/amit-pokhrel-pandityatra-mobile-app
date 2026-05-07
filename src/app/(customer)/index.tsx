@@ -227,6 +227,20 @@ export default function CustomerHomeScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH,
+              offset: SCREEN_WIDTH * index,
+              index,
+            })}
+            onScrollToIndexFailed={(info) => {
+              const fallbackIndex = Math.max(0, Math.min(info.index, dynamicBanners.length - 1));
+              requestAnimationFrame(() => {
+                flatListRef.current?.scrollToOffset({
+                  offset: SCREEN_WIDTH * fallbackIndex,
+                  animated: true,
+                });
+              });
+            }}
             onMomentumScrollEnd={(event) => {
               currentIndexRef.current = Math.floor(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
             }}

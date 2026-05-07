@@ -10,17 +10,17 @@ module.exports = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#FF6F00', // Saffron
-                    50: '#FFF3E0',
-                    100: '#FFE0B2',
-                    200: '#FFCC80',
-                    300: '#FFB74D',
-                    400: '#FFA726',
-                    500: '#FF6F00',
-                    600: '#FB8C00',
-                    700: '#F57C00',
-                    800: '#EF6C00',
-                    900: '#E65100',
+                    DEFAULT: '#f97316', // Saffron Orange
+                    50: '#fff7ed',
+                    100: '#ffedd5',
+                    200: '#fed7aa',
+                    300: '#fdba74',
+                    400: '#fb923c',
+                    500: '#f97316',
+                    600: '#ea580c',
+                    700: '#c2410c',
+                    800: '#9a3412',
+                    900: '#7c2d12',
                 },
                 secondary: {
                     DEFAULT: '#9C1C1C', // Deep Red
@@ -48,8 +48,8 @@ module.exports = {
                     800: '#F9A825',
                     900: '#F57F17',
                 },
-                background: '#F5F5F5', // Cream/White
-                textDark: '#3E2723', // Dark Brown  
+                background: '#FFF7ED', // Sacred Cream
+                textDark: '#1A1A1A', 
             },
         },
     },

@@ -10,55 +10,47 @@ const getBaseUrl = () => {
     // 1. Priority: Explicit environment variable (from .env file)
     if (process.env.EXPO_PUBLIC_API_URL) {
         let url = process.env.EXPO_PUBLIC_API_URL;
-        if (!url.endsWith('/')) {
-            url += '/';
-        }
-        console.log('[API] Using environment variable URL:', url);
+        if (!url.endsWith('/')) url += '/';
+        console.log('[API] 🛠️ Using .env URL:', url);
         return url;
     }
 
-    const PROD_DOMAIN = 'amit-pokhrel-pandityatra.onrender.com';
-    const DEFAULT_PORT = '8000';
-
+    const PROD_URL = 'https://amit-pokhrel-pandityatra.onrender.com/api/';
     const expoConfig = Constants.expoConfig;
     
-    // Helper to format URL
-    const formatUrl = (host: string, port: string) => {
-        if (host.includes('onrender.com')) {
-            return `https://${host}/api/`;
-        }
-        // For local development, if host is not a production domain
-        return `http://${host}:${port}/api/`;
-    };
+    // For production builds (APK), always use PROD_URL
+    if (!__DEV__) {
+        console.log('[API] 📦 Production build, using:', PROD_URL);
+        return PROD_URL;
+    }
 
     if (expoConfig?.hostUri) {
         const host = expoConfig.hostUri.split(':')[0];
 
         // Tunnel mode (exp.direct)
-        if (host.includes('exp.direct')) {
-            console.log('[API] ⚠️ TUNNEL MODE DETECTED. Using production fallback.');
-            return formatUrl(PROD_DOMAIN, DEFAULT_PORT);
+        if (host.includes('exp.direct') || host.includes('ngrok')) {
+            console.log('[API] 🚇 Tunnel/NGROK detected. Using production fallback.');
+            return PROD_URL;
         }
 
         // Android Emulator
         if (host === 'localhost' || host === '127.0.0.1') {
-            const url = `http://10.0.2.2:${DEFAULT_PORT}/api/`;
-            console.log('[API] 📱 Emulator detected, using:', url);
+            const url = `http://10.0.2.2:8000/api/`;
+            console.log('[API] 📱 Emulator detected:', url);
             return url;
         }
 
-        const url = formatUrl(host, DEFAULT_PORT);
-        console.log('[API] 🌐 Using dynamic host URL:', url);
-        return url;
+        // Physical device on local network (only if not choosing production)
+        // If we have a PROD_URL, it's safer to use it even in DEV if it's available
+        console.log('[API] 🌐 Local host detected, but falling back to production for stability.');
+        return PROD_URL;
     }
 
-    // 3. Last fallback
-    const url = formatUrl(PROD_DOMAIN, DEFAULT_PORT);
-    console.log('[API] 📍 Using last fallback URL:', url);
-    return url;
+    return PROD_URL;
 };
 
 export const API_BASE_URL = getBaseUrl();
+console.log('[API] Final Base URL:', API_BASE_URL);
 
 // Create primary Axios instance
 const apiClient = axios.create({

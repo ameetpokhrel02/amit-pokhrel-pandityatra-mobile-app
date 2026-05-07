@@ -25,7 +25,7 @@ import { AppContainer } from "@/components/ui/AppContainer";
 import { Colors } from "@/theme/colors";
 import { requestOTP, loginPassword } from "@/services/auth.service";
 import { Ionicons } from "@expo/vector-icons";
-import { signInWithGoogleWebBrowser } from "@/features/auth/google-web-auth";
+import { signInWithFirebaseGoogle } from "@/features/auth/firebase-google-auth";
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -110,7 +110,7 @@ export default function LoginScreen() {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const res = await signInWithGoogleWebBrowser();
+      const res = await signInWithFirebaseGoogle();
 
       if (!res.access || !res.refresh) {
         throw new Error('Google login did not return app tokens.');

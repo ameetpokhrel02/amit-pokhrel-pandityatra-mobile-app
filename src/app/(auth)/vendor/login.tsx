@@ -17,7 +17,7 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { AuthButtons } from '@/components/auth/AuthButtons';
 import { CustomPhoneInput } from '@/components/ui/CustomPhoneInput';
 import { Ionicons } from '@expo/vector-icons';
-import { signInWithGoogleWebBrowser } from '@/features/auth/google-web-auth';
+import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
 
 export default function VendorLoginScreen() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function VendorLoginScreen() {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const res = await signInWithGoogleWebBrowser();
+      const res = await signInWithFirebaseGoogle();
       const userData = res.user;
       
       if (userData.role !== 'vendor') {

@@ -94,9 +94,10 @@ export default function BookingsScreen() {
       } finally {
         if (reqId !== requestSeq.current) return;
 
-        if (showFullLoader) {
-          setLoading(false);
-        }
+        // Always clear full loader when latest request settles.
+        // This prevents a race where the initial full-load request is superseded
+        // by a focus refresh request, leaving loading=true forever.
+        setLoading(false);
         setTabLoading(false);
       }
     },

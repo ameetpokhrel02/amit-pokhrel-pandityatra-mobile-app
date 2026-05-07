@@ -258,6 +258,20 @@ export default function ShopScreen() {
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
+              getItemLayout={(_, index) => ({
+                length: width,
+                offset: width * index,
+                index,
+              })}
+              onScrollToIndexFailed={(info) => {
+                const fallbackIndex = Math.max(0, Math.min(info.index, BANNERS.length - 1));
+                requestAnimationFrame(() => {
+                  flatListRef.current?.scrollToOffset({
+                    offset: width * fallbackIndex,
+                    animated: true,
+                  });
+                });
+              }}
               onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
               keyExtractor={(item) => item.id.toString()}
             />

@@ -40,7 +40,7 @@ export async function checkoutSamagri(payload: SamagriCheckoutPayload) {
     return response.data;
 }
 
-export async function aiRecommendSamagri(payload: { service_id?: number; puja_name?: string }) {
+export async function aiRecommendSamagri(payload: { puja_id?: number; puja_name?: string; location?: string; user_notes?: string }) {
     const response = await apiClient.post('samagri/ai_recommend/', payload);
     return response.data;
 }

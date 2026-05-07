@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 
 import { requestOTP, loginPassword, verifyTOTP } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { signInWithGoogleWebBrowser } from "@/features/auth/google-web-auth";
+import { signInWithFirebaseGoogle } from "@/features/auth/firebase-google-auth";
 
 export type AuthStep = "initial" | "email_login" | "phone_login" | "email_signup" | "totp_verify" | "totp_setup";
 
@@ -114,7 +114,7 @@ export const useLogin = () => {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const data = await signInWithGoogleWebBrowser();
+      const data = await signInWithFirebaseGoogle();
 
       if (data?.requires_2fa) {
         setPreAuthId(data.pre_auth_id || '');
