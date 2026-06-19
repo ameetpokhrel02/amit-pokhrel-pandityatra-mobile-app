@@ -28,6 +28,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@/utils/image';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
+import { FlashSale } from '@/components/home/FlashSale';
 import { UpcomingSessionBanner } from '@/components/booking/UpcomingSessionBanner';
 import { useDashboardData } from '@/hooks/customer/useDashboardData';
 import { SamagriItem } from '@/services/api';
@@ -246,7 +247,7 @@ export default function CustomerHomeScreen() {
             }}
             renderItem={({ item }) => (
               <View style={{ width: SCREEN_WIDTH, paddingHorizontal: 20, height: 200 }}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     activeOpacity={0.9}
                     style={[styles.bannerWrapper, { backgroundColor: colors.card }]}
                     onPress={() => item.link ? router.push(item.link as any) : router.push('/(customer)/pandits')}
@@ -295,6 +296,9 @@ export default function CustomerHomeScreen() {
             />
           </View>
         </View>
+
+        {/* Flash Sale */}
+        <FlashSale />
 
         {/* Category Filter */}
         <View style={{ height: 60, marginTop: 12 }}>
