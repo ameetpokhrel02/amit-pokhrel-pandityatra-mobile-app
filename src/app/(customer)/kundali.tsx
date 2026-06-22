@@ -24,6 +24,7 @@ import { generateKundaliPDF } from '@/utils/kundali-pdf.utils';
 import { MotiView, MotiText } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
 
 const MapLocationPicker = React.lazy(() => import('@/components/ui/MapLocationPicker'));
 
@@ -33,6 +34,7 @@ export default function KundaliScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
     const isDark = theme === 'dark';
+    const chartRef = useRef<View>(null);
     
     const [formData, setFormData] = useState({
         name: '',
@@ -280,12 +282,20 @@ export default function KundaliScreen() {
                     >
                         <View style={styles.resultHeader}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Celestial Alignment</Text>
-                            <TouchableOpacity onPress={handleDownloadPDF} style={styles.downloadIconBtn}>
-                                <Ionicons name="download-outline" size={24} color={colors.primary} />
-                            </TouchableOpacity>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                <ScreenshotButton
+                                    captureRef={chartRef}
+                                    label="Save Chart"
+                                    variant="outline"
+                                    style={{ paddingVertical: 8, paddingHorizontal: 12 }}
+                                />
+                                <TouchableOpacity onPress={handleDownloadPDF} style={styles.downloadIconBtn}>
+                                    <Ionicons name="download-outline" size={24} color={colors.primary} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
-                        <View style={[styles.chartWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View ref={chartRef} collapsable={false} style={[styles.chartWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
                             <KundaliChart 
                                 planets={Array.isArray(result.planets) ? result.planets.map((p: any) => ({
                                     planet: p.planet || p.name || '',

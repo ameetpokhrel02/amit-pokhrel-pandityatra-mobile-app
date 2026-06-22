@@ -1,38 +1,43 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
 
 export default function BookingConfirmationScreen() {
   const router = useRouter();
   const { bookingId, panditName, date, time } = useLocalSearchParams();
+  const captureRef = useRef<View>(null);
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.iconContainer}>
-          <View style={styles.successCircle}>
-            <Ionicons name="checkmark" size={60} color="#fff" />
+        {/* Wrap content to capture in a View with collapsable={false} */}
+        <View ref={captureRef} collapsable={false} style={styles.captureContainer}>
+          <View style={styles.iconContainer}>
+            <View style={styles.successCircle}>
+              <Ionicons name="checkmark" size={60} color="#fff" />
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.title}>Booking Confirmed!</Text>
-        <Text style={styles.subtitle}>
-          Your spiritual journey is scheduled. {panditName} is looking forward to performing the ritual for you.
-        </Text>
+          <Text style={styles.title}>Booking Confirmed!</Text>
+          <Text style={styles.subtitle}>
+            Your spiritual journey is scheduled. {panditName} is looking forward to performing the ritual for you.
+          </Text>
 
-        <View style={styles.detailsCard}>
-          <View style={styles.detailRow}>
-            <Ionicons name="calendar-outline" size={20} color="#f97316" />
-            <Text style={styles.detailText}>{date || 'March 25, 2026'}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Ionicons name="time-outline" size={20} color="#f97316" />
-            <Text style={styles.detailText}>{time || '10:30 AM'}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Ionicons name="person-outline" size={20} color="#f97316" />
-            <Text style={styles.detailText}>{panditName || 'Pandit G. Sharma'}</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.detailRow}>
+              <Ionicons name="calendar-outline" size={20} color="#f97316" />
+              <Text style={styles.detailText}>{date || 'March 25, 2026'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="time-outline" size={20} color="#f97316" />
+              <Text style={styles.detailText}>{time || '10:30 AM'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="person-outline" size={20} color="#f97316" />
+              <Text style={styles.detailText}>{panditName || 'Pandit G. Sharma'}</Text>
+            </View>
           </View>
         </View>
 
@@ -60,6 +65,15 @@ export default function BookingConfirmationScreen() {
         >
           <Text style={styles.buttonText}>My Bookings</Text>
         </TouchableOpacity>
+
+        {/* Reusable ScreenshotButton */}
+        <ScreenshotButton
+          captureRef={captureRef}
+          label="Save Confirmation"
+          loadingLabel="Saving..."
+          variant="outline"
+          style={styles.screenshotBtn}
+        />
         
         <TouchableOpacity 
           style={styles.secondaryButton}
@@ -75,6 +89,12 @@ export default function BookingConfirmationScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff7ed' },
   content: { padding: 30, alignItems: 'center', paddingTop: 60 },
+  captureContainer: {
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: '#fff7ed', // Match parent background for clean screenshots
+    paddingVertical: 10,
+  },
   iconContainer: { marginBottom: 30 },
   successCircle: { 
     width: 100, 
@@ -98,11 +118,16 @@ const styles = StyleSheet.create({
     borderRadius: 20, 
     marginBottom: 35,
     borderWidth: 1,
-    borderColor: '#eee'
+    borderColor: '#eee',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   detailText: { fontSize: 16, color: '#3E2723', marginLeft: 15, fontWeight: '500' },
-  nextSteps: { width: '100%', paddingHorizontal: 10 },
+  nextSteps: { width: '100%', paddingHorizontal: 10, marginTop: 10 },
   nextStepsTitle: { fontSize: 18, fontWeight: 'bold', color: '#3E2723', marginBottom: 20 },
   stepItem: { flexDirection: 'row', marginBottom: 20, alignItems: 'flex-start' },
   stepNumber: { 
@@ -119,6 +144,9 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     alignItems: 'center', 
     marginBottom: 12 
+  },
+  screenshotBtn: {
+    marginBottom: 12,
   },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   secondaryButton: { 
