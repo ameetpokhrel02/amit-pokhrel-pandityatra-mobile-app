@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -11,6 +11,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useVendorDashboard } from '@/hooks/vendor/useVendorDashboard';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
+import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
 
 const StatCard = ({ icon, label, value, color, colors }: any) => (
   <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -32,6 +33,7 @@ export default function VendorDashboard() {
   } = useVendorDashboard();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
+  const analyticsRef = useRef<View>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -45,26 +47,34 @@ export default function VendorDashboard() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 20, paddingBottom: 20 }]}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.greeting, { color: colors.text, opacity: 0.6 }]}>WELCOME BACK,</Text>
-          <Text style={[styles.shopName, { color: colors.text }]}>
+          <Text style={[styles.shopName, { color: colors.text }]} numberOfLines={1}>
             {profile?.shop_name || profile?.full_name || 'Vendor'}
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.headerBtn, { backgroundColor: colors.card, overflow: 'hidden' }]}
-          onPress={() => router.push('/(vendor)/profile' as any)}
-        >
-          {profile?.profile_pic ? (
-            <Image
-              source={{ uri: getImageUrl(profile.profile_pic) || profile.profile_pic }}
-              style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-            />
-          ) : (
-            <Ionicons name="business-outline" size={24} color={colors.primary} />
-          )}
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <ScreenshotButton
+            captureRef={analyticsRef}
+            label=""
+            variant="ghost"
+            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+          />
+          <TouchableOpacity
+            style={[styles.headerBtn, { backgroundColor: colors.card, overflow: 'hidden' }]}
+            onPress={() => router.push('/(vendor)/profile' as any)}
+          >
+            {profile?.profile_pic ? (
+              <Image
+                source={{ uri: getImageUrl(profile.profile_pic) || profile.profile_pic }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            ) : (
+              <Ionicons name="business-outline" size={24} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -83,29 +93,30 @@ export default function VendorDashboard() {
           </View>
         )}
 
-        {/* Balance Hero Card */}
-        <View style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
-          <View style={styles.balanceHeader}>
-            <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.balanceLabel}>CURRENT BALANCE</Text>
+        {/* Analytics Capture View */}
+        <View ref={analyticsRef} collapsable={false} style={{ backgroundColor: colors.background }}>
+          {/* Balance Hero Card */}
+          <View style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
+            <View style={styles.balanceHeader}>
+              <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.balanceLabel}>CURRENT BALANCE</Text>
+            </View>
+            <Text style={styles.balanceAmount}>
+              NPR {stats ? parseFloat(stats.current_balance || '0').toLocaleString() : '—'}
+            </Text>
+            <TouchableOpacity
+              style={styles.payoutBtn}
+              onPress={() => router.push('/(vendor)/profile' as any)}
+            >
+              <Ionicons name="cash-outline" size={16} color={colors.primary} />
+              <Text style={[styles.payoutBtnText, { color: colors.primary }]}>Request Payout</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.balanceAmount}>
-            NPR {stats ? parseFloat(stats.current_balance || '0').toLocaleString() : '—'}
-          </Text>
-          <TouchableOpacity
-            style={styles.payoutBtn}
-            onPress={() => router.push('/(vendor)/profile' as any)}
-          >
-            <Ionicons name="cash-outline" size={16} color={colors.primary} />
-            <Text style={[styles.payoutBtnText, { color: colors.primary }]}>Request Payout</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Stats Grid */}
-        {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} size="large" />
-        ) : (
-          <>
+          {/* Stats Grid */}
+          {loading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} size="large" />
+          ) : (
             <View style={styles.statsGrid}>
               <StatCard
                 icon={<Ionicons name="cash-outline" size={22} color="#10B981" />}
@@ -128,6 +139,11 @@ export default function VendorDashboard() {
                 color="#F59E0B" colors={colors}
               />
             </View>
+          )}
+        </View>
+
+        {!loading && (
+          <>
 
             {/* Low Stock Alerts */}
             {lowStockItems.length > 0 && (
