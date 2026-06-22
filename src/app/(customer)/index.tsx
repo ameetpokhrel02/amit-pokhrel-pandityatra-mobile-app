@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { getImageUrl } from '@/utils/image';
 import { DailyPanchang } from '@/components/home/DailyPanchang';
 import { FlashSale } from '@/components/home/FlashSale';
+import { SalesOffersBanner } from '@/components/home/SalesOffersBanner';
 import { UpcomingSessionBanner } from '@/components/booking/UpcomingSessionBanner';
 import { useDashboardData } from '@/hooks/customer/useDashboardData';
 import { SamagriItem } from '@/services/api';
@@ -299,6 +300,9 @@ export default function CustomerHomeScreen() {
 
         {/* Flash Sale */}
         <FlashSale />
+
+        {/* Sales Offers Banner */}
+        <SalesOffersBanner />
 
         {/* Category Filter */}
         <View style={{ height: 60, marginTop: 12 }}>

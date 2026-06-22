@@ -25,7 +25,7 @@ export default function BookingsScreen() {
   const [selectedTab, setSelectedTab] = useState<'pending' | 'accepted' | 'completed' | 'cancelled'>('pending');
   const requestSeq = useRef(0);
 
-  const tabs = [
+  const tabs: { id: 'pending' | 'accepted' | 'completed' | 'cancelled'; label: string }[] = [
     { id: 'pending', label: 'Pending' },
     { id: 'accepted', label: 'Accepted' },
     { id: 'completed', label: 'Completed' },

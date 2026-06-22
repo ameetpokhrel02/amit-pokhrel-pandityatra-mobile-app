@@ -77,7 +77,7 @@ export default function MapLocationPicker({ value, onSelect, placeholder = 'Sele
       const results = await Location.reverseGeocodeAsync(markerCoord);
       if (results && results.length > 0) {
         const r = results[0];
-        city = r.city || r.subregion || r.district;
+        city = r.city || r.subregion || r.district || undefined;
         region = r.region || undefined;
         country = r.country || undefined;
         const parts = [r.name, r.street, r.city, r.region, r.country].filter(Boolean);

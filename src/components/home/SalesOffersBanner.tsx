@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -16,57 +16,50 @@ interface TimeLeft {
   seconds: number;
 }
 
-interface FlashSaleItem {
+interface SpecialOffer {
   id: string;
   name: string;
-  description: string;
+  tagline: string;
   price: number;
   originalPrice: number;
   discount: number;
   image: string;
   offersLeft: number;
+  points: number;
 }
 
-const FLASH_ITEMS: FlashSaleItem[] = [
+const SPECIAL_OFFERS: SpecialOffer[] = [
   {
-    id: 'fs_1',
-    name: 'Sacred Havan Kit',
-    description: 'Complete items for holy fire rituals',
-    price: 1250,
-    originalPrice: 2500,
-    discount: 50,
-    image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1781149969/brynr0mrk6pvizenegwu.png',
-    offersLeft: 12,
+    id: 'so_1',
+    name: 'Brass Designer Puja Thali',
+    tagline: 'Elegant plate for daily prayers',
+    price: 975,
+    originalPrice: 1500,
+    discount: 35,
+    image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1777722110/image-Photoroom_5_zl1nug.png',
+    offersLeft: 18,
+    points: 1200,
   },
   {
-    id: 'fs_2',
-    name: 'Premium Brass Diya',
-    description: 'Exquisite hand-carved oil lamp',
-    price: 840,
-    originalPrice: 1400,
-    discount: 40,
-    image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1780847704/wgdmwhyykoqubldpkavy.png',
-    offersLeft: 8,
-  },
-  {
-    id: 'fs_3',
-    name: 'Vedic Copper Kalash',
-    description: 'Pure copper vessel for holy water',
-    price: 630,
+    id: 'so_2',
+    name: 'Haldi & Kumkum Spoon Set',
+    tagline: 'Artisan double-sided ritual spoon',
+    price: 495,
     originalPrice: 900,
-    discount: 30,
-    image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1781150040/rdzkpsnundr3khz0rzth.png',
-    offersLeft: 15,
+    discount: 45,
+    image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1775157041/media/samagri_images/haldi_b__and_kumkum_spoon_lcsomt.png',
+    offersLeft: 22,
+    points: 850,
   },
 ];
 
-export const FlashSale = () => {
+export const SalesOffersBanner = () => {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
   const addToCart = useCartStore((state) => state.addToCart);
 
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 4, minutes: 32, seconds: 15 });
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 6, minutes: 15, seconds: 40 });
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -83,9 +76,9 @@ export const FlashSale = () => {
           minutes = 59;
           seconds = 59;
         } else {
-          hours = 4;
-          minutes = 32;
-          seconds = 15;
+          hours = 6;
+          minutes = 15;
+          seconds = 40;
         }
         return { hours, minutes, seconds };
       });
@@ -95,7 +88,7 @@ export const FlashSale = () => {
 
   const formatTime = (num: number) => String(num).padStart(2, '0');
 
-  const handleAddToCart = (item: FlashSaleItem) => {
+  const handleAddToCart = (item: SpecialOffer) => {
     addToCart({
       id: item.id,
       name: item.name,
@@ -110,22 +103,22 @@ export const FlashSale = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={[styles.headerIconWrap, { backgroundColor: '#EF444415' }]}>
-            <Ionicons name="flame" size={20} color="#EF4444" />
+          <View style={[styles.headerIconWrap, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name="sparkles" size={18} color={colors.primary} />
           </View>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Flash Sale</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Special Offers</Text>
         </View>
 
-        {/* Global Countdown Timer */}
-        <View style={[styles.timerContainer, { backgroundColor: isDark ? '#27272A' : '#FEE2E2' }]}>
-          <Ionicons name="time" size={14} color="#EF4444" />
-          <Text style={[styles.timerText, { color: '#EF4444' }]}>
-            {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+        {/* Countdown Timer */}
+        <View style={[styles.timerContainer, { backgroundColor: isDark ? '#27272A' : '#FFF7ED' }]}>
+          <Ionicons name="time" size={14} color={colors.primary} />
+          <Text style={[styles.timerText, { color: colors.primary }]}>
+            {formatTime(timeLeft.hours)}h {formatTime(timeLeft.minutes)}m {formatTime(timeLeft.seconds)}s
           </Text>
         </View>
       </View>
 
-      {/* Horizontal Scrollable Flash Items */}
+      {/* Horizontal Scrollable Special Items */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -134,7 +127,7 @@ export const FlashSale = () => {
         snapToInterval={CARD_WIDTH + 16}
         snapToAlignment="start"
       >
-        {FLASH_ITEMS.map((item) => (
+        {SPECIAL_OFFERS.map((item) => (
           <View
             key={item.id}
             style={[
@@ -150,7 +143,9 @@ export const FlashSale = () => {
             <View style={styles.leftSection}>
               {/* Badge: Stock left */}
               <View style={styles.stockBadge}>
-                <Text style={styles.stockBadgeText}>ONLY {item.offersLeft} LEFT</Text>
+                <Text style={[styles.stockBadgeText, { color: colors.primary }]}>
+                  ONLY {item.offersLeft} LEFT
+                </Text>
               </View>
 
               {/* Title & Description */}
@@ -159,7 +154,7 @@ export const FlashSale = () => {
                   {item.name}
                 </Text>
                 <Text style={[styles.itemDesc, { color: colors.text + '80' }]} numberOfLines={1}>
-                  {item.description}
+                  {item.tagline}
                 </Text>
               </View>
 
@@ -173,13 +168,13 @@ export const FlashSale = () => {
                 </Text>
               </View>
 
-              {/* Action: Add to Cart */}
+              {/* Action Button */}
               <TouchableOpacity
                 style={[styles.buyButton, { backgroundColor: colors.primary }]}
                 onPress={() => handleAddToCart(item)}
               >
-                <Ionicons name="cart" size={14} color="#FFF" />
-                <Text style={styles.buyButtonText}>Add to Cart</Text>
+                <Ionicons name="bag-handle" size={13} color="#FFF" />
+                <Text style={styles.buyButtonText}>Claim Deal</Text>
               </TouchableOpacity>
             </View>
 
@@ -192,7 +187,7 @@ export const FlashSale = () => {
                   contentFit="contain"
                 />
                 {/* Discount Badge */}
-                <View style={styles.discountBadge}>
+                <View style={[styles.discountBadge, { backgroundColor: colors.primary }]}>
                   <Text style={styles.discountText}>{item.discount}% OFF</Text>
                 </View>
               </View>
@@ -266,13 +261,12 @@ const styles = StyleSheet.create({
   },
   stockBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
   },
   stockBadgeText: {
-    color: '#EF4444',
     fontSize: 8,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -340,7 +334,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
-    backgroundColor: '#EF4444',
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
