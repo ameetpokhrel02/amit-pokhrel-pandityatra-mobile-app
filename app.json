@@ -63,6 +63,13 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow PanditYatra to access your photo library to save screenshots of invoices and Kundali charts.",
+          "savePhotosPermission": "Allow PanditYatra to save screenshots to your photo library."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./src/assets/images/pandit-logo.png",
