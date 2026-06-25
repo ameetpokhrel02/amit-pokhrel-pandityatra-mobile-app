@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
+import { Banner } from '@/services/banner.service';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.82;
@@ -53,7 +54,7 @@ const SPECIAL_OFFERS: SpecialOffer[] = [
   },
 ];
 
-export const SalesOffersBanner = () => {
+export const SalesOffersBanner = ({ banners }: { banners?: Banner[] }) => {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
@@ -61,6 +62,7 @@ export const SalesOffersBanner = () => {
 
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 6, minutes: 15, seconds: 40 });
 
+  console.log('SalesOffersBanner rendered with banners:', banners);
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -87,6 +89,33 @@ export const SalesOffersBanner = () => {
   }, []);
 
   const formatTime = (num: number) => String(num).padStart(2, '0');
+
+  // Map backend OFFER_BANNER / DISCOUNT_BANNER → SpecialOffer shape; fallback to static
+  const items = React.useMemo<SpecialOffer[]>(() => {
+    const offerBanners = banners?.filter(
+      (b) => b.banner_type === 'OFFER_BANNER' || b.banner_type === 'DISCOUNT_BANNER'
+    ) || [];
+    if (offerBanners.length > 0) {
+      return offerBanners.map((b) => {
+        const seed = b.id || 1;
+        const originalPrice = 600 + (seed % 12) * 150;
+        const discount = b.discount_percentage || 25;
+        const price = Math.round(originalPrice * (1 - discount / 100));
+        return {
+          id: `so_${b.id}`,
+          name: b.title,
+          tagline: b.description || 'Exclusive offer from PanditYatra',
+          price,
+          originalPrice,
+          discount,
+          image: b.mobile_image_url || b.image_url,
+          offersLeft: 5 + (seed % 20),
+          points: price,
+        };
+      });
+    }
+    return SPECIAL_OFFERS;
+  }, [banners]);
 
   const handleAddToCart = (item: SpecialOffer) => {
     addToCart({
@@ -127,7 +156,7 @@ export const SalesOffersBanner = () => {
         snapToInterval={CARD_WIDTH + 16}
         snapToAlignment="start"
       >
-        {SPECIAL_OFFERS.map((item) => (
+        {items.map((item) => (
           <View
             key={item.id}
             style={[

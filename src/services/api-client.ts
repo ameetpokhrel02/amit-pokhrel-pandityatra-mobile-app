@@ -5,52 +5,47 @@ import Constants from 'expo-constants';
 
 // Helper to determine base URL dynamically based on environment
 const getBaseUrl = () => {
-    console.log('[API] Detecting Base URL...');
+    const PROD_URL = 'https://amit-pokhrel-pandityatra.onrender.com/api/';
 
-    // 1. Priority: Explicit environment variable (from .env file)
+    // 1. Highest priority: explicit .env variable (inlined by Expo Metro bundler at startup)
+    //    Run `npx expo start --clear` if changes to .env are not reflected.
     if (process.env.EXPO_PUBLIC_API_URL) {
-        let url = process.env.EXPO_PUBLIC_API_URL;
+        let url = process.env.EXPO_PUBLIC_API_URL.trim();
         if (!url.endsWith('/')) url += '/';
-        console.log('[API] 🛠️ Using .env URL:', url);
+        console.log('[API] ✅ Using EXPO_PUBLIC_API_URL:', url);
         return url;
     }
 
-    const PROD_URL = 'https://amit-pokhrel-pandityatra.onrender.com/api/';
-    const expoConfig = Constants.expoConfig;
-    
-    // For production builds (APK), always use PROD_URL
+    // 2. Production builds always use PROD_URL
     if (!__DEV__) {
-        console.log('[API] 📦 Production build, using:', PROD_URL);
+        console.log('[API] 📦 Production build:', PROD_URL);
         return PROD_URL;
     }
 
+    // 3. Dev builds: inspect where Expo is serving from
+    const expoConfig = (Constants as any).expoConfig;
     if (expoConfig?.hostUri) {
         const host = expoConfig.hostUri.split(':')[0];
 
-        // Tunnel mode (exp.direct)
+        // Tunnel / ngrok → use deployed backend
         if (host.includes('exp.direct') || host.includes('ngrok')) {
-            console.log('[API] 🚇 Tunnel/NGROK detected. Using production fallback.');
+            console.log('[API] 🚇 Tunnel detected → production URL');
             return PROD_URL;
         }
 
-        // Android Emulator
-        if (host === 'localhost' || host === '127.0.0.1') {
-            const url = `http://10.0.2.2:8000/api/`;
-            console.log('[API] 📱 Emulator detected:', url);
-            return url;
-        }
-
-        // Physical device on local network (only if not choosing production)
-        // If we have a PROD_URL, it's safer to use it even in DEV if it's available
-        console.log('[API] 🌐 Local host detected, but falling back to production for stability.');
-        return PROD_URL;
+        // NOTE: We no longer redirect emulator (localhost / 10.0.2.2) to a local backend
+        // because the local Django server is not always running. If you want to point at
+        // a local backend, set EXPO_PUBLIC_API_URL=http://10.0.2.2:8000/api/ in .env
+        // and restart Metro with `npx expo start --clear`.
     }
 
+    // 4. Safe final fallback
+    console.log('[API] 🌐 Falling back to production URL:', PROD_URL);
     return PROD_URL;
 };
 
 export const API_BASE_URL = getBaseUrl();
-console.log('[API] Final Base URL:', API_BASE_URL);
+console.log('[API] 🔗 Final Base URL:', API_BASE_URL);
 
 // Create primary Axios instance
 const apiClient = axios.create({

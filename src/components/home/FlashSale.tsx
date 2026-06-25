@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '@/store/cart.store';
+import { Banner } from '@/services/banner.service';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.82;
@@ -60,7 +61,7 @@ const FLASH_ITEMS: FlashSaleItem[] = [
   },
 ];
 
-export const FlashSale = () => {
+export const FlashSale = ({ banners }: { banners?: Banner[] }) => {
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
@@ -94,6 +95,30 @@ export const FlashSale = () => {
   }, []);
 
   const formatTime = (num: number) => String(num).padStart(2, '0');
+
+  const items = React.useMemo(() => {
+    const saleBanners = banners?.filter(b => b.banner_type === 'SALE_BANNER') || [];
+    if (saleBanners.length > 0) {
+      return saleBanners.map((b) => {
+        const seed = b.id || 1;
+        const originalPrice = 500 + (seed % 10) * 200;
+        const discount = b.discount_percentage || 20;
+        const price = Math.round(originalPrice * (1 - discount / 100));
+        const offersLeft = 5 + (seed % 15);
+        return {
+          id: `fs_${b.id}`,
+          name: b.title,
+          description: b.description || 'Exclusive deal from PanditYatra',
+          price,
+          originalPrice,
+          discount,
+          image: b.mobile_image_url || b.image_url,
+          offersLeft,
+        };
+      });
+    }
+    return FLASH_ITEMS;
+  }, [banners]);
 
   const handleAddToCart = (item: FlashSaleItem) => {
     addToCart({
@@ -134,7 +159,7 @@ export const FlashSale = () => {
         snapToInterval={CARD_WIDTH + 16}
         snapToAlignment="start"
       >
-        {FLASH_ITEMS.map((item) => (
+        {items.map((item) => (
           <View
             key={item.id}
             style={[

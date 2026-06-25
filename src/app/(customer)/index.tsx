@@ -299,10 +299,10 @@ export default function CustomerHomeScreen() {
         </View>
 
         {/* Flash Sale */}
-        <FlashSale />
+        <FlashSale banners={apiBanners} />
 
         {/* Sales Offers Banner */}
-        <SalesOffersBanner />
+        <SalesOffersBanner banners={apiBanners} />
 
         {/* Category Filter */}
         <View style={{ height: 60, marginTop: 12 }}>
