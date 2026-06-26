@@ -54,7 +54,7 @@ export const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({
 }) => {
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
-  const { captureAndSave, loading } = useScreenshot();
+  const { captureAndSaveUri, loading } = useScreenshot();
   const [isSuccess, setIsSuccess] = React.useState(false);
 
   const isDisabled = disabled || loading;
@@ -66,7 +66,7 @@ export const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
 
-    const savedUri = await captureAndSave(captureRef, { silent });
+    const savedUri = await captureAndSaveUri(captureRef, { silent });
     if (savedUri) {
       if (successLabel) {
         setIsSuccess(true);
