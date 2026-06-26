@@ -3,7 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as Localization from 'expo-localization';
+import * as TaskManager from 'expo-task-manager';
 import { useCurrencyStore } from './currency.store';
+
+const BACKGROUND_LOCATION_TASK = 'background-location-task';
 
 export interface LocationState {
   countryCode: string | null;
@@ -11,10 +14,14 @@ export interface LocationState {
   phoneCode: string | null;
   isNepal: boolean;
   isCustomLocation: boolean;
-  
+  isBackgroundTrackingEnabled: boolean;
+  lastBackgroundUpdate: string | null;
+
   // Actions
   detectLocation: () => Promise<void>;
   setLocation: (countryCode: string, countryName: string, phoneCode: string) => void;
+  startBackgroundTracking: () => Promise<boolean>;
+  stopBackgroundTracking: () => Promise<void>;
 }
 
 const COUNTRY_MAP: Record<string, { name: string; phoneCode: string; currency: 'NPR' | 'USD' }> = {
@@ -24,6 +31,53 @@ const COUNTRY_MAP: Record<string, { name: string; phoneCode: string; currency: '
   // Default fallback for others can be added here or handled in detection
 };
 
+// Define background task handler before creating the store
+TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }: any) => {
+  if (error) {
+    console.error('[BackgroundLocation] Error:', error);
+    return;
+  }
+  if (data) {
+    const { locations } = data as any;
+    const location = locations?.[0];
+
+    if (location) {
+      try {
+        const geocode = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+
+        if (geocode && geocode.length > 0) {
+          const countryCode = geocode[0].isoCountryCode || 'NP';
+          const isNepal = countryCode === 'NP';
+          const countryInfo = COUNTRY_MAP[countryCode] || {
+            name: countryCode,
+            phoneCode: '',
+            currency: 'USD'
+          };
+
+          // Update store with background location data
+          useLocationStore.setState({
+            countryCode,
+            countryName: countryInfo.name,
+            phoneCode: countryInfo.phoneCode,
+            isNepal,
+            lastBackgroundUpdate: new Date().toISOString(),
+          });
+
+          // Sync currency
+          useCurrencyStore.getState().setCurrency(countryInfo.currency);
+
+          console.log('[BackgroundLocation] Updated:', countryInfo.name);
+        }
+      } catch (err) {
+        console.warn('[BackgroundLocation] Geocode failed:', err);
+      }
+    }
+  }
+});
+
 export const useLocationStore = create<LocationState>()(
   persist(
     (set, get) => ({
@@ -32,6 +86,8 @@ export const useLocationStore = create<LocationState>()(
       phoneCode: '+977',
       isNepal: true,
       isCustomLocation: false,
+      isBackgroundTrackingEnabled: false,
+      lastBackgroundUpdate: null,
 
       detectLocation: async () => {
         let detectedCountryCode = 'NP'; // Default to Nepal
@@ -105,15 +161,86 @@ export const useLocationStore = create<LocationState>()(
 
       setLocation: (countryCode, countryName, phoneCode) => {
         const isNepal = countryCode === 'NP';
-        set({ 
-          countryCode, 
-          countryName, 
-          phoneCode, 
-          isNepal, 
-          isCustomLocation: true 
+        set({
+          countryCode,
+          countryName,
+          phoneCode,
+          isNepal,
+          isCustomLocation: true
         });
-        
+
         useCurrencyStore.getState().setCurrency(isNepal ? 'NPR' : 'USD');
+      },
+
+      startBackgroundTracking: async () => {
+        try {
+          // Check if location services are enabled
+          const servicesEnabled = await Location.hasServicesEnabledAsync();
+          if (!servicesEnabled) {
+            console.warn('[BackgroundLocation] Location services disabled');
+            return false;
+          }
+
+          // Request foreground permission first
+          const foreground = await Location.requestForegroundPermissionsAsync();
+          if (foreground.status !== 'granted') {
+            console.warn('[BackgroundLocation] Foreground permission denied');
+            return false;
+          }
+
+          // Request background permission
+          const background = await Location.requestBackgroundPermissionsAsync();
+          if (background.status !== 'granted') {
+            console.warn('[BackgroundLocation] Background permission denied');
+            return false;
+          }
+
+          // Check if task is already registered
+          const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK);
+
+          if (!isRegistered) {
+            // Start background location updates
+            await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 300000, // 5 minutes
+              distanceInterval: 500, // 500 meters
+              deferredUpdatesInterval: 300000, // 5 minutes
+              showsBackgroundLocationIndicator: true,
+              foregroundService: {
+                notificationTitle: 'PanditYatra Location',
+                notificationBody: 'Tracking location for nearby pandit discovery and delivery coordination',
+                notificationColor: '#f97316',
+              },
+            });
+
+            set({ isBackgroundTrackingEnabled: true });
+            console.log('[BackgroundLocation] Started successfully');
+            return true;
+          } else {
+            set({ isBackgroundTrackingEnabled: true });
+            console.log('[BackgroundLocation] Already running');
+            return true;
+          }
+        } catch (error) {
+          console.error('[BackgroundLocation] Start failed:', error);
+          set({ isBackgroundTrackingEnabled: false });
+          return false;
+        }
+      },
+
+      stopBackgroundTracking: async () => {
+        try {
+          const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK);
+
+          if (isRegistered) {
+            await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+            console.log('[BackgroundLocation] Stopped successfully');
+          }
+
+          set({ isBackgroundTrackingEnabled: false });
+        } catch (error) {
+          console.error('[BackgroundLocation] Stop failed:', error);
+        }
       },
     }),
     {

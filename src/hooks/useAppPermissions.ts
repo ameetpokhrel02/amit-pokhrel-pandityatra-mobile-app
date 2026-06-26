@@ -21,7 +21,8 @@ export type PermissionKey =
   | 'mediaLibrary'
   | 'camera'
   | 'notifications'
-  | 'location';
+  | 'location'
+  | 'backgroundLocation';
 
 export type PermissionStatus =
   | 'undetermined'
@@ -35,6 +36,7 @@ export interface PermissionState {
   camera: PermissionStatus;
   notifications: PermissionStatus;
   location: PermissionStatus;
+  backgroundLocation: PermissionStatus;
 }
 
 export interface PermissionConfig {
@@ -82,6 +84,13 @@ const PERMISSION_INFO: Record<
     settingsHint:
       'Please open Settings and grant "Location" permission to PanditYatra.',
   },
+  backgroundLocation: {
+    title: 'Background Location Access',
+    defaultRationale:
+      'PanditYatra uses background location only for active spiritual service logistics, such as nearby pandit discovery and booking delivery coordination. This helps us provide better service when you have ongoing bookings.',
+    settingsHint:
+      'Please open Settings and grant "Allow all the time" location permission to PanditYatra for delivery coordination.',
+  },
 };
 
 // ─────────────────────────────────────────
@@ -94,6 +103,7 @@ export function useAppPermissions() {
     camera: 'checking',
     notifications: 'checking',
     location: 'checking',
+    backgroundLocation: 'checking',
   });
 
   const [isChecking, setIsChecking] = useState(true);
@@ -164,16 +174,24 @@ export function useAppPermissions() {
     return 'undetermined';
   }, []);
 
+  const checkBackgroundLocation = useCallback(async (): Promise<PermissionStatus> => {
+    const { status } = await Location.getBackgroundPermissionsAsync();
+    if (status === 'granted') return 'granted';
+    if (status === 'denied') return 'denied';
+    return 'undetermined';
+  }, []);
+
   // ─── Startup check (silent, no dialogs) ──
 
   const checkAllPermissions = useCallback(async () => {
     setIsChecking(true);
     try {
-      const [media, camera, notif, location] = await Promise.all([
+      const [media, camera, notif, location, bgLocation] = await Promise.all([
         checkMediaLibrary(),
         checkCamera(),
         checkNotifications(),
         checkLocation(),
+        checkBackgroundLocation(),
       ]);
 
       setPermissions({
@@ -181,13 +199,14 @@ export function useAppPermissions() {
         camera: camera,
         notifications: notif,
         location: location,
+        backgroundLocation: bgLocation,
       });
     } catch (err) {
       console.warn('[Permissions] Startup check failed:', err);
     } finally {
       setIsChecking(false);
     }
-  }, [checkMediaLibrary, checkCamera, checkNotifications, checkLocation]);
+  }, [checkMediaLibrary, checkCamera, checkNotifications, checkLocation, checkBackgroundLocation]);
 
   // ─── Request individual permission with optional custom rationale ──
 
@@ -276,6 +295,15 @@ export function useAppPermissions() {
         }
         case 'location': {
           const { status } = await Location.requestForegroundPermissionsAsync();
+          return status === 'granted' ? 'granted' : 'denied';
+        }
+        case 'backgroundLocation': {
+          // Must request foreground first before background
+          const foreground = await Location.requestForegroundPermissionsAsync();
+          if (foreground.status !== 'granted') {
+            return 'denied';
+          }
+          const { status } = await Location.requestBackgroundPermissionsAsync();
           return status === 'granted' ? 'granted' : 'denied';
         }
       }
