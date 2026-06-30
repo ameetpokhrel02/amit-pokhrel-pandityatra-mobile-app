@@ -3,6 +3,13 @@ import { api, publicApi, saveTokens } from './api-client';
 
 export const registerUser = (data: any) => publicApi.post('users/register/', data);
 export const requestOTP = (data: any) => publicApi.post('users/request-otp/', data);
+
+/** Alias used by tests: send OTP to a phone number */
+export const sendOTP = async (phoneNumber: string) => {
+  const res = await publicApi.post('users/request-otp/', { phone_number: phoneNumber });
+  return res.data;
+};
+
 export const loginOTP = async (data: any) => {
   const res = await publicApi.post('users/login-otp/', data);
   if (res.data.requires_2fa || res.data.requires_setup) return res; // Step 1 of 2FA
@@ -17,12 +24,15 @@ export const loginPassword = async (data: any) => {
   await saveTokens(res.data.access, res.data.refresh, userData);
   return res;
 };
+
+/** googleLogin — returns unwrapped data for tests and screens alike */
 export const googleLogin = async (data: any) => {
   const res = await publicApi.post('users/google-login/', data);
-  if (res.data.requires_2fa || res.data.requires_setup) return res;
+  if (res.data.requires_2fa || res.data.requires_setup) return res.data;
   await saveTokens(res.data.access, res.data.refresh, res.data.user);
-  return res;
+  return res.data;
 };
+
 // -- 2FA ENDPOINTS --
 export const verifyTOTP = async (token: string, pre_auth_id: string) => {
   const res = await publicApi.post('users/auth/2fa/verify/', { token, pre_auth_id });
@@ -38,7 +48,16 @@ export const disableTOTP = (token: string) => api.delete('users/auth/2fa/setup/'
 export const forgotPassword = (data: any) => publicApi.post('users/forgot-password/', data);
 export const requestPasswordResetOTP = forgotPassword; // Fixed casing
 export const verifyForgotOTP = (data: any) => publicApi.post('users/forgot-password/verify-otp/', data);
-export const verifyOTP = loginOTP; // Added for general OTP verification
+
+/** verifyOTP — returns unwrapped data (access, refresh, user) for tests */
+export const verifyOTP = async (phoneNumber: string, otp: string) => {
+  const res = await publicApi.post('users/login-otp/', { phone_number: phoneNumber, otp });
+  if (res.data.requires_2fa || res.data.requires_setup) return res.data;
+  const userData = res.data.user || { id: res.data.user_id, name: res.data.full_name, role: res.data.role };
+  await saveTokens(res.data.access, res.data.refresh, userData);
+  return res.data;
+};
+
 export const resetPassword = (data: any) => publicApi.post('users/forgot-password/reset/', data);
 export const resetPasswordWithToken = resetPassword; // Alias
 export const getProfile = () => api.get('users/profile/');
