@@ -118,3 +118,14 @@ export function getChatWebSocketUrl(roomId: string | number, token: string): str
   return `${baseUrl.replace('/api/', '')}/ws/chat/${roomId}/?token=${token}`;
 }
 
+/** Alias used by tests — returns unwrapped ChatMessage array. */
+export async function getChatMessages(chatId: number | string): Promise<any[]> {
+  const response = await apiClient.get(`chat/${chatId}/messages/`);
+  return response.data.results ?? response.data;
+}
+
+/** Alias used by tests — sends a message and returns the created message object. */
+export async function sendChatMessage(chatId: number | string, text: string): Promise<any> {
+  const response = await apiClient.post(`chat/${chatId}/send/`, { text });
+  return response.data;
+}
