@@ -31,3 +31,20 @@ export async function getPujaInsight(serviceId: number) {
     const response = await apiClient.get(`ai/insight/${serviceId}/`);
     return response.data;
 }
+
+/**
+ * AI Kundali Prediction — used by chat tests and Kundali screens.
+ */
+export async function getAIKundaliPrediction(payload: { pdf_url: string; question: string }): Promise<{ response: string }> {
+    const res = await apiClient.post('ai/kundali-chat/', payload);
+    return res.data;
+}
+
+/**
+ * AI Samagri Recommendation — given a puja type, returns recommended items.
+ */
+export async function getAISamagriRecommendation(payload: { pujaType: string }): Promise<{ items: any[] }> {
+    const res = await apiClient.post('ai/samagri-recommendation/', { puja_name: payload.pujaType });
+    return res.data;
+}
+
