@@ -8,6 +8,13 @@ export const getPanditProfile = (id: number) => publicApi.get(`pandits/${id}/pro
 export const getPujaCatalog = () => publicApi.get('pandits/services/catalog/');
 export const registerPandit = (formData: FormData) => publicApi.post('pandits/register/', formData);
 
+/** Unwrapped search — returns the data array directly (used by tests and screens). */
+export async function searchPandits(params?: any): Promise<any[]> {
+    const response = await publicApi.get('pandits/search/', { params });
+    return response.data.results ?? response.data;
+}
+
+
 // Pandit self-service
 export const getDashboardStats = () => api.get('pandits/wallet/'); // Use wallet as a fallback or fix path if we find the real one
 export const fetchPanditDashboardStats = getDashboardStats;
