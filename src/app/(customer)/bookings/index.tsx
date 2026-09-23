@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '@/store/ThemeContext';
 import { listBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
