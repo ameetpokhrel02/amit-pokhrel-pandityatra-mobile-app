@@ -46,3 +46,11 @@ app_backup/
 #env
 .env
 .env.env
+
+# Internal docs, API references & scratch files (keep local only)
+*.md
+!README.md
+!src/__tests__/README.md
+api.schema.yml
+*.save
+test-perm.txt
