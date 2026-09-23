@@ -1,133 +1,263 @@
 <div align="center">
-  <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="PanditYatra Logo" width="120" />
-  <h1>🕉️ Pandit Yatra Platform (Mobile Interfaces)</h1>
-  <p><strong>A Next-Generation Spiritual Booking & E-commerce Platform for Customers, Pandits, and Vendors</strong></p>
+  <img src="src/assets/images/pandit-logo.png" alt="PanditYatra Logo" width="140" />
+
+  <h1>PanditYatra</h1>
+  <p><strong>Book pandits, shop puja samagri and consult live — all in one app.</strong></p>
+  <p>Mobile app for Customers, Pandits and Vendors, built with Expo &amp; React Native.</p>
 
   <p>
-    <img src="https://img.shields.io/badge/React_Native-0.81.5-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native Version" />
-    <img src="https://img.shields.io/badge/Expo-~54.0.30-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo Version" />
-    <img src="https://img.shields.io/badge/TypeScript-~5.9.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript Version" />
-    <img src="https://img.shields.io/badge/Zustand-^5.0.9-423535?style=for-the-badge&logo=react&logoColor=white" alt="Zustand Version" />
-    <img src="https://img.shields.io/badge/TailwindCSS-^3.4.19-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind Version" />
+    <img src="https://img.shields.io/badge/Expo-SDK_57-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo SDK 57" />
+    <img src="https://img.shields.io/badge/React_Native-0.86-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React Native 0.86" />
+    <img src="https://img.shields.io/badge/React-19.2-149ECA?style=flat-square&logo=react&logoColor=white" alt="React 19.2" />
+    <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 6.0" />
+    <img src="https://img.shields.io/badge/NativeWind-4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="NativeWind 4" />
+    <img src="https://img.shields.io/badge/Zustand-5-433e38?style=flat-square" alt="Zustand 5" />
   </p>
 </div>
 
 ---
 
-## ✨ Comprehensive Features
+## Table of Contents
 
-### 👤 Customer (Anita) Journey
-- **Pandit Booking:** Discover top-rated pandits near your location, view their real-time availability, and securely book personalized rituals or pujas.
-- **Offline Kundali AI Engine:** Generate highly precise, private Vedic Kundali charts entirely on-device, and seamlessly export your detailed reading as a formatted PDF.
-- **Unified Samagri Shop:** A comprehensive e-commerce portal to buy genuine spiritual items, including secure Khalti and eSewa integrated checkouts.
-- **Live Video Consultations:** Communicate with your booked Pandits immediately through the native WebRTC Video Call integration.
-
-### 👳 Pandit (Ramesh) Portal
-- **Service & Availability Management:** Update custom prices for rituals, set expected durations, and toggle your availability.
-- **Live Wallet & Earnings Tracker:** View total bookings, track real-time earnings stored dynamically, and manage upcoming, ongoing, or pending payments securely in NPR.
-
-### 🏬 Marketplace Vendor (Riya) Interface
-- **Store & Product Oversight:** Add and customize listings directly onto the PanditYatra ecosystem securely.
-- **Analytics Dashboard:** Instantly view live total earnings, real-time product depletion counts, and payout metrics managed end-to-end through the synchronized backend.
-
-*(Note: **Admin Oversight** is managed exclusively out of the native application context via the connected Django Web Administrator platform to enforce strict boundary protocols and keep the apps lightweight.)*
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [Running the App](#running-the-app)
+- [Building for Release](#building-for-release)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [License](#license)
 
 ---
 
-## 🛑 System Requirements & SDK Dependencies
+## Features
 
-Before building PanditYatra natively or using Expo, you strictly need the following environment configurations installed.
+| Role | What they can do |
+| --- | --- |
+| **Customer** | Find nearby pandits and book pujas · Generate Vedic Kundali on-device and export to PDF · Shop samagri with Khalti, eSewa & Stripe · Live video puja & chat · Daily Panchang · AI assistant |
+| **Pandit** | Manage services, pricing and availability · Track bookings and earnings (NPR) · Join live video sessions |
+| **Vendor** | List and manage products · Track orders, stock and payouts |
 
-### Global Dependencies
-- **Node.js**: v18.17.0+ (LTS Version highly recommended)
-- **PNPM**: Package manager (Install via `npm install -g pnpm`)
-- **Git**: For version control management
+> Admin features live in the separate Django web dashboard, not in this app.
 
-### 🍏 Mac OS X Specifics (iOS & Android)
-- **Watchman**: `brew install watchman`
-- **Xcode** (For iOS Emulation/Builds): Available from the Mac App Store. Make sure the Command Line Tools are active.
-- **CocoaPods**: `sudo gem install cocoapods`
-- **Android Studio** (For Android Emulation/Builds): 
-   - Accept all SDK licenses.
-   - Requires Android SDK 34, Android SDK Platform-Tools 35.x, and Android NDK settings.
-   - *Java requirement: OpenJDK 17 (`brew install openjdk@17`).*
-
-### 🪟 Windows Specifics (Android Only)
-- **Java Development Kit (JDK)**: Microsoft OpenJDK 17 or Oracle JDK 17.
-- **Android Studio**:
-   - Install standard SDK packages via SDK Manager. Ensure `Android API 34` and `Android SDK Build-Tools` are accessible.
-   - Configure global `ANDROID_HOME` system variables properly pointing to `C:\Users\YOUR_USERNAME\AppData\Local\Android\Sdk`.
-
-### 🐧 Linux Specifics (Android Only)
-- **Java**: OpenJDK 17 (`sudo apt install openjdk-17-jdk`)
-- **Android Studio**: Install via Snap or direct tar extract. 
-   - Add `.bashrc` or `.zshrc` exports:
-     ```bash
-     export ANDROID_HOME=$HOME/Android/Sdk
-     export PATH=$PATH:$ANDROID_HOME/emulator
-     export PATH=$PATH:$ANDROID_HOME/platform-tools
-     ```
-- **KVM**: Ensure KVM accelerates Linux kernel running to assist with smooth emulator performance.
+Supports **English**, **Nepali** and **Hindi**, with light and dark themes.
 
 ---
 
-## 🚀 Installation & Build Guide
+## Tech Stack
 
-### 1. Cloning the Core Application
-On all operating systems, begin by cloning the repository using bash or powershell:
+- **Framework:** Expo SDK 57, React Native 0.86, Expo Router
+- **Styling:** NativeWind (Tailwind CSS)
+- **State:** Zustand
+- **Networking:** Axios, Socket.IO
+- **Auth:** Firebase, Google Sign-In
+- **Payments:** Khalti, eSewa, Stripe
+- **Video:** WebRTC / Daily
+- **i18n:** i18next
+- **Testing:** Jest, React Native Testing Library
+
+---
+
+## Prerequisites
+
+| Tool | Version | Needed for |
+| --- | --- | --- |
+| [Node.js](https://nodejs.org/) | 20 LTS or newer | Everything |
+| [Git](https://git-scm.com/) | Latest | Cloning the repo |
+| [Expo Go](https://expo.dev/go) | Latest (App Store / Play Store) | Quick preview on a phone |
+| [Android Studio](https://developer.android.com/studio) | Latest + JDK 17 | Android emulator / native builds |
+| [Xcode](https://developer.apple.com/xcode/) | Latest (macOS only) | iOS simulator / native builds |
+
+<details>
+<summary><b>🐧 Linux setup</b></summary>
+
+```bash
+# Node.js (via nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+nvm install --lts
+
+# Java 17 (Debian / Ubuntu)
+sudo apt install openjdk-17-jdk
+
+# Android SDK paths — add to ~/.bashrc or ~/.zshrc
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
+```
+
+Enable KVM for a fast Android emulator. iOS builds are not possible on Linux — use Expo Go or EAS Build.
+</details>
+
+<details>
+<summary><b>🍎 macOS setup</b></summary>
+
+```bash
+# Homebrew packages
+brew install node watchman
+brew install --cask zulu@17        # JDK 17 for Android
+
+# Android SDK paths — add to ~/.zshrc
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
+
+# iOS: install Xcode from the App Store, then
+xcode-select --install
+sudo gem install cocoapods
+```
+</details>
+
+<details>
+<summary><b>🪟 Windows setup</b></summary>
+
+```powershell
+# Node.js and JDK 17 (via winget)
+winget install OpenJS.NodeJS.LTS
+winget install Microsoft.OpenJDK.17
+
+# Android SDK path (PowerShell, then restart the terminal)
+setx ANDROID_HOME "$env:LOCALAPPDATA\Android\Sdk"
+setx PATH "$env:PATH;$env:LOCALAPPDATA\Android\Sdk\platform-tools"
+```
+
+iOS builds are not possible on Windows — use Expo Go or EAS Build.
+</details>
+
+---
+
+## Getting Started
+
+**1. Clone the repository**
+
 ```bash
 git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-app.git
 cd amit-pokhrel-pandityatra-app
 ```
 
-### 2. Dependency Resolution
-Execute the following to hydrate all internal packages without legacy peer conflicts:
+**2. Install dependencies**
+
 ```bash
-pnpm install
+npm install
 ```
 
-### 3. Environment Context
-Duplicate the template structure to bind your endpoints locally:
+**3. Set up environment variables**
+
+| Linux / macOS | Windows (PowerShell) |
+| --- | --- |
+| `cp .env.example .env` | `Copy-Item .env.example .env` |
+
+Then open `.env` and fill in your values. `EXPO_PUBLIC_API_URL` must point to the PanditYatra backend.
+
+> When testing on a real phone against a local backend, use your computer's LAN IP (e.g. `http://192.168.1.10:8000/api/`), not `localhost`.
+
+---
+
+## Running the App
+
+### Option A — Expo Go (quickest)
+
+1. Install **Expo Go** on your phone ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) · [iOS](https://apps.apple.com/app/expo-go/id982107779)).
+2. Start the dev server:
+
+   ```bash
+   npm start
+   ```
+
+3. Scan the QR code — with the Expo Go app on Android, or the Camera app on iOS.
+
+Phone and computer on different networks? Use a tunnel:
+
 ```bash
-cp .env.example .env
+npm run start:tunnel
 ```
-Ensure `process.env.EXPO_PUBLIC_API_URL` reflects either your local Django environment network tunnel or your live production instance to verify authentication channels correctly.
 
-### 4. Running the Development Server
-**For Local Testing & Device Previews:**
+> **Note:** Expo Go can't load some native modules (WebRTC video calls, Khalti, Stripe, Google Sign-In). The app detects Expo Go and falls back where possible. To test these features, use a development build (Option B).
+
+### Option B — Development build (full native features)
+
 ```bash
-# Starts the local development instance using Expo Metro
-pnpm run start
+# Android (Linux / macOS / Windows) — emulator running or device connected via USB
+npm run android
 
-# Important: If firing this on an external mobile device over fluctuating Wi-Fi 
-# or testing heavily isolated APIs, ALWAYS prefer tunnel tunneling:
-pnpm run start:tunnel
+# iOS (macOS only)
+npm run ios
 ```
-Press `a` in your terminal to fire up your Android Emulator, `i` for iOS (Mac only), or scan the QR Code via the **Expo Go App** on your smartphone.
 
-### 5. Compiling for Production Release (APK / AAB)
-When validating your end-to-end integration mapping, execute an internal build sequence to distribute the APK. Wait for the EAS compilation process to export the standalone application file.
+### Option C — Web
+
 ```bash
-# Install Expo Application Services CLI globally
+npm run web
+```
+
+### Dev server shortcuts
+
+With the dev server running, press:
+
+| Key | Action |
+| --- | --- |
+| `a` | Open on Android emulator / device |
+| `i` | Open on iOS simulator (macOS) |
+| `w` | Open in the browser |
+| `r` | Reload the app |
+| `j` | Open the debugger |
+
+### Troubleshooting
+
+```bash
+npx expo start -c        # clear the Metro cache
+npx expo-doctor          # check for dependency issues
+npx expo install --fix   # align package versions with the Expo SDK
+```
+
+---
+
+## Building for Release
+
+Builds run in the cloud with [EAS Build](https://docs.expo.dev/build/introduction/), so they work from any OS.
+
+```bash
 npm install -g eas-cli
-
-# Login and create your localized build configuration locally or push to servers
 eas login
-eas build:configure
-eas build -p android --profile production
+
+eas build -p android --profile preview      # installable APK for testing
+eas build -p android --profile production   # AAB for the Play Store
+eas build -p ios --profile production       # iOS build (needs an Apple Developer account)
 ```
 
 ---
 
-## 👨‍💻 Primary Directory Mapping
-- `src/app/` — Central Expo Router Navigation. All restricted roles `(customer)`, `(pandit)`, and `(vendor)` live dynamically here alongside strictly gated middleware in `_layout.tsx`.
-- `src/components/` — Standalone native components including maps, video layers, and chart parsers.
-- `src/services/` — All API handlers managing Axios interceptors tracking automatic 401 token rotations.
-- `src/store/` — Robust Zustand state modules (Global Authenticators, Wishlists).
-- `src/utils/` — Math engine layers including standalone pure TS calculation mechanisms (WASM fallback Kundali).
+## Testing
 
-## 📄 License
-Distributed under the MIT License. See `LICENSE` for more information.
+```bash
+npm test                  # run all tests
+npm run test:watch        # watch mode
+npm run test:coverage     # coverage report
+npm run test:critical     # auth, booking and kundali tests only
+npm run lint              # ESLint
+```
 
 ---
-<p align="center">Built and Maintained for PanditYatra Production • Amit Pokhrel</p>
+
+## Project Structure
+
+```
+src/
+├── app/            # Expo Router screens: (auth), (customer), (pandit), (vendor), (public)
+├── components/     # Reusable UI components
+├── features/       # Feature modules (e.g. auth)
+├── hooks/          # Custom React hooks
+├── services/       # API clients (Axios) and backend services
+├── store/          # Zustand stores and React contexts
+├── theme/          # Colors, spacing, typography
+├── locales/        # Translations: en, np, hi
+├── utils/          # Helpers (Kundali, Nepali calendar, currency, …)
+├── assets/         # Images, fonts, animations
+└── __tests__/      # Jest test suites
+```
+
+---
+
+## License
+
+Distributed under the MIT License.
+
+<p align="center">Built with 🙏 by <b>Amit Pokhrel</b> for PanditYatra</p>
