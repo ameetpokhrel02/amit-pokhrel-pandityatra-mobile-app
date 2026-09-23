@@ -368,7 +368,7 @@ export const NativeVideoCall: React.FC = React.memo(() => {
 
 const styles = StyleSheet.create({
   fullScreen: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#000',
     zIndex: 10000,
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   remoteVideoContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#1A1A1A',
   },
   remoteVideo: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
   },
   topContainer: {
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   bubbleOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'transparent',
   },
   miniLabel: {
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#0D0D0E',
     justifyContent: 'center',
     alignItems: 'center',

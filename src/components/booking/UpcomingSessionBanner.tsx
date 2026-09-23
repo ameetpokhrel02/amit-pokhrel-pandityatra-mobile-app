@@ -96,7 +96,7 @@ export const UpcomingSessionBanner: React.FC<UpcomingSessionBannerProps> = React
                from={{ opacity: 0.6, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
                transition={{ loop: true, type: 'timing', duration: 1000 }}
-               style={StyleSheet.absoluteFillObject}
+               style={StyleSheet.absoluteFill}
             />
             <Text style={styles.joinBtnText}>JOIN NOW</Text>
             <Ionicons name="arrow-forward" size={16} color="white" />

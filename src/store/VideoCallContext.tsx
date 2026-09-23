@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useRef, useCallback } from 
 import { Alert, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Camera } from 'expo-camera';
-import { Audio } from 'expo-av';
+import { requestRecordingPermissionsAsync } from 'expo-audio';
 import { API_BASE_URL } from '@/services/api-client';
 import { 
   startVideoRoom, 
@@ -156,7 +156,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       // 0. Pre-warm Native Permissions on Android/iOS
       const camPerm = await Camera.requestCameraPermissionsAsync();
-      const micPerm = await Audio.requestPermissionsAsync();
+      const micPerm = await requestRecordingPermissionsAsync();
       
       if (camPerm.status !== 'granted' || micPerm.status !== 'granted') {
         Alert.alert(

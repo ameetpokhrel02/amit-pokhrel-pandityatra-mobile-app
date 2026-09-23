@@ -405,7 +405,9 @@ export default function BookingScreen() {
                   <ActivityIndicator size="small" color={colors.primary} className="mt-1 self-start" />
                 ) : (
                   <Text className="text-base font-black" style={{ color: colors.text }}>
-                    {panchangData?.tithi || 'Shukla Dashami'} • {panchangData?.nakshatra || 'Pushya'}
+                    {panchangData?.tithi || panchangData?.nakshatra
+                      ? [panchangData?.tithi, panchangData?.nakshatra].filter(Boolean).join(' • ')
+                      : 'Not available for this day'}
                   </Text>
                 )}
               </View>

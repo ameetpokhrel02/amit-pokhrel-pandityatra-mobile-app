@@ -4,12 +4,11 @@ import Toast from 'react-native-toast-message';
 import { Button } from '@/components/ui/Button';
 import { LogoutModal } from '@/components/ui/LogoutModal';
 import { DeleteAccountModal } from '@/components/ui/DeleteAccountModal';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 

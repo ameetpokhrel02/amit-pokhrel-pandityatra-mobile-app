@@ -68,8 +68,8 @@ export default function PanditProfileScreen() {
               id: String(data.id),
               name: data.user_details?.full_name || 'Unknown',
               image: getImageUrl(data.user_details?.profile_pic) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-              location: 'Kathmandu, Nepal',
-              rating: data.rating || 5.0,
+              location: data.user_details?.city || '',
+              rating: Number(data.rating) || 0,
               reviewCount: data.review_count || 0,
               experience: data.experience_years || 0,
               isAvailable: data.is_available ?? true,
@@ -84,7 +84,7 @@ export default function PanditProfileScreen() {
                 image: s.puja_details?.image,
                 description: s.puja_details?.description
               })),
-              price: data.services && data.services.length > 0 ? Math.min(...data.services.map((s: any) => parseFloat(s.custom_price))) : 500,
+              price: data.services && data.services.length > 0 ? Math.min(...data.services.map((s: any) => parseFloat(s.custom_price) || 0)) : 0,
               isVerified: data.is_verified
             };
             setPandit(mappedPandit);
@@ -178,17 +178,19 @@ export default function PanditProfileScreen() {
                    </View>
                 )}
             </View>
-            <View className="flex-row items-center gap-1.5 opacity-90">
-                <Ionicons name="location" size={14} color="#FFF" />
-                <Text className="text-white font-extrabold text-sm uppercase tracking-widest">{pandit.location}</Text>
-            </View>
+            {!!pandit.location && (
+              <View className="flex-row items-center gap-1.5 opacity-90">
+                  <Ionicons name="location" size={14} color="#FFF" />
+                  <Text className="text-white font-extrabold text-sm uppercase tracking-widest">{pandit.location}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Stats Grid - High-Fidelity Floating Card */}
         <View className="-mt-8 px-6 z-50">
             <View className="bg-white rounded-[32px] p-6 flex-row items-center justify-between shadow-xl shadow-zinc-200 border border-zinc-50">
-                <StatItem label="Rating" val={pandit.rating.toString()} icon="star" iconColor="#FFD700" />
+                <StatItem label="Rating" val={pandit.rating ? pandit.rating.toFixed(1) : 'New'} icon="star" iconColor="#FFD700" />
                 <View className="w-[1px] h-10 bg-zinc-100" />
                 <StatItem label="Exp" val={`${pandit.experience}+ Yrs`} icon="ribbon" iconColor="#3B82F6" />
                 <View className="w-[1px] h-10 bg-zinc-100" />

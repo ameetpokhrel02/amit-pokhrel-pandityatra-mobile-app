@@ -39,11 +39,11 @@ export default function ContactScreen() {
         </View>
         <View style={styles.infoItem}>
           <Ionicons name="mail-outline" size={20} color="#f97316" />
-          <Text style={styles.infoText}>support@pandityatra.com</Text>
+          <Text style={styles.infoText}>pandityatra9@gmail.com</Text>
         </View>
         <View style={styles.infoItem}>
           <Ionicons name="call-outline" size={20} color="#f97316" />
-          <Text style={styles.infoText}>+977-9876543210</Text>
+          <Text style={styles.infoText}>+977 9847226995</Text>
         </View>
       </View>
 

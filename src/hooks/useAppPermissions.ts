@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';

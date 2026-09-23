@@ -10,7 +10,6 @@
     "icon": "./src/assets/images/pandit-logo.png",
     "scheme": "pandityatraapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pandityatra.app",
@@ -29,7 +28,6 @@
         "foregroundImage": "./src/assets/images/pandit-logo.png",
         "backgroundColor": "#FFF7ED"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -120,7 +118,15 @@
           "icon": "./src/assets/images/pandit-logo.png",
           "color": "#f97316"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-localization",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-audio",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

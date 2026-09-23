@@ -1,6 +1,5 @@
 // Version: 1.0.1 - Fixed JSX Syntax
 import React, { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -17,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { getImageUrl } from '@/utils/image';
 import { usePanditDashboard } from '@/hooks/pandit/usePanditDashboard';

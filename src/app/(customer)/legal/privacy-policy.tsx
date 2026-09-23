@@ -122,7 +122,7 @@ export default function PrivacyPolicyScreen() {
         </Section>
 
         <Section title="12. Contact Information">
-          <Text style={[styles.paragraph, { color: colors.text }]}>For privacy requests or concerns, contact us at: support@pandityatra.com</Text>
+          <Text style={[styles.paragraph, { color: colors.text }]}>For privacy requests or concerns, contact us at: pandityatra9@gmail.com</Text>
           <Text style={[styles.paragraph, { color: colors.text }]}>If you are in the EU, you may also contact your local supervisory authority where applicable.</Text>
         </Section>
       </ScrollView>

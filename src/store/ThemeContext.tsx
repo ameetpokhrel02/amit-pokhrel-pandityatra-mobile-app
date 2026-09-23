@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/theme/colors';
-import { DefaultTheme, DarkTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, DarkTheme, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
