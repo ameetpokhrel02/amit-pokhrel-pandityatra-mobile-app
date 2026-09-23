@@ -1,13 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
-import { View, Text } from 'react-native';
+import { View, Text, type ColorValue } from 'react-native';
 import { useCartStore } from '@/store/cart.store';
 import { useTheme } from '@/store/ThemeContext';
 import { CustomTabBar } from '@/components/ui/CustomTabBar';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
-function ShopIcon({ color, focused }: { color: string, focused: boolean }) {
+function ShopIcon({ color, focused }: { color: ColorValue, focused: boolean }) {
   const { totalItems } = useCartStore();
   const { colors } = useTheme();
   return (
