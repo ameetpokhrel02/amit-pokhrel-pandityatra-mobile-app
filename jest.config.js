@@ -16,7 +16,7 @@ module.exports = {
     '^@expo/vector-icons$': '<rootDir>/__mocks__/@expo/vector-icons.js',
     '^expo-location$': '<rootDir>/__mocks__/expo-location.js',
     '^expo-camera$': '<rootDir>/__mocks__/expo-camera.js',
-    '^expo-media-library$': '<rootDir>/__mocks__/expo-media-library.js',
+    '^expo-media-library(/legacy)?$': '<rootDir>/__mocks__/expo-media-library.js',
     '^expo-image-picker$': '<rootDir>/__mocks__/expo-image-picker.js',
     '^@react-native-google-signin/google-signin$': '<rootDir>/__mocks__/@react-native-google-signin.js',
     '^socket.io-client$': '<rootDir>/__mocks__/socket.io-client.js',
