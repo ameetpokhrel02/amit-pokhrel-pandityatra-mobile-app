@@ -16,7 +16,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { generateKundali, getSavedKundalis } from '@/services/kundali.service';
-import { calculateLocalKundali } from '@/services/local-kundali.service';
 import { Image } from 'expo-image';
 import { LazyLoader } from '@/components/ui/LazyLoader';
 import KundaliChart from '@/components/kundali/KundaliChart';
@@ -49,7 +48,6 @@ export default function KundaliScreen() {
     const [result, setResult] = useState<any | null>(null);
     const [birthLat, setBirthLat] = useState(27.7172);
     const [birthLon, setBirthLon] = useState(85.3240);
-    const [offlineMode, setOfflineMode] = useState(false);
 
     useEffect(() => {
         if (!savedId) return;
@@ -128,30 +126,8 @@ export default function KundaliScreen() {
                 timezone: 'Asia/Kathmandu',
             };
 
-            if (offlineMode) {
-                const localRes = calculateLocalKundali({
-                    dob: formattedDob,
-                    time: formattedTime,
-                    lat: birthLat,
-                    lon: birthLon
-                });
-                setResult(localRes);
-                return;
-            }
-
-            try {
-                const res = await generateKundali(payload);
-                setResult(res);
-            } catch (apiErr) {
-                console.warn('API Failed, falling back to Local Engine');
-                const localRes = calculateLocalKundali({
-                    dob: formattedDob,
-                    time: formattedTime,
-                    lat: birthLat,
-                    lon: birthLon
-                });
-                setResult(localRes);
-            }
+            const res = await generateKundali(payload);
+            setResult(res);
         } catch (e) {
             console.error(e);
             Alert.alert('Error', 'Unable to generate Kundali. Please try again.');

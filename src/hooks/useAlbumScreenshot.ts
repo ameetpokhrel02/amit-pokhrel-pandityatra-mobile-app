@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 import { Alert, Platform } from 'react-native';
 
 const ALBUM_NAME = 'PanditYatra';

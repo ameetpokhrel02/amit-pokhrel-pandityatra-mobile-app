@@ -40,13 +40,15 @@ export const PanditCard: React.FC<PanditCardProps> = React.memo(({ pandit, index
               </Text>
               <View style={styles.ratingBadge}>
                 <Ionicons name="star" size={12} color="#FFD700" />
-                <Text style={styles.ratingText}>{pandit.rating}</Text>
+                <Text style={styles.ratingText}>{pandit.rating ? Number(pandit.rating).toFixed(1) : 'New'}</Text>
               </View>
             </View>
             
-            <Text style={styles.specialization} numberOfLines={1}>
-              {pandit.specialization.join(', ') || 'Vedic Astrology, Puja Specialist'}
-            </Text>
+            {pandit.specialization.length > 0 && (
+              <Text style={styles.specialization} numberOfLines={1}>
+                {pandit.specialization.join(', ')}
+              </Text>
+            )}
             
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
@@ -64,17 +66,25 @@ export const PanditCard: React.FC<PanditCardProps> = React.memo(({ pandit, index
               </View>
             </View>
 
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="#3E2723" />
-              <Text style={styles.locationText}>{pandit.location}</Text>
-            </View>
+            {!!pandit.location && (
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={14} color="#3E2723" />
+                <Text style={styles.locationText}>{pandit.location}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         <View style={styles.footer}>
           <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Starting from</Text>
-            <Text style={styles.priceValue}>NPR {pandit.price}</Text>
+            {pandit.price > 0 ? (
+              <>
+                <Text style={styles.priceLabel}>Starting from</Text>
+                <Text style={styles.priceValue}>NPR {pandit.price}</Text>
+              </>
+            ) : (
+              <Text style={styles.priceLabel}>Price on request</Text>
+            )}
           </View>
           
           <View style={styles.actionRow}>

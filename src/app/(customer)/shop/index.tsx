@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   stockLabel: { fontSize: 10, color: '#EF4444', fontWeight: '700' },
   addBtn: { position: 'absolute', bottom: -5, right: -5, width: 40, height: 40, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#FAFAFA' },
   outOfStockOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',

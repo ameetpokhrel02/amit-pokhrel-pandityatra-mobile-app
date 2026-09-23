@@ -4,7 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/store/ThemeContext';
 import { useCartStore } from '@/store/cart.store';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 
 interface CustomTabBarProps extends BottomTabBarProps {
   role: 'customer' | 'pandit' | 'vendor';

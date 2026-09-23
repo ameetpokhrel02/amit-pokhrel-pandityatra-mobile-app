@@ -101,11 +101,11 @@ export default function ContactSupportScreen() {
           <Text style={[styles.infoTitle, { color: colors.text }]}>Other Ways to Connect</Text>
           <View style={styles.infoItem}>
             <Ionicons name="mail-outline" size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.text }]}>support@pandityatra.com</Text>
+            <Text style={[styles.infoText, { color: colors.text }]}>pandityatra9@gmail.com</Text>
           </View>
           <View style={styles.infoItem}>
             <Ionicons name="call-outline" size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.text }]}>+977-9876543210</Text>
+            <Text style={[styles.infoText, { color: colors.text }]}>+977 9847226995</Text>
           </View>
         </View>
       </ScrollView>

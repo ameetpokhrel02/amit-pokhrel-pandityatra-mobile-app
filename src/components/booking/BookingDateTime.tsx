@@ -114,19 +114,19 @@ export const BookingDateTime: React.FC<BookingDateTimeProps> = ({
                         <View className="flex-row flex-wrap justify-between gap-y-3">
                             <View className="w-[48%]">
                                 <Text className="text-xs text-gray-500 font-medium">Tithi</Text>
-                                <Text className="font-semibold text-sm" style={{ color: colors.text }}>{panchangData.tithi || 'Shukla Ekadashi'}</Text>
+                                <Text className="font-semibold text-sm" style={{ color: colors.text }}>{panchangData.tithi || '—'}</Text>
                             </View>
                             <View className="w-[48%]">
                                 <Text className="text-xs text-gray-500 font-medium">Nakshatra</Text>
-                                <Text className="font-semibold text-sm" style={{ color: colors.text }}>{panchangData.nakshatra || 'Pushya'}</Text>
+                                <Text className="font-semibold text-sm" style={{ color: colors.text }}>{panchangData.nakshatra || '—'}</Text>
                             </View>
                             <View className="w-[48%]">
                                 <Text className="text-xs text-gray-500 font-medium">Muhurta</Text>
-                                <Text className="font-semibold text-sm" style={{ color: saffron }}>{panchangData.muhurta || 'Abhijit Muhurta'}</Text>
+                                <Text className="font-semibold text-sm" style={{ color: saffron }}>{panchangData.auspicious_time || panchangData.muhurta || '—'}</Text>
                             </View>
                             <View className="w-[48%]">
-                                <Text className="text-xs text-gray-500 font-medium">Status</Text>
-                                <Text className="font-semibold text-sm text-green-600">Auspicious Day</Text>
+                                <Text className="text-xs text-gray-500 font-medium">Yoga</Text>
+                                <Text className="font-semibold text-sm" style={{ color: colors.text }}>{panchangData.yoga || '—'}</Text>
                             </View>
                         </View>
                     ) : (

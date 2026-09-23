@@ -16,10 +16,9 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
@@ -32,6 +31,7 @@ import { FlashSale } from '@/components/home/FlashSale';
 import { SalesOffersBanner } from '@/components/home/SalesOffersBanner';
 import { PaymentTrustBanner } from '@/components/home/PaymentTrustBanner';
 import { AlignYourStars } from '@/components/home/AlignYourStars';
+import { AskAiBanner } from '@/components/home/AskAiBanner';
 import { UpcomingSessionBanner } from '@/components/booking/UpcomingSessionBanner';
 import { useDashboardData } from '@/hooks/customer/useDashboardData';
 import { SamagriItem } from '@/services/api';
@@ -286,20 +286,19 @@ export default function CustomerHomeScreen() {
           ))}
         </View>
 
-        {/* Trusted Payments */}
-        <PaymentTrustBanner />
-
         {/* Quick Utilities */}
         <View style={styles.sectionWrap}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.utilityRowScroller}>
             <UtilityItem title="Puja" icon="flame" onPress={() => router.push('/(customer)/services')} colors={colors} />
             <UtilityItem title="Find Pandit" icon="people" onPress={() => router.push('/(customer)/pandits')} colors={colors} />
             <UtilityItem title="Shop" icon="basket" onPress={() => router.push('/(customer)/shop')} colors={colors} />
-            <UtilityItem title="Ask AI" icon="chatbubbles" onPress={() => handleAuthAction('/chat/ai-guide', { mode: 'ai' })} colors={colors} />
             <UtilityItem title="Kundali" icon="sparkles" onPress={() => handleAuthAction('/(customer)/kundali')} colors={colors} />
             <UtilityItem title="Panchang" icon="calendar" onPress={() => router.push('/(customer)/panchang' as any)} colors={colors} />
           </ScrollView>
         </View>
+
+        {/* Ask AI */}
+        <AskAiBanner onPress={() => handleAuthAction('/chat/ai-guide', { mode: 'ai' })} />
 
         {/* Search */}
         <View style={[styles.sectionWrap, { marginTop: 36 }]}>
@@ -427,7 +426,7 @@ export default function CustomerHomeScreen() {
         </View>
 
         {/* App Feedback */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 40 }}>
+        <View style={{ paddingHorizontal: 24 }}>
           <TouchableOpacity 
             style={[styles.feedbackBanner, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => router.push('/(customer)/reviews/app-reviews' as any)}
@@ -443,6 +442,11 @@ export default function CustomerHomeScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.text + '50'} />
           </TouchableOpacity>
+        </View>
+
+        {/* Trusted Payments */}
+        <View style={{ marginBottom: 40 }}>
+          <PaymentTrustBanner />
         </View>
       </ScrollView>
     </View>
