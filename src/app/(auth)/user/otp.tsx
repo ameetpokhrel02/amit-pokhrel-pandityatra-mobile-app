@@ -9,7 +9,6 @@ import {
   Platform,
   ActivityIndicator,
   TextInput,
-  Dimensions,
   StatusBar
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,10 +16,11 @@ import { Image } from "expo-image";
 import { Ionicons } from '@expo/vector-icons';
 import { verifyOTP, requestOTP, getProfile } from '@/services/auth.service';
 import { useAuthStore } from "@/store/auth.store";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function OTPScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const loginStore = useAuthStore();
   const { phone, email, mode } = useLocalSearchParams<{ phone: string; email: string; mode: string }>();
@@ -115,7 +115,7 @@ export default function OTPScreen() {
     >
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 20, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >

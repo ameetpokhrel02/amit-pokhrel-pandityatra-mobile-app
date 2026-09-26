@@ -29,7 +29,10 @@ export const loginPassword = async (data: any) => {
 export const googleLogin = async (data: any) => {
   const res = await publicApi.post('users/google-login/', data);
   if (res.data.requires_2fa || res.data.requires_setup) return res.data;
-  await saveTokens(res.data.access, res.data.refresh, res.data.user);
+  // Only persist a complete session; callers report a missing token to the user
+  if (res.data.access && res.data.refresh) {
+    await saveTokens(res.data.access, res.data.refresh, res.data.user);
+  }
   return res.data;
 };
 
@@ -66,4 +69,6 @@ export const updateProfile = (data: any) => api.patch('users/profile/', data);
 export const deleteProfile = () => api.delete('users/profile/');
 export const contactSupport = (data: any) => publicApi.post('users/contact/', data);
 export const contactUs = contactSupport; // Alias for UI consistency
+/** Blacklist the refresh token on the server. The mobile header makes the backend read it from the body. */
+export const logoutSession = (refresh: string) => publicApi.post('logout/', { refresh }, { timeout: 5000 });
 export const siteContent = () => publicApi.get('users/site-content/');

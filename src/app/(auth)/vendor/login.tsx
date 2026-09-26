@@ -17,7 +17,7 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { AuthButtons } from '@/components/auth/AuthButtons';
 import { CustomPhoneInput } from '@/components/ui/CustomPhoneInput';
 import { Ionicons } from '@expo/vector-icons';
-import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
+import { signInWithGoogle, GoogleSignInCancelled } from '@/features/auth/google-auth';
 
 export default function VendorLoginScreen() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function VendorLoginScreen() {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const res = await signInWithFirebaseGoogle();
+      const res = await signInWithGoogle();
       const userData = res.user;
       
       if (userData.role !== 'vendor') {
@@ -87,6 +87,7 @@ export default function VendorLoginScreen() {
       router.replace("/(vendor)" as any);
       
     } catch (error: any) {
+      if (error instanceof GoogleSignInCancelled) return;
       console.error(error);
       Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error?.message || 'Please try again.' });
     } finally {

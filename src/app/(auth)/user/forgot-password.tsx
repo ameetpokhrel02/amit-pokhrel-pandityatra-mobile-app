@@ -8,7 +8,6 @@ import {
   ScrollView, 
   Platform,
   ActivityIndicator,
-  Dimensions,
   StatusBar
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -18,7 +17,6 @@ import { AppContainer } from '@/components/ui/AppContainer';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { requestPasswordResetOTP } from '@/services/auth.service';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();

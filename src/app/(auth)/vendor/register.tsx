@@ -6,8 +6,7 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform, 
-  ActivityIndicator, 
-  Dimensions, 
+  ActivityIndicator,  
   StatusBar,
   Alert
 } from 'react-native';
@@ -19,12 +18,13 @@ import { Input } from '@/components/ui/Input';
 import { CustomPhoneInput } from "@/components/ui/CustomPhoneInput";
 import { registerVendor } from '@/services/vendor.service';
 import { useAuthStore } from "@/store/auth.store";
-import { signInWithFirebaseGoogle } from '@/features/auth/firebase-google-auth';
+import { signInWithGoogle, GoogleSignInCancelled } from '@/features/auth/google-auth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUSINESS_TYPES = ['Samagri Store', 'Book Store', 'Gift & Accessories', 'Devotional Items', 'Other'];
 
 export default function VendorRegister() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const loginStore = useAuthStore();
   const [step, setStep] = useState(1);
@@ -51,7 +51,7 @@ export default function VendorRegister() {
   const handleGoogleSignup = async () => {
     try {
       setLoading(true);
-      const res = await signInWithFirebaseGoogle();
+      const res = await signInWithGoogle('vendor');
       const userData = res.user;
 
       if (res.access && res.refresh) {
@@ -70,6 +70,7 @@ export default function VendorRegister() {
       }
       
     } catch (error: any) {
+      if (error instanceof GoogleSignInCancelled) return;
       console.error(error);
       Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: error?.message || 'Please try again.' });
     } finally {
@@ -249,7 +250,7 @@ export default function VendorRegister() {
     >
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 20, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >

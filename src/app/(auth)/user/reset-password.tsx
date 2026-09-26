@@ -4,7 +4,6 @@ import {
   Text, 
   Alert, 
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,10 +15,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/ui/Input';
 import { resetPassword } from '@/services/auth.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function ResetPasswordScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   
@@ -66,7 +66,7 @@ export default function ResetPasswordScreen() {
     >
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20, minHeight: SCREEN_HEIGHT }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 20, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
