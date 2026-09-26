@@ -1,13 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { Banner } from '@/services/banner.service';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.82;
 const CARD_HEIGHT = 160;
 
 interface PromoBannerRowProps {
@@ -22,6 +20,9 @@ interface PromoBannerRowProps {
 export const PromoBannerRow = ({ title, icon, accent, banners, defaultCta }: PromoBannerRowProps) => {
   const router = useRouter();
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  // ~82% on phones so the next card peeks in; capped so tablets show several cards
+  const CARD_WIDTH = Math.min(screenWidth * 0.82, 380);
 
   if (banners.length === 0) return null;
 
@@ -58,7 +59,7 @@ export const PromoBannerRow = ({ title, icon, accent, banners, defaultCta }: Pro
             key={banner.id}
             activeOpacity={0.9}
             onPress={() => openBanner(banner)}
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border + '50' }]}
+            style={[styles.card, { width: CARD_WIDTH, backgroundColor: colors.card, borderColor: colors.border + '50' }]}
           >
             <View style={styles.leftSection}>
               <View>
@@ -118,7 +119,6 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '900' },
   scrollContent: { paddingHorizontal: 24, gap: 16 },
   card: {
-    width: CARD_WIDTH,
     height: CARD_HEIGHT,
     borderRadius: 24,
     borderWidth: 1,

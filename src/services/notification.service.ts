@@ -30,7 +30,7 @@ export async function deleteNotification(id: number): Promise<void> {
  * Register device for push notifications
  */
 export async function registerPushToken(token: string, deviceType: 'ios' | 'android'): Promise<void> {
-    await apiClient.post('notifications/push-tokens/', {
+    await apiClient.post('notifications/push-token/', {
         token: token,
         device_type: deviceType
     });
