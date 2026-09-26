@@ -3,15 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function BookingConfirmationScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { bookingId, panditName, date, time } = useLocalSearchParams();
   const captureRef = useRef<View>(null);
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 24 }]}>
         {/* Wrap content to capture in a View with collapsable={false} */}
         <View ref={captureRef} collapsable={false} style={styles.captureContainer}>
           <View style={styles.iconContainer}>
@@ -58,7 +60,7 @@ export default function BookingConfirmationScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity 
           style={styles.primaryButton}
           onPress={() => router.push(`/(customer)/bookings/${bookingId}`)}
@@ -88,7 +90,7 @@ export default function BookingConfirmationScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff7ed' },
-  content: { padding: 30, alignItems: 'center', paddingTop: 60 },
+  content: { padding: 30, alignItems: 'center' },
   captureContainer: {
     width: '100%',
     alignItems: 'center',

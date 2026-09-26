@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchBookingSamagri, fetchBookingSamagriRecommendations, fetchPujaSamagriRecommendations, addSamagriItem, removeSamagriItem } from '@/services/recommender.service';
 import { SamagriItem } from '@/services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SamagriRecommendationsScreen() {
+  const insets = useSafeAreaInsets();
   const { bookingId, pujaId } = useLocalSearchParams();
   const router = useRouter();
   const { colors, theme } = useTheme();
@@ -95,7 +97,7 @@ export default function SamagriRecommendationsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#E5E7EB' }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#E5E7EB' }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -173,7 +175,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
