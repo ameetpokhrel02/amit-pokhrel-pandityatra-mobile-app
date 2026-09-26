@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, Text, StyleSheet, FlatList, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { useTheme } from '@/store/ThemeContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SLIDE_WIDTH = SCREEN_WIDTH - 48; // matches the app's 24px section gutters
 const SLIDE_HEIGHT = 140;
 
 const SLIDES = [
@@ -15,6 +13,8 @@ const SLIDES = [
 
 export const PaymentTrustBanner = () => {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const SLIDE_WIDTH = screenWidth - 48; // matches the app's 24px section gutters
   const listRef = useRef<FlatList>(null);
   const indexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
