@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 import { sendAiChatMessage } from '@/services/ai.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Message {
   id: string;
@@ -16,6 +17,7 @@ interface Message {
 }
 
 export default function AIAssistantScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
   const { initialQuestion, contextLabel } = useLocalSearchParams<{ initialQuestion?: string; contextLabel?: string }>();
@@ -137,7 +139,7 @@ export default function AIAssistantScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -204,7 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
   },
   headerTitleContainer: { flex: 1, alignItems: 'center' },

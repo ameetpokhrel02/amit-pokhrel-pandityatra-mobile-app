@@ -65,8 +65,8 @@ const applyMocks = (mock: MockAdapter) => {
   mock.onGet(/banners\/active_banners/).reply(200, mockData.mockBanners);
 
   // Chat endpoints
-  mock.onGet(/chat\/\d+\/messages/).reply(200, mockData.mockChatMessages);
-  mock.onPost(/chat\/\d+\/send/).reply(201, mockData.mockChatMessages[0]);
+  mock.onGet(/chat\/rooms\/\d+\/messages/).reply(200, mockData.mockChatMessages);
+  mock.onPost(/chat\/rooms\/\d+\/messages/).reply(201, mockData.mockChatMessages[0]);
 
   // AI endpoints
   mock.onPost(/ai\/kundali-chat/).reply(200, {

@@ -3,48 +3,45 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 // import { useAuthStore } from '@/store/auth.store'; // Removed to break require cycle
 
-// Helper to determine base URL dynamically based on environment
-const getBaseUrl = () => {
-    const PROD_URL = 'https://amit-pokhrel-pandityatra.onrender.com/api/';
+// Local Django backend (docker compose publishes it on port 8000 of the dev machine)
+const LOCAL_BACKEND_PORT = 8000;
 
+// EXPO_PUBLIC_API_URL may be given as the bare origin (http://host:8000) or with a
+// legacy /api/ or /api/v1/ suffix. Strip either so we always end up on /api/v1/.
+const toOrigin = (url: string) => url.trim().replace(/\/+$/, '').replace(/\/api(\/v1)?$/, '');
+
+// Helper to determine the backend origin dynamically based on environment
+const getOrigin = () => {
     // 1. Highest priority: explicit .env variable (inlined by Expo Metro bundler at startup)
     //    Run `npx expo start --clear` if changes to .env are not reflected.
     if (process.env.EXPO_PUBLIC_API_URL) {
-        let url = process.env.EXPO_PUBLIC_API_URL.trim();
-        if (!url.endsWith('/')) url += '/';
-        console.log('[API] ✅ Using EXPO_PUBLIC_API_URL:', url);
-        return url;
+        const origin = toOrigin(process.env.EXPO_PUBLIC_API_URL);
+        console.log('[API] ✅ Using EXPO_PUBLIC_API_URL:', origin);
+        return origin;
     }
 
-    // 2. Production builds always use PROD_URL
-    if (!__DEV__) {
-        console.log('[API] 📦 Production build:', PROD_URL);
-        return PROD_URL;
+    // 2. Dev builds: the backend runs on the same machine as Metro, so reuse Metro's host
+    //    (its LAN IP). This keeps working when the Wi-Fi IP changes.
+    const host = (Constants as any).expoConfig?.hostUri?.split(':')[0];
+    if (__DEV__ && host && !host.includes('exp.direct') && !host.includes('ngrok')) {
+        const origin = `http://${host}:${LOCAL_BACKEND_PORT}`;
+        console.log('[API] 💻 Using local backend on the Metro host:', origin);
+        return origin;
     }
 
-    // 3. Dev builds: inspect where Expo is serving from
-    const expoConfig = (Constants as any).expoConfig;
-    if (expoConfig?.hostUri) {
-        const host = expoConfig.hostUri.split(':')[0];
-
-        // Tunnel / ngrok → use deployed backend
-        if (host.includes('exp.direct') || host.includes('ngrok')) {
-            console.log('[API] 🚇 Tunnel detected → production URL');
-            return PROD_URL;
-        }
-
-        // NOTE: We no longer redirect emulator (localhost / 10.0.2.2) to a local backend
-        // because the local Django server is not always running. If you want to point at
-        // a local backend, set EXPO_PUBLIC_API_URL=http://10.0.2.2:8000/api/ in .env
-        // and restart Metro with `npx expo start --clear`.
-    }
-
-    // 4. Safe final fallback
-    console.log('[API] 🌐 Falling back to production URL:', PROD_URL);
-    return PROD_URL;
+    // 3. Release builds (and tunnels, which can't reach a LAN address) must set
+    //    EXPO_PUBLIC_API_URL — eas.json does this per build profile.
+    const fallback = `http://localhost:${LOCAL_BACKEND_PORT}`;
+    console.error('[API] ❌ EXPO_PUBLIC_API_URL is not set; falling back to', fallback);
+    return fallback;
 };
 
-export const API_BASE_URL = getBaseUrl();
+/** Backend origin without any path, e.g. https://host — use for /media/ URLs. */
+export const API_ORIGIN = getOrigin();
+/** Versioned REST base. The unversioned /api/ prefix is deprecated (sunset 2027-01-01). */
+export const API_BASE_URL = `${API_ORIGIN}/api/v1/`;
+/** WebSockets live at the origin root (/ws/...), not under /api/. */
+export const WS_BASE = API_ORIGIN.replace(/^http/, 'ws');
 console.log('[API] 🔗 Final Base URL:', API_BASE_URL);
 
 // Create primary Axios instance
@@ -53,6 +50,9 @@ const apiClient = axios.create({
     timeout: 30000,
     headers: {
         'Accept': 'application/json',
+        // Tells the backend to return the refresh token in the JSON body
+        // instead of an httpOnly cookie (native apps have no cookie jar).
+        'X-Client-Platform': 'mobile',
     }
 });
 
@@ -62,6 +62,9 @@ export const publicApi = axios.create({
     timeout: 15000,
     headers: {
         'Accept': 'application/json',
+        // Tells the backend to return the refresh token in the JSON body
+        // instead of an httpOnly cookie (native apps have no cookie jar).
+        'X-Client-Platform': 'mobile',
     }
 });
 
@@ -191,10 +194,16 @@ apiClient.interceptors.response.use(
             try {
                 const response = await axios.post(`${API_BASE_URL}token/refresh/`, {
                     refresh: refreshToken,
+                }, {
+                    headers: { 'X-Client-Platform': 'mobile' },
                 });
 
-                const { access } = response.data;
+                const { access, refresh } = response.data;
                 await SecureStore.setItemAsync('access_token', access);
+                // Refresh tokens rotate and the old one is blacklisted, so keep the new one
+                if (refresh) {
+                    await SecureStore.setItemAsync('refresh_token', refresh);
+                }
 
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
                 processQueue(null, access);
@@ -243,3 +252,17 @@ publicApi.interceptors.response.use(
 
 export { apiClient as api };
 export default apiClient;
+
+/**
+ * Open an authenticated WebSocket. React Native can't send an Authorization header on
+ * the upgrade request, so the backend expects a single-use, 30-second ticket instead.
+ * A ticket is consumed even when the handshake fails — call this again for every reconnect.
+ *
+ * @param path e.g. `/ws/chat/12/`
+ */
+export async function openAuthedSocket(path: string): Promise<WebSocket> {
+    const { data } = await apiClient.post('ws-ticket/');
+    const url = `${WS_BASE}${path}?ticket=${encodeURIComponent(data.ticket)}`;
+    if (__DEV__) console.log('[WS] Connecting to:', `${WS_BASE}${path}`);
+    return new WebSocket(url);
+}
