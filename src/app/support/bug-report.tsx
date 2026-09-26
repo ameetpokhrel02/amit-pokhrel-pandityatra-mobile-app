@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuthStore } from '@/store/auth.store';
 import { submitBugReport } from '@/services/bug-report.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Safe dynamic import for Device
 let Device: any;
@@ -35,6 +36,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const BUG_SUCCESS_ICON = 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776945463/image-Photoroom_ohcynd.png';
 
 export default function BugReportScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors, theme } = useTheme();
   const isDark = theme === 'dark';
@@ -117,7 +119,7 @@ export default function BugReportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}> 
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { borderBottomColor: colors.border, backgroundColor: colors.card }]}> 
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -125,7 +127,7 @@ export default function BugReportScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 36 }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border + '55' }]}> 
           <View style={[styles.heroIconWrap, { backgroundColor: colors.primary + '15' }]}> 
             <Ionicons name="bug-outline" size={22} color={colors.primary} />
@@ -309,13 +311,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20, 
-    paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   backButton: { padding: 4 },
   title: { fontSize: 28, fontWeight: '800' },
-  content: { padding: 20, paddingBottom: 36 },
+  content: { padding: 20 },
   heroCard: {
     borderRadius: 18,
     borderWidth: 1,
