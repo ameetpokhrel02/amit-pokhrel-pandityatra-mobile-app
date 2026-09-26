@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useTheme } from '@/store/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LOGO_URL = 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1775928132/PanditYatralogo_gr68of.png';
 
@@ -21,6 +22,7 @@ function Bullet({ text }: { text: string }) {
 }
 
 export default function TermsOfServiceScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
   const lastUpdated = new Date().toLocaleDateString('en-US', {
@@ -31,7 +33,7 @@ export default function TermsOfServiceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}> 
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card, borderBottomColor: colors.border }]}> 
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -127,7 +129,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 54,
     paddingBottom: 14,
     borderBottomWidth: 1,
   },

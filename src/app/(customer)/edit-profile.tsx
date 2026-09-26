@@ -9,8 +9,10 @@ import { useUser } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
 import * as ImagePicker from 'expo-image-picker';
 import { updateProfile } from '@/services/auth.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function EditProfileScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { user, updateUser } = useUser();
     const { colors } = useTheme();
@@ -95,7 +97,7 @@ export default function EditProfileScreen() {
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: colors.background }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.background }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -198,7 +200,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 50,
         paddingBottom: 16,
     },
     backButton: {

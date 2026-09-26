@@ -16,8 +16,10 @@ import { getProfile } from '@/services/auth.service';
 import { listBookings } from '@/services/booking.service';
 import { getImageUrl } from '@/utils/image';
 import { useCurrencyStore } from '@/store/currency.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme, setMode, colors } = useTheme();
   const { user, logout, isAuthenticated, syncProfile } = useAuthStore();
@@ -140,7 +142,7 @@ export default function ProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { marginTop: insets.top }]}>
           <Text style={[styles.title, { color: colors.text }]}>{t('profile.title')}</Text>
         </View>
 
@@ -339,7 +341,6 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-    marginTop: 20,
   },
   title: {
     fontSize: 32,
