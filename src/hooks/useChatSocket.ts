@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { getChatWebSocketUrl, fetchChatRoomMessages } from '@/services/chat.service';
+import { openChatSocket, fetchChatRoomMessages } from '@/services/chat.service';
 import { ChatMessage } from '@/types/chat';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
@@ -33,21 +32,8 @@ export function useChatSocket(roomId: string | number | undefined) {
         setError(null);
 
         try {
-            const token = await SecureStore.getItemAsync('access_token');
-            if (!token) {
-                setError('No authentication token found');
-                setStatus('disconnected');
-                return;
-            }
-
-            const wsUrl = getChatWebSocketUrl(roomId, token);
-            console.log('[ChatSocket] Connecting to:', wsUrl);
-
-            const socket = new (WebSocket as any)(wsUrl, undefined, {
-                headers: {
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
+            // A fresh single-use ticket is minted on every (re)connect
+            const socket: any = await openChatSocket(roomId);
 
             socket.onopen = () => {
                 console.log('[ChatSocket] Connected');

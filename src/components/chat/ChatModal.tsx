@@ -13,10 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '@/store/ThemeContext';
 import { getAiAssistantResponse } from '@/services/ai.service';
-import { getChatWebSocketUrl } from '@/services/chat.service';
+import { openChatSocket } from '@/services/chat.service';
 import { ChatMessage } from '@/types/chat';
 
 interface ChatModalProps {
@@ -71,14 +70,12 @@ export const ChatModal: React.FC<ChatModalProps> = ({
     }, [visible, mode, bookingId]);
 
     const connectWebSocket = async () => {
-        const token = await SecureStore.getItemAsync('access_token');
-        if (!token) {
-            console.error('No access token found for chat');
+        try {
+            ws.current = await openChatSocket(bookingId!);
+        } catch (e) {
+            console.error('Failed to open chat socket', e);
             return;
         }
-        const url = getChatWebSocketUrl(bookingId!, token);
-
-        ws.current = new WebSocket(url);
 
         ws.current.onopen = () => {
             console.log('Chat WebSocket connected');

@@ -9,8 +9,10 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/store/ThemeContext';
 import { getImageUrl } from '@/utils/image';
 import { useAuthStore } from '@/store/auth.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ChatListScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors, theme } = useTheme();
   const { role, user } = useAuthStore();
@@ -76,7 +78,7 @@ export default function ChatListScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#f0f0f0' }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card, borderBottomColor: isDark ? '#333' : '#f0f0f0' }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Chat</Text>
       </View>
 
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
