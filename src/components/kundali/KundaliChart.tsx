@@ -1,9 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Svg, { Path, Line, G, Text as SvgText } from 'react-native-svg';
 
-const { width } = Dimensions.get('window');
-const CHART_SIZE = width * 0.85;
 
 interface Planet {
     planet: string;
@@ -34,6 +32,9 @@ const PLANET_ABBR: {[key: string]: string} = {
 };
 
 const KundaliChart: React.FC<KundaliChartProps> = ({ planets, houses, colors, isDark }) => {
+    const { width } = useWindowDimensions();
+    // Fill most of a phone screen, but stay readable rather than huge on tablets
+    const CHART_SIZE = Math.min(width * 0.85, 460);
     const strokeColor = isDark ? '#f97316' : '#ea580c';
     const textColor = colors.text;
     const signColor = colors.primary;
