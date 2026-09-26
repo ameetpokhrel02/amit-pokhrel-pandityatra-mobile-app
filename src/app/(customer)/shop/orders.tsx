@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { myOrders } from '@/services/samagri.service';
 import { getImageUrl } from '@/utils/image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ShopOrder {
   id: number | string;
@@ -14,6 +15,7 @@ interface ShopOrder {
 }
 
 export default function ShopOrdersScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function ShopOrdersScreen() {
         onPress={() => router.push(`/(customer)/shop/order/${item.id}` as any)}
       >
         <Image
-          source={{ uri: getImageUrl(previewImg) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=200' }}
+          source={getImageUrl(previewImg) ? { uri: getImageUrl(previewImg) } : require('@/assets/images/hero_3.jpg')}
           style={styles.previewImage}
         />
         <View style={styles.orderInfo}>
@@ -76,7 +78,7 @@ export default function ShopOrdersScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#f97316" />
         </TouchableOpacity>
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 20,
-    paddingTop: 50,
     paddingBottom: 20,
     backgroundColor: '#fff'
   },

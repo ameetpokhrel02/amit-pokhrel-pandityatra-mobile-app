@@ -9,8 +9,10 @@ import { aiRecommendSamagri, fetchSamagriItems } from '@/services/samagri.servic
 import { SamagriItem } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { useCartStore } from '@/store/cart.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AIRecommendScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colors, theme } = useTheme();
     const { addToCart } = useCartStore();
@@ -52,7 +54,7 @@ export default function AIRecommendScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={[styles.header, { backgroundColor: colors.card }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -162,7 +164,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 50,
         paddingBottom: 16,
     },
     backButton: {
