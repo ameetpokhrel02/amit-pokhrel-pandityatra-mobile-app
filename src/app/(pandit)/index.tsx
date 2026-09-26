@@ -241,7 +241,7 @@ export default function PanditDashboardScreen() {
                 onPress={() => router.push('/(pandit)/services' as any)}
               >
                 <Image
-                  source={{ uri: getImageUrl(service.puja_details?.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }}
+                  source={getImageUrl(service.puja_details?.image) ? { uri: getImageUrl(service.puja_details?.image) } : require('@/assets/images/hero_3.jpg')}
                   style={{ width: '100%', height: 120 }}
                   contentFit="cover"
                 />

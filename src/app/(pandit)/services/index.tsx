@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { fetchPanditMyServices, addPanditService, updateService, deleteService, MyService } from '@/services/pandit.service';
 import { fetchServices } from '@/services/puja.service';
 import { getImageUrl } from '@/utils/image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ServicesScreen() {
+    const insets = useSafeAreaInsets();
     const [services, setServices] = useState<MyService[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -106,7 +108,7 @@ export default function ServicesScreen() {
             <View style={styles.serviceCard}>
                 <View style={styles.serviceImageContainer}>
                     <Image
-                        source={{ uri: getImageUrl(item.puja_details?.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }}
+                        source={getImageUrl(item.puja_details?.image) ? { uri: getImageUrl(item.puja_details?.image) } : require('@/assets/images/hero_3.jpg')}
                         style={styles.serviceImage}
                         contentFit="cover"
                     />
@@ -148,7 +150,7 @@ export default function ServicesScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <View style={styles.headerTitleContainer}>
                     <TouchableOpacity onPress={() => Alert.alert("Navigate Back")}>
                         <Ionicons name="arrow-back" size={24} color="#111827" />
@@ -256,7 +258,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 24,
-        paddingTop: 60,
         paddingBottom: 20,
         backgroundColor: '#FFF',
         borderBottomWidth: 1,

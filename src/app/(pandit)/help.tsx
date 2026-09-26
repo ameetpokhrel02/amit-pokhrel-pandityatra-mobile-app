@@ -4,14 +4,16 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/store/ThemeContext';
 import { HelpContactView } from '@/components/profile/HelpContactView';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HelpScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colors } = useTheme();
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <View style={[styles.header, { backgroundColor: '#F97316' }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: '#F97316' }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color="#FFF" />
                 </TouchableOpacity>
@@ -29,7 +31,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 60,
         paddingBottom: 20,
     },
     backButton: {
