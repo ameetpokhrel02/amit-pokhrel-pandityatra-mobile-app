@@ -6,8 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { fetchMyBookings } from '@/services/booking.service';
 import { Booking } from '@/services/api';
 import { Button } from '@/components/ui/Button';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PendingReviewsScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colors } = useTheme();
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -73,7 +75,7 @@ export default function PendingReviewsScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -114,7 +116,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 60,
         paddingBottom: 16,
     },
     backButton: {

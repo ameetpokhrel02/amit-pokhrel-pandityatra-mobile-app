@@ -6,7 +6,6 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   StatusBar,
-  Dimensions,
   Platform
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -22,7 +21,6 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PanditProfileScreen() {
   const { id } = useLocalSearchParams();
@@ -326,7 +324,7 @@ function ServiceCard({ service, onBook }: { service: any, onBook: () => void }) 
         <View className="bg-white p-5 rounded-[32px] shadow-sm shadow-zinc-100 border border-zinc-50">
             <View className="flex-row mb-4">
                 <Image 
-                    source={{ uri: getImageUrl(service.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }} 
+                    source={getImageUrl(service.image) ? { uri: getImageUrl(service.image) } : require('@/assets/images/hero_3.jpg')} 
                     style={{ width: 80, height: 80, borderRadius: 16 }}
                     contentFit="cover"
                 />

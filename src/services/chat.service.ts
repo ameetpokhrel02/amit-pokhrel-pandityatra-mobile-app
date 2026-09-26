@@ -1,4 +1,4 @@
-import apiClient from './api-client';
+import apiClient, { openAuthedSocket } from './api-client';
 import { ChatRoom, ChatMessage, ChatUser } from '@/types/chat';
 
 
@@ -110,22 +110,19 @@ export async function initiateChat(panditId: number): Promise<ChatRoom> {
   return mapChatRoom(response.data);
 }
 
-// WebSocket URL helper
-export function getChatWebSocketUrl(roomId: string | number, token: string): string {
-  // Replace http with ws for the base URL and handle standard Django Channels path
-  const baseUrl = apiClient.defaults.baseURL?.replace('http', 'ws') || 'ws://localhost:8000/api';
-  // Note: Backend expectation is ws://<host>/ws/chat/{roomId}/?token=<jwt>
-  return `${baseUrl.replace('/api/', '')}/ws/chat/${roomId}/?token=${token}`;
+// Open the real-time socket for a room (ticket-authenticated, see openAuthedSocket)
+export function openChatSocket(roomId: string | number): Promise<WebSocket> {
+  return openAuthedSocket(`/ws/chat/${roomId}/`);
 }
 
 /** Alias used by tests — returns unwrapped ChatMessage array. */
 export async function getChatMessages(chatId: number | string): Promise<any[]> {
-  const response = await apiClient.get(`chat/${chatId}/messages/`);
+  const response = await apiClient.get(`chat/rooms/${chatId}/messages/`);
   return response.data.results ?? response.data;
 }
 
 /** Alias used by tests — sends a message and returns the created message object. */
 export async function sendChatMessage(chatId: number | string, text: string): Promise<any> {
-  const response = await apiClient.post(`chat/${chatId}/send/`, { text });
+  const response = await apiClient.post(`chat/rooms/${chatId}/messages/`, { content: text });
   return response.data;
 }

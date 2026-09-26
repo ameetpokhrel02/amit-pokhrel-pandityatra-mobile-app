@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { registerPandit } from '@/services/pandit.service';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchProfile } from '@/services/auth.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const EXPERTISE_OPTIONS = [
     'Vedic Rituals', 'Astrology & Kundali',
@@ -20,6 +21,7 @@ const EXPERTISE_OPTIONS = [
 ];
 
 export default function PanditProfileSetupScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colors, theme } = useTheme();
 
@@ -103,7 +105,7 @@ export default function PanditProfileSetupScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: colors.background }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 24 }]} showsVerticalScrollIndicator={false}>
                 <View style={{ alignItems: 'center', marginBottom: 16 }}>
                     <Image source={require('@/assets/images/pandit-logo.png')} style={{ width: 140, height: 140 }} contentFit="contain" />
                 </View>
@@ -195,7 +197,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 24,
-        paddingTop: 60,
     },
     headerTitle: {
         fontSize: 24,

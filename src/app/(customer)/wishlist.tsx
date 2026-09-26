@@ -8,10 +8,12 @@ import { useTheme } from '@/store/ThemeContext';
 import { fetchWishlist, toggleWishlist } from '@/services/samagri.service';
 import { useCartStore } from '@/store/cart.store';
 import { SamagriItem } from '@/services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 export default function WishlistScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
   const { addToCart } = useCartStore();
@@ -83,7 +85,7 @@ export default function WishlistScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -127,7 +129,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold' },

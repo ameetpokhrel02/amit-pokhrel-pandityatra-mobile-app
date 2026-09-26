@@ -1,14 +1,12 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 import { Camera } from 'expo-camera';
 import { requestRecordingPermissionsAsync } from 'expo-audio';
-import { API_BASE_URL } from '@/services/api-client';
+import { openAuthedSocket } from '@/services/api-client';
 import { 
   startVideoRoom, 
   endVideoRoom, 
-  joinVideoRoom, 
-  fetchVideoRoom 
+  createVideoRoom
 } from '@/services/video.service';
 import { fetchChatRoomMessages } from '@/services/chat.service';
 import { getBooking } from '@/services/booking.service';
@@ -188,14 +186,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       // 1. Get Room ID
-      let roomId: number | string | null = null;
-      try {
-        const roomRes = await fetchVideoRoom(bookingId);
-        roomId = roomRes.id || roomRes.room_id || (roomRes.data && (roomRes.data.id || roomRes.data.room_id));
-      } catch {
-        const joinRes = await joinVideoRoom(bookingId);
-        roomId = joinRes.id || joinRes.room_id || (joinRes.data && (joinRes.data.id || joinRes.data.room_id));
-      }
+      const { room_id: roomId } = await createVideoRoom(bookingId);
       roomIdRef.current = roomId;
       
       if (panditRole && roomIdRef.current) {
@@ -262,16 +253,7 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       };
 
       // 4. Start Signaling
-      const token = await SecureStore.getItemAsync('access_token');
-      
-      // IMPROVEMENT: Robust WS URL detection
-      let wsBase = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/?$/, '');
-      if (wsBase.endsWith('/')) wsBase = wsBase.slice(0, -1);
-      
-      const fullWsUrl = `${wsBase}/ws/video/${roomId}/?token=${token}`;
-      console.log(`[VideoContext] Connecting to: ${fullWsUrl}`);
-      
-      const ws = new WebSocket(fullWsUrl);
+      const ws = await openAuthedSocket(`/ws/video/${roomId}/`);
       socket.current = ws;
 
       // Safety timeout: If connection doesn't open in 30s, abort

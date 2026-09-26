@@ -2,7 +2,8 @@ import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-rout
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState, useRef } from 'react';
 import 'react-native-reanimated';
-import { ThemeProvider } from '@/store/ThemeContext';
+import { ThemeProvider, useTheme } from '@/store/ThemeContext';
+import { StatusBar } from 'react-native';
 import { useAuthStore } from '@/store/auth.store';
 import { useNotifications } from '@/hooks/useNotifications';
 import '@/i18n'; // Initialize i18n
@@ -15,6 +16,13 @@ import { VideoCallProvider, useVideoCall } from '@/store/VideoCallContext';
 import { LazyLoader } from '@/components/ui/LazyLoader';
 import { useLocationStore } from '@/store/location.store';
 import Toast from 'react-native-toast-message';
+
+// Default status-bar icon colour follows the in-app theme (the app can force light/dark
+// independently of the OS). Screens that render their own <StatusBar> override it while mounted.
+function ThemedStatusBar() {
+  const { theme } = useTheme();
+  return <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />;
+}
 
 const LazyNativeVideoCall = React.lazy(() => import('@/components/video/NativeVideoCall').then(m => ({ default: m.NativeVideoCall })));
 
@@ -180,6 +188,7 @@ export default function RootLayout() {
   return (
     <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}>
       <ThemeProvider>
+        <ThemedStatusBar />
         <VideoCallProvider>
           <Stack screenOptions={{ headerShown: false }}>
             {/* ... existing screens ... */}

@@ -10,7 +10,7 @@ export const registerPandit = (formData: FormData) => publicApi.post('pandits/re
 
 /** Unwrapped search — returns the data array directly (used by tests and screens). */
 export async function searchPandits(params?: any): Promise<any[]> {
-    const response = await publicApi.get('pandits/search/', { params });
+    const response = await publicApi.get('pandits/', { params });
     return response.data.results ?? response.data;
 }
 

@@ -17,10 +17,10 @@ export async function getAiPujaSamagri(payload: { service_id?: number; puja_name
 }
 
 /**
- * AI Quick Assistant (legacy or variant)
+ * Guide-mode AI helper (general app help, not tied to a chat room)
  */
 export async function getAiAssistantResponse(message: string) {
-    const response = await apiClient.post('ai/assistant/', { message });
+    const response = await apiClient.post('chat/quick-chat/', { message });
     return response.data;
 }
 

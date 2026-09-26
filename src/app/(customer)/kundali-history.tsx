@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { getSavedKundalis } from '@/services/kundali.service';
 import { useTheme } from '@/store/ThemeContext';
 import dayjs from 'dayjs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SavedKundali {
   id: string | number;
@@ -15,6 +16,7 @@ interface SavedKundali {
 }
 
 export default function KundaliHistoryScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
   const [history, setHistory] = useState<SavedKundali[]>([]);
@@ -99,7 +101,7 @@ export default function KundaliHistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -139,7 +141,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
     paddingBottom: 20,
     backgroundColor: '#fff'
   },

@@ -23,10 +23,10 @@ export interface ResetPasswordRequest {
  * Request OTP for forgot password
  */
 export async function requestForgotPasswordOTP(payload: ForgotPasswordRequest) {
-  const url = `${API_BASE_URL}/users/forgot-password/`;
+  const url = `${API_BASE_URL}users/forgot-password/`;
   const resp = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'mobile' },
     body: JSON.stringify(payload),
   });
   if (!resp.ok) {
@@ -40,10 +40,10 @@ export async function requestForgotPasswordOTP(payload: ForgotPasswordRequest) {
  * Verify OTP for forgot password
  */
 export async function verifyForgotPasswordOTP(payload: ForgotPasswordOTPVerify) {
-  const url = `${API_BASE_URL}/users/forgot-password/verify-otp/`;
+  const url = `${API_BASE_URL}users/forgot-password/verify-otp/`;
   const resp = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'mobile' },
     body: JSON.stringify(payload),
   });
   if (!resp.ok) {
@@ -57,10 +57,10 @@ export async function verifyForgotPasswordOTP(payload: ForgotPasswordOTPVerify) 
  * Reset password after OTP verification
  */
 export async function resetPassword(payload: ResetPasswordRequest) {
-  const url = `${API_BASE_URL}/users/forgot-password/reset/`;
+  const url = `${API_BASE_URL}users/forgot-password/reset/`;
   const resp = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'mobile' },
     body: JSON.stringify(payload),
   });
   if (!resp.ok) {

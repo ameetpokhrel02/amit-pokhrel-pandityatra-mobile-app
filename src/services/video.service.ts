@@ -1,13 +1,11 @@
 import apiClient from './api-client';
-import { VideoRoom, VideoLinkResponse } from './api';
 
-export async function fetchVideoRoom(bookingId: number): Promise<VideoRoom> {
-    const response = await apiClient.get(`video/room/${bookingId}/`);
-    return response.data;
-}
-
-export async function joinVideoRoom(bookingId: number): Promise<VideoLinkResponse> {
-    const response = await apiClient.post(`video/room/${bookingId}/join/`, { booking_id: bookingId });
+/**
+ * Create (or fetch, if it already exists) the video room for a booking.
+ * The booking must be ONLINE, paid and ACCEPTED/COMPLETED.
+ */
+export async function createVideoRoom(bookingId: number): Promise<{ room_id: string; room_url?: string; start_time?: string }> {
+    const response = await apiClient.post('video/rooms/create/', { booking_id: bookingId });
     return response.data;
 }
 
@@ -28,22 +26,6 @@ export async function endVideoRoom(roomId: number | string) {
  */
 export async function validateVideoRoom(roomId: string | number) {
     const response = await apiClient.get(`video/${roomId}/validate/`);
-    return response.data;
-}
-
-/**
- * Create a new video session token (Daily.co)
- */
-export async function createVideoToken(payload: { room_name: string; participant_identity: string; }) {
-    const response = await apiClient.post(`video/create-token/`, payload);
-    return response.data;
-}
-
-/**
- * High-level helper to get a join link for a specific booking
- */
-export async function generateVideoLink(bookingId: number) {
-    const response = await apiClient.post(`video/room/${bookingId}/join/`);
     return response.data;
 }
 
@@ -71,17 +53,21 @@ export async function uploadBookingRecording(roomId: number | string, fileUri: s
     return response.data;
 }
 /**
- * Fetch all video recordings for the logged-in user (Customer or Pandit)
+ * Fetch the user's recorded puja sessions (Customer or Pandit).
+ * Built from the call history; only ended calls with an uploaded recording are returned,
+ * mapped to the shape the recordings screen uses.
  */
 export async function fetchVideoRecordings() {
-    const response = await apiClient.get(`video/recordings/`);
-    return response.data;
-}
-
-/**
- * Fetch a specific recording detail
- */
-export async function fetchRecordingDetail(recordingId: number) {
-    const response = await apiClient.get(`video/recordings/${recordingId}/`);
-    return response.data;
+    const response = await apiClient.get('video/history/');
+    const calls: any[] = Array.isArray(response.data) ? response.data : response.data.results ?? [];
+    return calls
+        .filter((call) => call.recording_url)
+        .map((call) => ({
+            ...call,
+            recording: call.recording_url,
+            duration: call.duration_seconds
+                ? `${String(Math.floor(call.duration_seconds / 60)).padStart(2, '0')}:${String(call.duration_seconds % 60).padStart(2, '0')}`
+                : undefined,
+            booking_details: { service_name: call.puja_name, pandit_full_name: call.partner_name },
+        }));
 }

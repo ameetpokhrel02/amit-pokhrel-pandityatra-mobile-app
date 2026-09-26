@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/services/api-client';
+import { API_ORIGIN } from '@/services/api-client';
 
 /**
  * Resolves a potentially relative image path from the backend into a full URL.
@@ -12,7 +12,7 @@ export const getImageUrl = (path?: string | null): string | null => {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // FIX: Hande localhost URLs from backend that fail on mobile
     if (path.includes('localhost') || path.includes('127.0.0.1')) {
-        const rootUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+        const rootUrl = API_ORIGIN;
         const relativePart = path.split(':8000')[1] || path.split('localhost')[1] || path.split('127.0.0.1')[1];
         if (relativePart) {
             return `${rootUrl}${relativePart}`;
@@ -21,8 +21,8 @@ export const getImageUrl = (path?: string | null): string | null => {
     return path;
   }
   
-  // Remove /api from the end of API_BASE_URL to get the root
-  const rootUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+  // Backend origin (no /api/v1 path) serves /media/
+  const rootUrl = API_ORIGIN;
   
   // Ensure the path starts with a slash
   const cleanPath = path.startsWith('/') ? path : `/${path}`;

@@ -24,12 +24,14 @@ import { MotiView, MotiText } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MapLocationPicker = React.lazy(() => import('@/components/ui/MapLocationPicker'));
 
 const { width, height } = Dimensions.get('window');
 
 export default function KundaliScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { id: savedId } = useLocalSearchParams<{ id?: string }>();
     const { colors, theme } = useTheme();
@@ -112,11 +114,27 @@ export default function KundaliScreen() {
                 formattedDob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
             }
 
-            let formattedTime = formData.tob;
-            const timeParts = formData.tob.split(':');
-            if (timeParts.length >= 2) {
-                formattedTime = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+            // Accept "10", "10:5", "1030", "10.30" etc. and normalise to hh:mm —
+            // the backend rejects a bare hour like "10 AM".
+            const rawTime = formData.tob.trim();
+            let hourStr: string;
+            let minuteStr: string;
+            if (/[:.\s]/.test(rawTime)) {
+                [hourStr, minuteStr = '0'] = rawTime.split(/[:.\s]+/);
+            } else if (rawTime.length > 2) {
+                hourStr = rawTime.slice(0, -2);
+                minuteStr = rawTime.slice(-2);
+            } else {
+                hourStr = rawTime;
+                minuteStr = '0';
             }
+            const hour = Number(hourStr);
+            const minute = Number(minuteStr);
+            if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+                Alert.alert('Invalid time', 'Please enter the time of birth as HH:MM (e.g. 10:30) and pick AM or PM.');
+                return;
+            }
+            const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
             const payload = {
                 dob: formattedDob,
@@ -177,7 +195,7 @@ export default function KundaliScreen() {
                         style={styles.heroGradient}
                     />
                     
-                    <View style={styles.headerRow}>
+                    <View style={[styles.headerRow, { top: insets.top + 12 }]}>
                         <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
                             <Ionicons name="arrow-back" size={22} color="#FFF" />
                         </TouchableOpacity>
@@ -410,7 +428,6 @@ const styles = StyleSheet.create({
     heroGradient: { position: 'absolute', inset: 0 },
     headerRow: { 
         position: 'absolute', 
-        top: 60, 
         left: 0, 
         right: 0, 
         flexDirection: 'row', 

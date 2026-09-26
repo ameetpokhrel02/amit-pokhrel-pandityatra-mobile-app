@@ -5,8 +5,10 @@ import { useRouter } from 'expo-router';
 import { Colors } from '@/theme/colors';
 import { useTheme } from '@/store/ThemeContext';
 import { fetchUserPreferences, updateUserPreference, createUserPreference } from '@/services/recommender.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PreferencesScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors, mode, setMode } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -81,7 +83,7 @@ export default function PreferencesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -187,7 +189,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
   },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },

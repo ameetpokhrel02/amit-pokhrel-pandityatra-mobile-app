@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { contactUs } from '@/services/auth.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ContactSupportScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -31,7 +33,7 @@ export default function ContactSupportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -120,7 +122,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20, 
-    paddingTop: 60,
     paddingBottom: 20
   },
   backButton: { padding: 4 },

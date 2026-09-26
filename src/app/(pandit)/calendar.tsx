@@ -6,8 +6,10 @@ import dayjs from 'dayjs';
 import { Colors } from '@/theme/colors';
 import { fetchPanditCalendar, addAvailabilityBlock, deleteAvailabilityBlock } from '@/services/pandit.service';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CalendarScreen() {
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +124,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Calendar</Text>
         <Text style={styles.headerSubtitle}>Manage your availability and schedule</Text>
       </View>
@@ -300,7 +302,6 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 25,
     backgroundColor: '#FFF',

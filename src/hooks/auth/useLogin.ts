@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 
 import { requestOTP, loginPassword, verifyTOTP } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { signInWithFirebaseGoogle } from "@/features/auth/firebase-google-auth";
+import { signInWithGoogle, GoogleSignInCancelled } from '@/features/auth/google-auth';
 
 export type AuthStep = "initial" | "email_login" | "phone_login" | "email_signup" | "totp_verify" | "totp_setup";
 
@@ -114,7 +114,7 @@ export const useLogin = () => {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const data = await signInWithFirebaseGoogle();
+      const data = await signInWithGoogle('user');
 
       if (data?.requires_2fa) {
         setPreAuthId(data.pre_auth_id || '');
@@ -148,6 +148,7 @@ export const useLogin = () => {
         router.replace("/(customer)" as any);
       }
     } catch (error: any) {
+      if (error instanceof GoogleSignInCancelled) return;
       console.error(error);
       Toast.show({ type: 'error', text1: 'Google Login Failed', text2: error.message || 'Could not complete Google login.' });
     } finally {

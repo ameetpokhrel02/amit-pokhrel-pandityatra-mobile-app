@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
@@ -19,6 +19,7 @@ const PaymentWebView = React.lazy(() =>
 );
 
 export default function CheckoutScreen() {
+    const insets = useSafeAreaInsets();
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
     const router = useRouter();
     const { colors, theme } = useTheme();
@@ -150,7 +151,8 @@ export default function CheckoutScreen() {
             }
         } catch (error: any) {
             console.error('Payment initiation failed:', error);
-            Alert.alert('Error', error.message || 'Failed to initiate payment.');
+            const serverMessage = error?.response?.data?.error || error?.response?.data?.detail;
+            Alert.alert('Error', serverMessage || error.message || 'Failed to initiate payment.');
         } finally {
             setPaying(false);
         }
@@ -254,7 +256,7 @@ export default function CheckoutScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={[styles.header, { backgroundColor: colors.card }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.card }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -404,7 +406,7 @@ export default function CheckoutScreen() {
                 </View>
             </ScrollView>
 
-            <View style={[styles.footer, { backgroundColor: colors.card }]}>
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 20, backgroundColor: colors.card }]}>
                 <Button
                     title={paying ? "Processing..." : `Pay NPR ${booking.total_fee}`}
                     onPress={handlePayment}
@@ -429,7 +431,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 50,
+        paddingTop: 12,
         paddingBottom: 16,
     },
     backButton: {

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ContactScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
 
@@ -22,7 +24,7 @@ export default function ContactScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#f97316" />
@@ -86,7 +88,7 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff7ed' },
   content: { padding: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   backButton: { marginRight: 15 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#3E2723' },
   subtitle: { fontSize: 16, color: '#3E2723', marginBottom: 20 },

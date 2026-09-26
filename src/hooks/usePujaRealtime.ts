@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '@/services/api-client';
+import { openAuthedSocket } from '@/services/api-client';
 
 export function usePujaRealtime(bookingId: number | undefined, onUpdate?: (data: any) => void) {
   const [status, setStatus] = useState<string | null>(null);
@@ -20,27 +19,8 @@ export function usePujaRealtime(bookingId: number | undefined, onUpdate?: (data:
     }
 
     try {
-      const token = await SecureStore.getItemAsync('access_token');
-      if (!token) {
-        console.warn('[WS] No access token found');
-        return;
-      }
-
-      // Construct WS URL: replace /api/ with /ws/ and protocol http with ws
-      let wsBase = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/?$/, '/ws');
-      
-      // Cleanup base
-      if (wsBase.endsWith('/')) wsBase = wsBase.slice(0, -1);
-      
-      /**
-       * ⚠️ PATH NOTE: 
-       * If /ws/puja/ is failing with 404/Handshake error, it might be /ws/booking/ (singular) 
-       * or /ws/bookings/ (plural) to match REST endpoints.
-       */
-      const fullWsUrl = `${wsBase}/puja/${bookingId}/?token=${token}`;
-      
-      console.log(`[WS] Connecting to: ${fullWsUrl}`);
-      const socket = new WebSocket(fullWsUrl);
+      // Fresh single-use ticket on every (re)connect
+      const socket = await openAuthedSocket(`/ws/puja/${bookingId}/`);
 
       socket.onopen = () => {
         console.log('[WS] Connected to puja updates');

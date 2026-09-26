@@ -6,8 +6,10 @@ import { Colors } from '@/theme/colors';
 import { fetchBookings, updateBookingStatus } from '@/services/booking.service';
 import { Booking } from '@/services/api';
 import dayjs from 'dayjs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function BookingsScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export default function BookingsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.title}>Bookings</Text>
       </View>
 
@@ -198,7 +200,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
     backgroundColor: '#FFF',

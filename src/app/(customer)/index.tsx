@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   Animated,
   StatusBar,
@@ -12,7 +11,8 @@ import {
   FlatList,
   StyleSheet,
   TextInput,
-  Platform
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -36,7 +36,6 @@ import { UpcomingSessionBanner } from '@/components/booking/UpcomingSessionBanne
 import { useDashboardData } from '@/hooks/customer/useDashboardData';
 import { SamagriItem } from '@/services/api';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const BANNERS = [
   {
@@ -74,6 +73,7 @@ const getCategoryIcon = (name: string): any => {
 };
 
 export default function CustomerHomeScreen() {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();

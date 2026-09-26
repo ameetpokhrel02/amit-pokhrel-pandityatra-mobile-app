@@ -15,8 +15,10 @@ import * as Linking from 'expo-linking';
 import { API_BASE_URL } from '@/services/api-client';
 import { ScreenshotButton } from '@/components/ui/ScreenshotButton';
 import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function InvoiceViewerScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { bookingId, orderId } = useLocalSearchParams<{ bookingId?: string; orderId?: string }>();
   const { colors } = useTheme();
@@ -64,7 +66,7 @@ export default function InvoiceViewerScreen() {
   return (
     <View style={styles.container}>
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -174,7 +176,7 @@ export default function InvoiceViewerScreen() {
       </ScrollView>
 
       {/* ── Action Bar: PDF Download + Screenshot ── */}
-      <View style={[styles.actionBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+      <View style={[styles.actionBar, { paddingBottom: insets.bottom + 16, backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {/* PDF Download */}
         <TouchableOpacity
           style={[styles.actionBtn, styles.outlineBtn, { borderColor: colors.primary }]}
@@ -230,7 +232,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },

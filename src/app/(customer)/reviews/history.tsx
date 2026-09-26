@@ -4,8 +4,10 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/store/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchMyReviews, Review } from '@/services/review.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ReviewHistoryScreen() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { colors, theme } = useTheme();
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -76,7 +78,7 @@ export default function ReviewHistoryScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 60,
         paddingBottom: 16,
     },
     backButton: {

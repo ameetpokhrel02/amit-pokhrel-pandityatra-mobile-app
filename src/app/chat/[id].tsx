@@ -36,7 +36,7 @@ const ChatProductCard = ({ product, colors, isDark }: { product: any, colors: an
   return (
     <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: isDark ? '#444' : '#F0F0F0' }]}>
       <Image 
-        source={{ uri: getImageUrl(product.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=300' }} 
+        source={getImageUrl(product.image) ? { uri: getImageUrl(product.image) } : require('@/assets/images/hero_3.jpg')} 
         style={styles.productImage} 
         contentFit="cover"
       />

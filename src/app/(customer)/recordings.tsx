@@ -40,7 +40,7 @@ export default function MyRecordingsScreen() {
     try {
       setLoading(true);
       const data = await fetchVideoRecordings();
-      setRecordings(data.results || data || []);
+      setRecordings(data);
     } catch (error) {
       console.error('Error fetching recordings:', error);
     } finally {
@@ -103,7 +103,7 @@ export default function MyRecordingsScreen() {
     >
       <View style={styles.thumbnailContainer}>
         <Image 
-          source={{ uri: item.thumbnail || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }} 
+          source={item.thumbnail ? { uri: item.thumbnail } : require('@/assets/images/hero_3.jpg')} 
           style={styles.thumbnail}
           contentFit="cover"
         />

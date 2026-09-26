@@ -13,8 +13,10 @@ import { fetchProfile, updateProfile as updateAuthProfile } from '@/services/aut
 import { patchPanditProfile } from '@/services/pandit.service';
 import { getImageUrl } from '@/utils/image';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { theme, setMode, colors } = useTheme();
   const { user, logout, isAuthenticated, syncProfile, setUser } = useAuthStore();
@@ -211,7 +213,7 @@ export default function ProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { marginTop: insets.top }]}>
           <Text style={[styles.title, { color: colors.text }]}>Pandit Profile</Text>
         </View>
 
@@ -516,7 +518,6 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-    marginTop: 40,
   },
   title: {
     fontSize: 28,

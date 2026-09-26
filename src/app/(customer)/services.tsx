@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  TextInput, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
   ScrollView,
-  Dimensions
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +19,10 @@ import { fetchCategories, fetchServices } from '@/services/puja.service';
 import { getImageUrl } from '@/utils/image';
 import { Category, Service } from '@/services/api';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLUMN_WIDTH = (SCREEN_WIDTH - 52) / 2; // (Width - paddingHorizontal*2 - gap) / 2
 
 export default function ServicesListingScreen() {
+  const { width: screenWidth } = useWindowDimensions();
+  const columnWidth = (screenWidth - 52) / 2; // (Width - paddingHorizontal*2 - gap) / 2
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
@@ -72,12 +72,12 @@ export default function ServicesListingScreen() {
 
   const renderServiceItem = ({ item }: { item: Service }) => (
     <TouchableOpacity 
-      style={[styles.serviceCard, { backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
+      style={[styles.serviceCard, { width: columnWidth, backgroundColor: colors.card, borderColor: isDark ? '#2A2A2E' : '#F0F0F0' }]}
       onPress={() => router.push({ pathname: '/(customer)/pandits', params: { searchQuery: item.name } })}
     >
       <View style={styles.serviceImageWrap}>
         <Image 
-          source={{ uri: getImageUrl(item.image) || 'https://images.unsplash.com/photo-1544158404-585ff67ece33?q=80&w=400' }} 
+          source={getImageUrl(item.image) ? { uri: getImageUrl(item.image) } : require('@/assets/images/hero_3.jpg')} 
           style={styles.serviceImage}
           contentFit="cover"
         />
@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   listHeader: { marginBottom: 12 },
   listSubtitle: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
   serviceCard: { 
-    width: COLUMN_WIDTH,
     borderRadius: 24, 
     overflow: 'hidden', 
     borderWidth: 1,

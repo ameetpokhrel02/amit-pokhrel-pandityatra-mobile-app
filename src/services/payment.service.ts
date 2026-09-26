@@ -23,7 +23,9 @@ export async function initiatePayment(payload: CreatePaymentPayload): Promise<Pa
         const response = await apiClient.post('payments/initiate/', payload);
         return response.data;
     } catch (e: any) {
-        if (e.response && e.response.status === 404) {
+        // Only fall back when the route itself is missing. A 404 with an `error`
+        // body (e.g. "Booking not found") is a real answer — retrying won't help.
+        if (e.response?.status === 404 && !e.response.data?.error) {
             console.warn('[Payments] /initiate/ not found, falling back to /create/ endpoint.');
             const fallbackResponse = await apiClient.post('payments/create/', payload);
             return fallbackResponse.data;

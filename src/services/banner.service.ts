@@ -30,3 +30,13 @@ export async function fetchBanners(): Promise<Banner[]> {
         throw error;
     }
 }
+
+/** Analytics: count one impression. Fire-and-forget. */
+export function trackBannerView(id: number) {
+    publicApi.post(`banners/${id}/track_view/`).catch(() => {});
+}
+
+/** Analytics: count one tap. Fire-and-forget. */
+export function trackBannerClick(id: number) {
+    publicApi.post(`banners/${id}/track_click/`).catch(() => {});
+}

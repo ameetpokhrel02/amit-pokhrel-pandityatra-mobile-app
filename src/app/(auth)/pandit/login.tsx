@@ -7,7 +7,6 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   ActivityIndicator,
 } from "react-native";
@@ -25,10 +24,9 @@ import { AppContainer } from "@/components/ui/AppContainer";
 import { Colors } from "@/theme/colors";
 import { requestOTP, loginPassword } from "@/services/auth.service";
 import { Ionicons } from "@expo/vector-icons";
-import { signInWithFirebaseGoogle } from "@/features/auth/firebase-google-auth";
+import { signInWithGoogle, GoogleSignInCancelled } from '@/features/auth/google-auth';
 
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type AuthStep = "initial" | "email_login" | "phone_login";
 
@@ -110,7 +108,7 @@ export default function LoginScreen() {
   const handleGooglePress = async () => {
     try {
       setLoading(true);
-      const res = await signInWithFirebaseGoogle();
+      const res = await signInWithGoogle();
 
       if (!res.access || !res.refresh) {
         throw new Error('Google login did not return app tokens.');
@@ -130,6 +128,7 @@ export default function LoginScreen() {
       else router.replace("/(customer)" as any);
       
     } catch (error: any) {
+      if (error instanceof GoogleSignInCancelled) return;
       console.error(error);
       Toast.show({
         type: 'error',

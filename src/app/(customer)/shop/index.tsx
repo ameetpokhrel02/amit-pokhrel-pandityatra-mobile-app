@@ -1,414 +1,398 @@
-import React, { useState, useEffect, useRef } from 'react'; // Refreshed for routing
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  TextInput, 
-  FlatList, 
-  ActivityIndicator, 
-  Alert, 
-  Dimensions, 
-  Animated 
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  FlatList,
+  ScrollView,
+  RefreshControl,
+  Modal,
+  Pressable,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/theme/colors';
 import { useCartStore } from '@/store/cart.store';
-import { useAuthStore } from '@/store/auth.store';
 import { useTheme } from '@/store/ThemeContext';
-import { SamagriItem, SamagriCategory } from '@/services/api';
-import { useShopData } from '@/hooks/customer/useShopData';
+import { useShopData, SORT_OPTIONS, ShopItem } from '@/hooks/customer/useShopData';
+import { ProductCard } from '@/components/shop/ProductCard';
+import { ShopBannerCarousel } from '@/components/shop/ShopBannerCarousel';
 
-const { width } = Dimensions.get('window');
-
-const BANNERS = [
-  { 
-    id: 1, 
-    image: require('@/assets/images/hero_2.jpg'), 
-    title: 'Divine Shanti', 
-    subtitle: 'Spiritual Essentials & Holistic Goods' 
-  },
-  { 
-    id: 2, 
-    image: require('@/assets/images/oils_products.jpg'), 
-    title: 'Authentic Oils', 
-    subtitle: 'Pure & Energized Spiritual Oils' 
-  },
-  { 
-    id: 3, 
-    image: require('@/assets/images/hero_3.jpg'), 
-    title: 'Sacred Rituals', 
-    subtitle: 'Complete Samagri for Every Occasion' 
-  }
-];
+const GUTTER = 20;
+const COLUMN_GAP = 12;
+// Keep cards around phone-card size on tablets / foldables / landscape
+const MIN_CARD_WIDTH = 160;
+const MAX_COLUMNS = 4;
 
 export default function ShopScreen() {
   const router = useRouter();
-  const { colors, theme } = useTheme();
-  const { isAuthenticated, user } = useAuthStore();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { totalItems, addToCart } = useCartStore();
-  
+  const { width } = useWindowDimensions();
+  const numColumns = Math.max(2, Math.min(MAX_COLUMNS, Math.floor((width - GUTTER * 2 + COLUMN_GAP) / (MIN_CARD_WIDTH * 1.4 + COLUMN_GAP))));
+  const cardWidth = (width - GUTTER * 2 - COLUMN_GAP * (numColumns - 1)) / numColumns;
+
+  const { items: cartItems, totalItems, addToCart, updateQuantity } = useCartStore();
   const {
     loading,
+    refreshing,
+    error,
+    refresh,
+    retry,
     products,
     categories,
+    banners,
     selectedCategory,
     setSelectedCategory,
+    sort,
+    setSort,
     wishlist,
-    showSearch,
-    setShowSearch,
     searchQuery,
     setSearchQuery,
     handleToggleWishlist,
     filteredProducts,
   } = useShopData();
 
-  // Banner Carousel animation
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
-  const currentIndexRef = useRef(0);
+  const [sortOpen, setSortOpen] = useState(false);
+  const isSearching = searchQuery.trim().length > 0;
+  const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label;
+  const selectedCategoryName = categories.find((c) => c.id === selectedCategory)?.name;
 
-  useEffect(() => {
-    // Auto-slide interval (4 seconds)
-    const interval = setInterval(() => {
-      if (currentIndexRef.current < BANNERS.length - 1) {
-        currentIndexRef.current += 1;
-      } else {
-        currentIndexRef.current = 0;
-      }
-      
-      flatListRef.current?.scrollToIndex({
-        index: currentIndexRef.current,
-        animated: true,
-      });
-    }, 4000);
+  const quantityOf = (id: number) => cartItems.find((c) => String(c.id) === String(id))?.quantity ?? 0;
 
-    return () => clearInterval(interval);
-  }, []);
+  const addItem = (item: ShopItem) =>
+    addToCart({
+      id: String(item.id),
+      name: item.name,
+      price: Number(item.price),
+      image: item.image,
+      category: item.category_name,
+      description: item.description,
+    });
 
-  const userName = user?.name ? user.name.split(' ')[0] : 'Guest';
+  const header = (
+    <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
+      <View style={styles.titleRow}>
+        <View style={styles.titleBlock}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            Samagri Shop
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+            Authentic puja essentials, delivered
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          <IconButton icon="heart-outline" count={wishlist.length} onPress={() => router.push('/(customer)/wishlist' as any)} />
+          <IconButton icon="bag-handle-outline" count={totalItems} onPress={() => router.push('/(customer)/cart')} />
+        </View>
+      </View>
 
-  const renderProductItem = ({ item }: { item: SamagriItem }) => {
-    const isOutOfStock = item.stock_quantity === 0;
-
-    return (
-      <View style={[styles.productCard, { backgroundColor: colors.card, opacity: isOutOfStock ? 0.7 : 1 }]}>
-        <TouchableOpacity 
-          style={styles.productTouchable}
-          onPress={() => router.push(`/(customer)/shop/${item.id}`)}
-        >
-          <View style={[styles.imageWrapper, { backgroundColor: colors.background }]}>
-            {item.image ? (
-              <Image source={{ uri: item.image }} style={styles.productImg} contentFit="cover" />
-            ) : (
-              <Ionicons name="image-outline" size={40} color={colors.text + '20'} />
-            )}
-            
-            {isOutOfStock && (
-              <View style={styles.outOfStockOverlay}>
-                <Text style={styles.outOfStockText}>Restocking Soon</Text>
-              </View>
-            )}
-
-            <TouchableOpacity 
-              style={styles.wishlistBtn}
-              onPress={() => handleToggleWishlist(item.id)}
-            >
-              <Ionicons 
-                name={wishlist.includes(item.id) ? "heart" : "heart-outline"} 
-                size={20} 
-                color={wishlist.includes(item.id) ? colors.primary : colors.text} 
-              />
-            </TouchableOpacity>
-          </View>
-  
-          <View style={styles.productInfo}>
-            <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.priceRow}>
-              <Text style={[styles.productPrice, { color: colors.primary }]}>NPR {item.price}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-  
-        {!isOutOfStock && (
-          <TouchableOpacity 
-            style={[styles.addBtn, { backgroundColor: colors.primary }]}
-            onPress={() => addToCart({ ...item, id: String(item.id) } as any)}
-          >
-            <Ionicons name="add" size={20} color="#FFF" />
+      <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Ionicons name="search" size={18} color={colors.textSecondary} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder="Search diyo, mala, incense…"
+          placeholderTextColor={colors.placeholder}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          autoCorrect={false}
+        />
+        {isSearching && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel="Clear search">
+            <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
-    );
-  };
+    </View>
+  );
 
-  const renderBannerItem = ({ item }: { item: any }) => (
-    <View style={styles.bannerItem}>
-      <Image 
-        source={item.image} 
-        style={styles.bannerImage}
-        contentFit="cover"
-      />
-      <View style={styles.bannerOverlay}>
-        <Text style={styles.bannerTitle}>{item.title}</Text>
-        <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.bannerBtn}>
-          <Text style={styles.bannerBtnText}>Shop Now</Text>
+  const listHeader = (
+    <View>
+      {!isSearching && (
+        <View style={styles.bannerSection}>
+          <ShopBannerCarousel banners={banners} />
+        </View>
+      )}
+
+      {categories.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {[{ id: null as number | null, name: 'All' }, ...categories].map((cat) => {
+            const active = selectedCategory === cat.id;
+            return (
+              <TouchableOpacity
+                key={String(cat.id)}
+                onPress={() => setSelectedCategory(cat.id)}
+                style={[
+                  styles.chip,
+                  active
+                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                    : { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.chipText, { color: active ? '#FFF' : colors.text }]}>{cat.name}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      <View style={styles.sectionHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]} numberOfLines={1}>
+            {isSearching ? `Results for “${searchQuery.trim()}”` : selectedCategoryName ?? 'All products'}
+          </Text>
+          <Text style={[styles.count, { color: colors.textSecondary }]}>
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.sortBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+          onPress={() => setSortOpen(true)}
+        >
+          <Ionicons name="swap-vertical" size={14} color={colors.text} />
+          <Text style={[styles.sortText, { color: colors.text }]}>{sort === 'featured' ? 'Sort' : activeSortLabel}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  if (loading && products.length === 0) {
+  const renderBody = () => {
+    if (loading && products.length === 0) return <ShopSkeleton cardWidth={cardWidth} numColumns={numColumns} />;
+
+    if (error && products.length === 0) {
+      return (
+        <StateMessage
+          icon="cloud-offline-outline"
+          title="Shop unavailable"
+          message={error}
+          actionLabel="Try again"
+          onAction={retry}
+        />
+      );
+    }
+
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <FlatList
+        data={filteredProducts}
+        keyExtractor={(item) => String(item.id)}
+        key={`grid-${numColumns}`}
+        numColumns={numColumns}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={listHeader}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        renderItem={({ item }) => (
+          <ProductCard
+            item={item}
+            width={cardWidth}
+            isWishlisted={wishlist.includes(item.id)}
+            quantityInCart={quantityOf(item.id)}
+            onPress={() => router.push(`/(customer)/shop/${item.id}`)}
+            onToggleWishlist={() => handleToggleWishlist(item.id)}
+            onAdd={() => addItem(item)}
+            onDecrement={() => updateQuantity(String(item.id), quantityOf(item.id) - 1)}
+          />
+        )}
+        ListEmptyComponent={
+          <StateMessage
+            icon="search-outline"
+            title="Nothing found"
+            message={isSearching ? 'Try a different word or clear the filters.' : 'No products in this category yet.'}
+            actionLabel={isSearching || selectedCategory !== null ? 'Clear filters' : undefined}
+            onAction={() => {
+              setSearchQuery('');
+              setSelectedCategory(null);
+            }}
+          />
+        }
+      />
     );
-  }
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border + '20', borderBottomWidth: 1, backgroundColor: colors.card }]}>
-        {!showSearch ? (
-          <View style={styles.headerTitleRow}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity 
-                style={styles.avatarBtn}
-                onPress={() => router.push('/(customer)/profile')}
-              >
-                <Image
-                  source={{ uri: user?.profile_pic_url || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
-              </TouchableOpacity>
-              <View>
-                <Text style={[styles.welcomeText, { color: colors.text + '80' }]}>Sacred Market,</Text>
-                <Text style={[styles.userName, { color: colors.text }]}>{user?.name?.split(' ')[0] || 'Amit'}</Text>
-              </View>
-            </View>
-            <View style={styles.headerIcons}>
-              <TouchableOpacity 
-                style={[styles.iconBox, { backgroundColor: colors.card }]}
-                onPress={() => setShowSearch(true)}
-              >
-                <Ionicons name="search-outline" size={22} color={colors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.iconBox, { backgroundColor: colors.card }]}
-                onPress={() => router.push('/(customer)/wishlist' as any)}
-              >
-                <Ionicons name="heart-outline" size={22} color={colors.text} />
-                {wishlist.length > 0 && (
-                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.badgeText}>{wishlist.length}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.iconBox, { backgroundColor: colors.card }]}
-                onPress={() => router.push('/(customer)/cart')}
-              >
-                <Ionicons name="bag-handle-outline" size={22} color={colors.text} />
-                {totalItems > 0 && (
-                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.badgeText}>{totalItems}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.searchHeader}>
-            <TouchableOpacity onPress={() => { setShowSearch(false); setSearchQuery(''); }}>
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <TextInput
-              style={[styles.searchInput, { color: colors.text, backgroundColor: colors.card }]}
-              placeholder="Search samagri..."
-              placeholderTextColor={colors.text + '60'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.text + '60'} />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {header}
+      {renderBody()}
+
+      <Modal visible={sortOpen} transparent animationType="fade" onRequestClose={() => setSortOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setSortOpen(false)}>
+          <Pressable style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Sort by</Text>
+            {SORT_OPTIONS.map((option) => {
+              const active = option.key === sort;
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  style={styles.sheetOption}
+                  onPress={() => {
+                    setSort(option.key);
+                    setSortOpen(false);
+                  }}
+                >
+                  <Text style={[styles.sheetOptionText, { color: active ? colors.primary : colors.text }]}>{option.label}</Text>
+                  {active && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
+function IconButton({ icon, count, onPress }: { icon: keyof typeof Ionicons.glyphMap; count: number; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onPress}>
+      <Ionicons name={icon} size={20} color={colors.text} />
+      {count > 0 && (
+        <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
+          <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function StateMessage({
+  icon,
+  title,
+  message,
+  actionLabel,
+  onAction,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.state}>
+      <View style={[styles.stateIcon, { backgroundColor: colors.primary + '15' }]}>
+        <Ionicons name={icon} size={28} color={colors.primary} />
       </View>
+      <Text style={[styles.stateTitle, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.stateMessage, { color: colors.textSecondary }]}>{message}</Text>
+      {actionLabel && onAction && (
+        <TouchableOpacity style={[styles.stateBtn, { backgroundColor: colors.primary }]} onPress={onAction}>
+          <Text style={styles.stateBtnText}>{actionLabel}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Banner Carousel */}
-        {!showSearch && (
-          <View style={styles.bannerSection}>
-            <FlatList
-              ref={flatListRef}
-              data={BANNERS}
-              renderItem={renderBannerItem}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              getItemLayout={(_, index) => ({
-                length: width,
-                offset: width * index,
-                index,
-              })}
-              onScrollToIndexFailed={(info) => {
-                const fallbackIndex = Math.max(0, Math.min(info.index, BANNERS.length - 1));
-                requestAnimationFrame(() => {
-                  flatListRef.current?.scrollToOffset({
-                    offset: width * fallbackIndex,
-                    animated: true,
-                  });
-                });
-              }}
-              onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
-              keyExtractor={(item) => item.id.toString()}
-            />
-            {/* Pagination Dots */}
-            <View style={styles.pagination}>
-              {BANNERS.map((_, i) => {
-                const opacity = scrollX.interpolate({
-                  inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-                  outputRange: [0.3, 1, 0.3],
-                  extrapolate: 'clamp',
-                });
-                return <Animated.View key={i} style={[styles.dot, { backgroundColor: colors.primary, opacity }]} />;
-              })}
-            </View>
+function ShopSkeleton({ cardWidth, numColumns }: { cardWidth: number; numColumns: number }) {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const block = { backgroundColor: colors.border + '90' };
+  return (
+    <View style={styles.skeleton}>
+      <View style={[styles.skeletonBanner, block, { height: Math.min(Math.round((width - GUTTER * 2) * 0.46), 240) }]} />
+      <View style={styles.skeletonChips}>
+        {[56, 72, 88, 64].map((w) => (
+          <View key={w} style={[styles.skeletonChip, block, { width: w }]} />
+        ))}
+      </View>
+      <View style={styles.skeletonGrid}>
+        {Array.from({ length: numColumns * 2 }, (_, i) => (
+          <View key={i} style={{ width: cardWidth }}>
+            <View style={[styles.skeletonImage, block]} />
+            <View style={[styles.skeletonLine, block, { width: '80%' }]} />
+            <View style={[styles.skeletonLine, block, { width: '45%' }]} />
           </View>
-        )}
-
-        {/* Categories */}
-        <View style={styles.categoriesContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-            {categories.map((cat: any) => (
-              <TouchableOpacity
-                key={cat.id}
-                onPress={() => setSelectedCategory(cat.name)}
-                style={[
-                  styles.categoryChip,
-                  { backgroundColor: selectedCategory === cat.name ? colors.primary : colors.card },
-                  selectedCategory === cat.name && styles.activeChip
-                ]}
-              >
-                <Text style={[
-                  styles.categoryText,
-                  { color: selectedCategory === cat.name ? '#FFF' : colors.text }
-                ]}>
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Products Grid */}
-        <View style={styles.productsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {showSearch ? `Results for "${searchQuery}"` : selectedCategory === 'All' ? 'Sacred Samagri' : selectedCategory}
-            </Text>
-            <Text style={[styles.itemCount, { color: colors.text + '60' }]}>
-              {filteredProducts.length} items
-            </Text>
-          </View>
-
-          <FlatList
-            data={filteredProducts}
-            renderItem={renderProductItem}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={styles.columnWrapper}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="search" size={48} color={colors.text + '20'} />
-                <Text style={[styles.emptyText, { color: colors.text + '60' }]}>No items found</Text>
-              </View>
-            }
-          />
-        </View>
-      </ScrollView>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 12 },
-  headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatarBtn: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden', borderWidth: 1.5, borderColor: '#FF6F0020' },
-  avatarImage: { width: '100%', height: '100%' },
-  welcomeText: { fontSize: 13, fontWeight: '500' },
-  userName: { fontSize: 20, fontWeight: '800' },
-  headerIcons: { flexDirection: 'row', gap: 10 },
-  iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  badge: { position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF', paddingHorizontal: 4 },
-  badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
-  searchHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 44 },
-  searchInput: { flex: 1, height: 44, borderRadius: 14, paddingHorizontal: 15, fontSize: 15, fontWeight: '500' },
-  scrollContent: { paddingBottom: 20 },
-  bannerSection: { marginVertical: 10 },
-  bannerItem: { width: width, paddingHorizontal: 20, height: 180 },
-  bannerImage: { width: '100%', height: '100%', borderRadius: 25 },
-  bannerOverlay: { position: 'absolute', inset: 0, left: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 25, padding: 25, justifyContent: 'center' },
-  bannerTitle: { color: '#FFF', fontSize: 24, fontWeight: '900', marginBottom: 5 },
-  bannerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600', marginBottom: 15 },
-  bannerBtn: { backgroundColor: '#FFF', alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12 },
-  bannerBtnText: { color: '#FF6F00', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
-  pagination: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 15 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  categoriesContainer: { marginVertical: 15 },
-  categoriesScroll: { paddingHorizontal: 20, gap: 10 },
-  categoryChip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 15 },
-  activeChip: { elevation: 4, shadowColor: '#FF6F00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
-  categoryText: { fontSize: 13, fontWeight: '700' },
-  productsSection: { paddingHorizontal: 20, marginTop: 10 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '800' },
-  itemCount: { fontSize: 12, fontWeight: '600' },
-  columnWrapper: { justifyContent: 'space-between', marginBottom: 20 },
-  productCard: { width: (width - 55) / 2, borderRadius: 25, padding: 10, position: 'relative' },
-  productTouchable: { flex: 1 },
-  imageWrapper: { width: '100%', height: 140, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 12, overflow: 'hidden' },
-  productImg: { width: '100%', height: '100%' },
-  wishlistBtn: { position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: 12, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  productInfo: { paddingHorizontal: 5 },
-  productName: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  productPrice: { fontSize: 16, fontWeight: '900' },
-  stockLabel: { fontSize: 10, color: '#EF4444', fontWeight: '700' },
-  addBtn: { position: 'absolute', bottom: -5, right: -5, width: 40, height: 40, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#FAFAFA' },
-  outOfStockOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+
+  header: { paddingHorizontal: GUTTER, paddingBottom: 12 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 },
+  titleBlock: { flex: 1, minWidth: 0 },
+  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.3 },
+  subtitle: { fontSize: 13, marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: { width: 42, height: 42, borderRadius: 21, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center', alignItems: 'center' },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 5,
   },
-  outOfStockText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
   },
-  emptyContainer: { alignItems: 'center', marginTop: 50, gap: 15 },
-  emptyText: { fontSize: 15, fontWeight: '600' }
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+
+  listContent: { paddingBottom: 32 },
+  bannerSection: { marginTop: 4, marginBottom: 18 },
+  chips: { paddingHorizontal: GUTTER, gap: 8 },
+  chip: { paddingHorizontal: 16, height: 36, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' },
+  chipText: { fontSize: 13, fontWeight: '600' },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: GUTTER, marginTop: 22, marginBottom: 14, gap: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  count: { fontSize: 12, marginTop: 2 },
+  sortBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: 17,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  sortText: { fontSize: 12, fontWeight: '600' },
+
+  row: { paddingHorizontal: GUTTER, gap: COLUMN_GAP, marginBottom: COLUMN_GAP },
+
+  state: { alignItems: 'center', paddingHorizontal: 40, paddingVertical: 48 },
+  stateIcon: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
+  stateTitle: { fontSize: 17, fontWeight: '700' },
+  stateMessage: { fontSize: 13, textAlign: 'center', marginTop: 6, lineHeight: 19 },
+  stateBtn: { marginTop: 18, paddingHorizontal: 22, height: 42, borderRadius: 21, justifyContent: 'center' },
+  stateBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
+
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: GUTTER, paddingTop: 10 },
+  sheetHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: 14 },
+  sheetTitle: { fontSize: 17, fontWeight: '800', marginBottom: 6 },
+  sheetOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 },
+  sheetOptionText: { fontSize: 15, fontWeight: '600' },
+
+  skeleton: { paddingTop: 4 },
+  skeletonBanner: { borderRadius: 20, marginHorizontal: GUTTER },
+  skeletonChips: { flexDirection: 'row', gap: 8, paddingHorizontal: GUTTER, marginTop: 30 },
+  skeletonChip: { height: 36, borderRadius: 18 },
+  skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: COLUMN_GAP, paddingHorizontal: GUTTER, marginTop: 64 },
+  skeletonImage: { aspectRatio: 1, borderRadius: 18 },
+  skeletonLine: { height: 12, borderRadius: 6, marginTop: 10 },
 });

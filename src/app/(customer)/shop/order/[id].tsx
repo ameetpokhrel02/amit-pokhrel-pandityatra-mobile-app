@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Act
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { orderDetail, fetchOrderInvoice } from '@/services/samagri.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OrderDetailScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
@@ -45,7 +47,7 @@ export default function OrderDetailScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#f97316" />
@@ -131,8 +133,7 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    marginBottom: 20, 
-    marginTop: 40 
+    marginBottom: 20 
   },
   backButton: { marginRight: 15 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#3E2723' },

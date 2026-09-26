@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 // import { router } from 'expo-router'; // Removed to centralize navigation in layouts
-import { fetchProfile } from '@/services/auth.service';
+import { fetchProfile, logoutSession } from '@/services/auth.service';
 
 interface User {
   id: string;
@@ -86,6 +86,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
+      // Best effort: the local session is cleared below even if the server is unreachable
+      const refresh = await SecureStore.getItemAsync('refresh_token');
+      if (refresh) {
+        await logoutSession(refresh).catch(() => {});
+      }
+
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
       await SecureStore.deleteItemAsync('user');
